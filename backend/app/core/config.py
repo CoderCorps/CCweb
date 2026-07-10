@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     # Database Settings
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/codercorps")
     
+    # SMTP Email Settings
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    MAIL_TO: str = os.getenv("MAIL_TO", "codercorps@gmail.com")
+    
     # CORS Origins (comma-separated string in env, parsed to list)
     BACKEND_CORS_ORIGINS: Any = ["http://localhost:3000"]
 

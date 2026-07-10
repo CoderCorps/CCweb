@@ -513,5 +513,17 @@ export function handleMockRequest(path: string, method: string, body?: any) {
     return { status: 200, ok: true, json: async () => mockCurrentUser };
   }
 
+  // --- Contact Submission ---
+  if (path === "/contact" && method === "POST") {
+    return { 
+      status: 200, 
+      ok: true, 
+      json: async () => ({
+        status: "success",
+        message: "Logged successfully (Frontend Sandbox Fallback active)"
+      }) 
+    };
+  }
+
   return { status: 404, ok: false, json: async () => ({ detail: "Not found" }) };
 }

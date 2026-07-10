@@ -3,7 +3,7 @@ import { handleMockRequest } from "./mockDb";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 // Set to true to bypass backend completely for static frontend hosting/testing
-const FORCE_MOCK = true;
+const FORCE_MOCK = false;
 
 let inMemoryToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;
