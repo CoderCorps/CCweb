@@ -4,10 +4,12 @@ import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Code, ShieldCheck, Cpu, Terminal, Users, Award, BookOpen, Calendar, MapPin, Play } from "lucide-react";
+import { ArrowRight, Code, ShieldCheck, Cpu, Terminal, Users, Award, BookOpen, Calendar, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { CyberScene } from "@/components/ui/cyber-scene";
+import { TiltCard } from "@/components/ui/tilt-card";
 
 export default function HomePage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -130,21 +132,26 @@ export default function HomePage() {
   return (
     <div className="bg-background text-foreground overflow-x-hidden">
 
-      {/* ── HERO SECTION with video background ───────────────── */}
-      <section className="relative min-h-[92vh] flex items-center overflow-hidden">
+      {/* ── HERO SECTION with WebGL Three.js & Video background ── */}
+      <section className="relative min-h-[92vh] flex items-center overflow-hidden isolate">
         {/* Video background */}
         <video
           autoPlay
           muted
           loop
           playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          src="/assets/intro.mp4"
-        />
+          className="absolute inset-0 w-full h-full object-cover -z-20"
+        >
+          <source src="/assets/intro.mp4" type="video/mp4" />
+        </video>
+
+        {/* WebGL Interactive Particle canvas */}
+        <CyberScene />
+
         {/* Dark overlay so text stays readable */}
-        <div className="absolute inset-0 bg-black/65" />
+        <div className="absolute inset-0 bg-black/60 dark:bg-black/70 -z-10" />
         {/* Subtle radial purple tint on top */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.18),transparent_65%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.18),transparent_70%)] -z-10" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center w-full">
           <div className="lg:col-span-7 flex flex-col gap-6 text-left">
@@ -200,47 +207,49 @@ export default function HomePage() {
             </motion.div>
           </div>
 
-          {/* Real logo + terminal card */}
+          {/* Real logo + terminal card (with 3D Hover Tilt wrapper) */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
-            className="lg:col-span-5 flex flex-col items-center gap-6"
+            className="lg:col-span-5 w-full flex flex-col items-center gap-6"
           >
-            {/* Big CoderCorps logo */}
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-indigo-500/20 blur-3xl scale-150" />
-              <Image
-                src="/assets/logo.gif"
-                alt="CoderCorps"
-                width={200}
-                height={200}
-                className="relative z-10 drop-shadow-2xl"
-              />
-            </div>
+            <TiltCard className="w-full flex flex-col items-center gap-6 p-4 rounded-3xl" scale={1.03}>
+              {/* Big CoderCorps logo */}
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-indigo-500/20 blur-3xl scale-150" />
+                <Image
+                  src="/assets/logo.gif"
+                  alt="CoderCorps"
+                  width={200}
+                  height={200}
+                  className="relative z-10 drop-shadow-2xl"
+                />
+              </div>
 
-            {/* Terminal card */}
-            <div className="w-full bg-black/60 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-red-500" />
-                  <span className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <span className="w-3 h-3 rounded-full bg-green-500" />
+              {/* Terminal card */}
+              <div className="w-full bg-black/60 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-red-500" />
+                    <span className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <span className="w-3 h-3 rounded-full bg-green-500" />
+                  </div>
+                  <span className="text-xs text-slate-400 font-mono">codercorps-cli --version</span>
                 </div>
-                <span className="text-xs text-slate-400 font-mono">codercorps-cli --version</span>
+                <div className="font-mono text-sm space-y-2.5">
+                  <p className="text-indigo-400">$ npx codercorps init</p>
+                  <p className="text-emerald-400">✓ Connected to Supabase PostgreSQL cluster</p>
+                  <p className="text-emerald-400">✓ Auth system initialized (JWT + HTTP-Only Refresh)</p>
+                  <p className="text-emerald-400">✓ Active Sprint: 1 [Distributed API Engine]</p>
+                  <p className="text-slate-500">// Pure capability audits. No shortcuts.</p>
+                  <div className="h-px bg-white/10 my-1" />
+                  <p className="text-indigo-400">$ git push origin sprint-1</p>
+                  <p className="text-cyan-400">→ Running automated linting & unit tests...</p>
+                  <p className="text-emerald-400">✓ Tests passed. PR #4 opened for Siddharth Roy</p>
+                </div>
               </div>
-              <div className="font-mono text-sm space-y-2.5">
-                <p className="text-indigo-400">$ npx codercorps init</p>
-                <p className="text-emerald-400">✓ Connected to Supabase PostgreSQL cluster</p>
-                <p className="text-emerald-400">✓ Auth system initialized (JWT + HTTP-Only Refresh)</p>
-                <p className="text-emerald-400">✓ Active Sprint: 1 [Distributed API Engine]</p>
-                <p className="text-slate-500">// Pure capability audits. No shortcuts.</p>
-                <div className="h-px bg-white/10 my-1" />
-                <p className="text-indigo-400">$ git push origin sprint-1</p>
-                <p className="text-cyan-400">→ Running automated linting & unit tests...</p>
-                <p className="text-emerald-400">✓ Tests passed. PR #4 opened for Siddharth Roy</p>
-              </div>
-            </div>
+            </TiltCard>
           </motion.div>
         </div>
       </section>
@@ -352,51 +361,47 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Real event photo */}
-          <div className="mb-12 rounded-2xl overflow-hidden border border-border/40 shadow-2xl relative group">
-            <Image
-              src="/assets/event-rpa.png"
-              alt="CoderCorps RPA Workshop — Jan 2022"
-              width={1400}
-              height={600}
-              className="w-full object-cover h-64 md:h-96 group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            <div className="absolute bottom-6 left-6 text-white">
-              <p className="text-xs font-mono text-indigo-300 uppercase tracking-wider">Featured Event</p>
-              <h3 className="text-2xl font-bold mt-1">Robotic Process Automation Workshop</h3>
-              <p className="text-sm text-slate-300 mt-1 flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5" /> Day 1: Jan 29 · Day 2: Jan 30, 2022
-              </p>
+          {/* Real event photo inside Tilt Card */}
+          <TiltCard className="mb-12 rounded-2xl border border-border/40 shadow-2xl w-full" scale={1.01}>
+            <div className="relative group overflow-hidden w-full h-64 md:h-96">
+              <Image
+                src="/assets/event-rpa.png"
+                alt="CoderCorps RPA Workshop — Jan 2022"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute bottom-6 left-6 text-white">
+                <p className="text-xs font-mono text-indigo-300 uppercase tracking-wider">Featured Event</p>
+                <h3 className="text-2xl font-bold mt-1">Robotic Process Automation Workshop</h3>
+                <p className="text-sm text-slate-300 mt-1 flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" /> Day 1: Jan 29 · Day 2: Jan 30, 2022
+                </p>
+              </div>
             </div>
-          </div>
+          </TiltCard>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {events.map((event, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className="glass-premium p-6 rounded-2xl border border-border/40 hover:border-primary/30 transition-all duration-300 flex flex-col justify-between gap-4 group"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-indigo-500 uppercase tracking-widest font-semibold">{event.type}</span>
-                    <span className="text-[10px] font-mono text-muted-foreground">{event.date}</span>
+              <TiltCard key={idx} className="w-full flex" scale={1.02}>
+                <div className="glass-premium p-6 rounded-2xl border border-border/40 hover:border-primary/30 transition-all duration-300 flex flex-col justify-between gap-4 group w-full h-full">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-indigo-500 uppercase tracking-widest font-semibold">{event.type}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground">{event.date}</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">{event.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{event.desc}</p>
                   </div>
-                  <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">{event.title}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{event.desc}</p>
-                </div>
 
-                <div className="flex items-center justify-between border-t border-border/30 pt-4 text-xs font-mono text-muted-foreground">
-                  <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-indigo-400" /> {event.location}</span>
-                  {event.partner && (
-                    <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 text-[9px] border border-indigo-500/20">{event.partner}</span>
-                  )}
+                  <div className="flex items-center justify-between border-t border-border/30 pt-4 text-xs font-mono text-muted-foreground">
+                    <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-indigo-400" /> {event.location}</span>
+                    {event.partner && (
+                      <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 text-[9px] border border-indigo-500/20">{event.partner}</span>
+                    )}
+                  </div>
                 </div>
-              </motion.div>
+              </TiltCard>
             ))}
           </div>
         </div>
@@ -417,44 +422,41 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              className="glass-premium p-8 rounded-2xl border border-border/40 hover:border-indigo-500/30 transition-all duration-300 flex flex-col gap-4 group"
-            >
-              <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 w-fit">
-                <BookOpen className="h-7 w-7 text-primary" />
+            <TiltCard scale={1.03}>
+              <div className="glass-premium p-8 rounded-2xl border border-border/40 hover:border-indigo-500/30 transition-all duration-300 flex flex-col gap-4 group h-full">
+                <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 w-fit">
+                  <BookOpen className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground">Academy Learning</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Structured, rigorous modules covering Systems Programming, Distributed Architectures, and advanced AI systems. Learn the why, not just the how.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-foreground">Academy Learning</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Structured, rigorous modules covering Systems Programming, Distributed Architectures, and advanced AI systems. Learn the why, not just the how.
-              </p>
-            </motion.div>
+            </TiltCard>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
-              className="glass-premium p-8 rounded-2xl border border-border/40 hover:border-cyan-500/30 transition-all duration-300 flex flex-col gap-4 group"
-            >
-              <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 w-fit">
-                <Users className="h-7 w-7 text-cyan-500" />
+            <TiltCard scale={1.03}>
+              <div className="glass-premium p-8 rounded-2xl border border-border/40 hover:border-cyan-500/30 transition-all duration-300 flex flex-col gap-4 group h-full">
+                <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 w-fit">
+                  <Users className="h-7 w-7 text-cyan-500" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground">Real Mentorship</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Interact with staff engineers from high-scale tech firms. Get direct, line-by-line code review feedback on your PR submissions.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-foreground">Real Mentorship</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Interact with staff engineers from high-scale tech firms. Get direct, line-by-line code review feedback on your PR submissions.
-              </p>
-            </motion.div>
+            </TiltCard>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
-              className="glass-premium p-8 rounded-2xl border border-border/40 hover:border-teal-500/30 transition-all duration-300 flex flex-col gap-4 group"
-            >
-              <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 w-fit">
-                <Award className="h-7 w-7 text-teal-500" />
+            <TiltCard scale={1.03}>
+              <div className="glass-premium p-8 rounded-2xl border border-border/40 hover:border-teal-500/30 transition-all duration-300 flex flex-col gap-4 group h-full">
+                <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 w-fit">
+                  <Award className="h-7 w-7 text-teal-500" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground">Verifiable Proof</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Every certificate represents a real project contribution with verified code reviews and deliverables. No fake credits, no fluff.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-foreground">Verifiable Proof</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Every certificate represents a real project contribution with verified code reviews and deliverables. No fake credits, no fluff.
-              </p>
-            </motion.div>
+            </TiltCard>
           </div>
         </div>
       </section>

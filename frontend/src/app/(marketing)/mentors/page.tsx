@@ -8,34 +8,34 @@ import { motion } from "framer-motion";
 export default function MentorsPage() {
   const mentors = [
     {
-      name: "Siddharth Roy",
-      title: "Backend & Systems Mentor",
-      company: "Ex-Staff Engineer at Uber",
-      bio: "12+ years experience building highly concurrent distributed systems. Expert in DB tuning, cache design, and Python/Go.",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300",
-      skills: ["FastAPI", "Go", "PostgreSQL", "Kafka", "Kubernetes"],
-      github: "https://github.com/mentor-siddharth",
-      linkedin: "https://linkedin.com/in/siddharth-roy"
+      name: "Atul Sharma",
+      title: "Founder & Lead Backend Architect",
+      company: "Founder at CoderCorps",
+      bio: "Backend Engineer with 2+ years of experience building scalable Python systems and cloud-native applications. Specializes in optimizing workflows, high-performance APIs, data pipelines, and production AI solutions.",
+      avatar: "/assets/mentors/atul.png",
+      skills: ["Python", "FastAPI", "Cloud Native", "Data Pipelines", "LLMs", "RAG"],
+      github: "https://github.com/atul120212",
+      linkedin: "https://www.linkedin.com/in/imatul-sharma/"
     },
     {
-      name: "Neha Mehta",
-      title: "Frontend & Architecture Mentor",
-      company: "Principal Engineer at Razorpay",
-      bio: "UI Architect. Focused on client state management, responsive designs, Next.js performance auditing, and animations.",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300",
-      skills: ["React", "TypeScript", "Next.js", "Framer Motion", "Tailwind"],
-      github: "https://github.com/neha-mehta",
-      linkedin: "https://linkedin.com/in/neha-mehta"
+      name: "Devansh Rathaur",
+      title: "Distributed Systems & Infrastructure Lead",
+      company: "Core Architect at CoderCorps · Founder of CodeInCampus",
+      bio: "Software Developer, Python Trainer & tech community builder. Honed skills in Python, Core Java, Flask, Django, MySQL, AWS, and mentored in open-source programs like GirlScript Summer of Code.",
+      avatar: "/assets/mentors/devansh.jpg",
+      skills: ["Python", "Flask/Django", "MySQL", "AWS", "Docker/K8s", "Git"],
+      github: "https://github.com/Devansh80",
+      linkedin: "https://www.linkedin.com/in/devanshrathaur/"
     },
     {
-      name: "Kabir Sengupta",
-      title: "AI & Platform Lead",
-      company: "Senior Applied Scientist at Nvidia",
-      bio: "PhD in AI/ML. Specializes in LLM fine-tuning, training container optimization, CUDA drivers, and vector pipeline design.",
-      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300",
-      skills: ["PyTorch", "Hugging Face", "LangChain", "LLMs", "Vector DBs"],
-      github: "https://github.com/kabir-s",
-      linkedin: "https://linkedin.com/in/kabir-sengupta"
+      name: "Divakar Singh",
+      title: "AI Backend & Systems Lead",
+      company: "AI Engineer at Blackcoffer · Tech Lead",
+      bio: "AI Backend Engineer building LLM applications, RAG systems, and FastAPI microservices. Experienced in training deep learning models (ImageNets, LSTM) and building serious AI infrastructure.",
+      avatar: "/assets/mentors/divakar.jpg",
+      skills: ["Deep Learning", "FastAPI", "RAG Systems", "PyTorch", "LangChain", "Docker"],
+      github: "https://github.com/divakar166",
+      linkedin: "https://www.linkedin.com/in/divakar-singh/"
     }
   ];
 
@@ -44,10 +44,10 @@ export default function MentorsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="text-left max-w-3xl mb-16 flex flex-col gap-4">
           <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 text-violet-400 px-3 py-1 rounded-full text-xs font-semibold w-fit">
-            <span>OUR INDUSTRY LEADS</span>
+            <span>OUR CORE ENGINEERING BOARD</span>
           </div>
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight">
-            Meet the Mentors
+            Core Engineers & Mentors
           </h1>
           <p className="text-lg text-muted-foreground">
             Learn from engineers who have built, optimized, and deployed code handling millions of active daily users. Real engineers giving real code reviews.

@@ -15,6 +15,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/ui/icons";
+import { TiltCard } from "@/components/ui/tilt-card";
 
 interface Profile {
   bio: string;
@@ -158,42 +159,44 @@ export default function PublicPortfolioPage() {
           <ArrowLeft className="h-4 w-4" /> Back to CoderCorps
         </button>
 
-        {/* Developer Card Header */}
-        <Card className="glass-premium border-border/40 p-8 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-            <img 
-              src={profileData.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.name)}`} 
-              alt={profileData.name} 
-              className="w-28 h-28 rounded-full object-cover border-2 border-primary/50 shadow-lg"
-            />
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono">
-                <ShieldCheck className="h-3 w-3" /> VERIFIED DEVELOPER
+        {/* Developer Card Header with 3D Tilt Wrapper */}
+        <TiltCard scale={1.01} maxRotation={8}>
+          <Card className="glass-premium border-border/40 p-8 flex flex-col md:flex-row items-center md:items-start justify-between gap-6 w-full">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
+              <img 
+                src={profileData.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.name)}`} 
+                alt={profileData.name} 
+                className="w-28 h-28 rounded-full object-cover border-2 border-primary/50 shadow-lg"
+              />
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono">
+                  <ShieldCheck className="h-3 w-3" /> VERIFIED DEVELOPER
+                </div>
+                <h1 className="text-3xl font-extrabold text-foreground">{profileData.name}</h1>
+                <p className="text-sm text-indigo-400 font-mono">{profile.college}</p>
+                <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">{profile.bio}</p>
               </div>
-              <h1 className="text-3xl font-extrabold text-foreground">{profileData.name}</h1>
-              <p className="text-sm text-indigo-400 font-mono">{profile.college}</p>
-              <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">{profile.bio}</p>
             </div>
-          </div>
 
-          <div className="flex flex-row md:flex-col gap-3">
-            {profile.github_url && (
-              <a href={profile.github_url} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-card border hover:bg-border/60 text-muted-foreground hover:text-foreground transition-colors">
-                <Github className="h-5 w-5" />
-              </a>
-            )}
-            {profile.linkedin_url && (
-              <a href={profile.linkedin_url} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-card border hover:bg-border/60 text-muted-foreground hover:text-foreground transition-colors">
-                <Linkedin className="h-5 w-5" />
-              </a>
-            )}
-            {profile.resume_url && (
-              <a href={profile.resume_url} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-card border hover:bg-border/60 text-muted-foreground hover:text-foreground transition-colors">
-                <FileText className="h-5 w-5" />
-              </a>
-            )}
-          </div>
-        </Card>
+            <div className="flex flex-row md:flex-col gap-3">
+              {profile.github_url && (
+                <a href={profile.github_url} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-card border hover:bg-border/60 text-muted-foreground hover:text-foreground transition-colors">
+                  <Github className="h-5 w-5" />
+                </a>
+              )}
+              {profile.linkedin_url && (
+                <a href={profile.linkedin_url} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-card border hover:bg-border/60 text-muted-foreground hover:text-foreground transition-colors">
+                  <Linkedin className="h-5 w-5" />
+                </a>
+              )}
+              {profile.resume_url && (
+                <a href={profile.resume_url} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-card border hover:bg-border/60 text-muted-foreground hover:text-foreground transition-colors">
+                  <FileText className="h-5 w-5" />
+                </a>
+              )}
+            </div>
+          </Card>
+        </TiltCard>
 
         {/* Skills Grid */}
         {profile.skills && profile.skills.length > 0 && (

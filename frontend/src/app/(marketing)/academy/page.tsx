@@ -6,8 +6,24 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Cpu, Globe, Database, Shield, Terminal, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { TiltCard } from "@/components/ui/tilt-card";
+
+const VIDEO_POOL = [
+  "/assets/track-ai.mp4",
+  "/assets/track-web.mp4",
+  "/assets/track-devops.mp4",
+  "/assets/track-systems.mp4",
+  "/assets/hud-logo.mp4",
+  "/assets/track-1.mp4",
+  "/assets/track-2.mp4",
+  "/assets/track-3.mp4",
+  "/assets/track-4.mp4",
+  "/assets/track-5.mp4"
+];
 
 export default function AcademyPage() {
+  const [randomVideos, setRandomVideos] = React.useState<string[]>([]);
+
   const tracks = [
     {
       title: "AI & Machine Learning Engineering",
@@ -38,6 +54,12 @@ export default function AcademyPage() {
       duration: "14 Weeks"
     }
   ];
+
+  React.useEffect(() => {
+    // Shuffle the video pool to assign unique random background videos to each card
+    const shuffled = [...VIDEO_POOL].sort(() => 0.5 - Math.random());
+    setRandomVideos(shuffled.slice(0, tracks.length));
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -75,50 +97,70 @@ export default function AcademyPage() {
           animate="show"
           className="grid grid-cols-1 md:grid-cols-2 gap-8"
         >
-          {tracks.map((track, idx) => (
-            <motion.div 
-              key={idx}
-              variants={cardVariants}
-              whileHover={{ y: -5 }}
-              className="flex"
-            >
-              <Card className="glass-premium border border-border/40 flex flex-col justify-between w-full p-2">
-                <CardHeader className="flex flex-row items-center gap-4">
-                  <div className="p-3 rounded-xl bg-border/40 border border-border/60">
-                    {track.icon}
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl text-foreground font-bold">{track.title}</CardTitle>
-                    <CardDescription className="text-xs text-indigo-500 font-mono mt-1">Duration: {track.duration}</CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-6">
-                  <p className="text-sm text-muted-foreground leading-relaxed">{track.desc}</p>
-                  
-                  <div>
-                    <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 font-mono">Skills Covered:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {track.skills.map((skill, sIdx) => (
-                        <span 
-                          key={sIdx}
-                          className="text-xs px-2.5 py-1 rounded-md bg-muted border border-border text-foreground font-mono"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-4 border-t border-border/30 mt-6">
-                  <Link href="/signup" className="w-full">
-                    <Button variant="outline" className="w-full gap-2 font-semibold">
-                      Apply to Track <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            </motion.div>
-          ))}
+          {tracks.map((track, idx) => {
+            const currentVideo = randomVideos[idx];
+            return (
+              <motion.div 
+                key={idx}
+                variants={cardVariants}
+                className="flex"
+              >
+                <TiltCard className="w-full flex" scale={1.02}>
+                  <Card className="glass-premium border border-border/40 flex flex-col justify-between w-full p-2 relative overflow-hidden isolate">
+                    {/* Subtle dynamic background video selected randomly on mount */}
+                    {currentVideo && (
+                      <video
+                        key={currentVideo} // Force re-render when video path sets
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="absolute inset-0 w-full h-full object-cover -z-20 opacity-30 dark:opacity-20 group-hover:scale-105 transition-transform duration-500"
+                      >
+                        <source src={currentVideo} type="video/mp4" />
+                      </video>
+                    )}
+                    {/* Subtle dark backdrop inside the card for readability */}
+                    <div className="absolute inset-0 bg-background/90 dark:bg-background/95 -z-10" />
+
+                    <CardHeader className="flex flex-row items-center gap-4">
+                      <div className="p-3 rounded-xl bg-border/40 border border-border/60">
+                        {track.icon}
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-foreground font-bold">{track.title}</CardTitle>
+                        <CardDescription className="text-xs text-indigo-500 font-mono mt-1">Duration: {track.duration}</CardDescription>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-6">
+                      <p className="text-sm text-muted-foreground leading-relaxed">{track.desc}</p>
+                      
+                      <div>
+                        <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 font-mono">Skills Covered:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {track.skills.map((skill, sIdx) => (
+                            <span 
+                              key={sIdx}
+                              className="text-xs px-2.5 py-1 rounded-md bg-muted border border-border text-foreground font-mono"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="pt-4 border-t border-border/30 mt-6">
+                      <Link href="/signup" className="w-full">
+                        <Button variant="outline" className="w-full gap-2 font-semibold">
+                          Apply to Track <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                </TiltCard>
+              </motion.div>
+            );
+          })}
         </motion.div>
       </div>
     </div>
