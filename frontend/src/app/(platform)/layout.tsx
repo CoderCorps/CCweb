@@ -19,8 +19,11 @@ import {
   Terminal,
   ChevronRight,
   Settings,
-  Users
+  Users,
+  FileText
 } from "lucide-react";
+
+import NotificationBell from "@/components/dashboard/NotificationBell";
 
 export default function PlatformLayout({
   children,
@@ -64,12 +67,18 @@ export default function PlatformLayout({
     return null; // will redirect in useEffect
   }
 
-  const navLinks = [
-    { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+  const navLinks = [];
+  if (user.role === "student") {
+    navLinks.push({ name: "Today", href: "/today", icon: <LayoutDashboard className="h-4 w-4" /> });
+  } else {
+    navLinks.push({ name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> });
+  }
+  
+  navLinks.push(
     { name: "Projects", href: "/projects", icon: <FolderGit2 className="h-4 w-4" /> },
     { name: "My Portfolio", href: "/portfolio", icon: <UserCircle className="h-4 w-4" /> },
-    { name: "Settings", href: "/settings", icon: <Settings className="h-4 w-4" /> },
-  ];
+    { name: "Settings", href: "/settings", icon: <Settings className="h-4 w-4" /> }
+  );
 
   // Mentors get reviews and students links
   if (user.role === "mentor" || user.role === "admin") {
@@ -77,6 +86,11 @@ export default function PlatformLayout({
       name: "Reviews Board",
       href: "/mentor/reviews",
       icon: <ClipboardList className="h-4 w-4" />
+    });
+    navLinks.push({
+      name: "Standup Reports",
+      href: "/mentor/reports",
+      icon: <FileText className="h-4 w-4" />
     });
     navLinks.push({
       name: "Students Roster",
@@ -99,7 +113,7 @@ export default function PlatformLayout({
           {/* Brand header */}
           <div className="h-16 flex items-center px-6 border-b border-border">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-              <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={32} height={32} className="object-contain" />
+              <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={32} height={32} className="object-contain" unoptimized priority />
               <span className="font-bold text-lg text-foreground">Coder<span className="text-primary">Corps</span></span>
             </Link>
           </div>
@@ -173,6 +187,7 @@ export default function PlatformLayout({
             <span className="text-xs text-muted-foreground font-mono hidden sm:block">
               STATUS: <span className="text-emerald-400">ACTIVE</span>
             </span>
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </header>

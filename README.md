@@ -75,3 +75,28 @@ Visit the app at [http://localhost:3000](http://localhost:3000).
 4. **Mentor Availability Widget**: Allows mentors to state their office hours/mentorship availability inside settings, displayed publicly on the Core Board flip cards.
 5. **Command Palette (⌘K)**: Quick, keyboard-accessible command menu (`Cmd+K`/`Ctrl+K`) for seamless navigation between platform workspaces. Role-aware dashboard routing.
 
+---
+
+## ⏰ Scheduled Tasks & Cron
+
+The accountability features (carrying over uncompleted todos and triggering missing standup alerts) are executed via a scheduled background script. 
+
+To configure this job in production (e.g., Render Cron or Railway Scheduled Jobs) or locally, schedule the following command to run daily once per evening (e.g., at 11:59 PM server time):
+
+```bash
+cd backend
+# Activate virtual environment
+.\venv\Scripts\activate   # Windows
+source venv/bin/activate  # Unix/macOS
+
+# Run accountability job
+python -m app.cron.accountability
+```
+
+---
+
+## 🚧 Not Yet Implemented
+
+1. **Email Notification Dispatch**: Live email delivery (e.g. via Resend or SMTP hooks) is not yet active. Notifications are dispatched and stored exclusively in-app via the notifications table. Integrating an external email service provider (like Resend) remains a developer roadmap TODO.
+
+

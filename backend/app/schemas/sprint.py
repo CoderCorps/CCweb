@@ -1,14 +1,39 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 import datetime
-from app.schemas.user import UserResponse
+
+class TaskAssignmentResponse(BaseModel):
+    id: int
+    task_id: int
+    user_id: int
+    assigned_by_id: Optional[int] = None
+    assigned_at: datetime.datetime
+    status: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class TaskSubmissionResponse(BaseModel):
+    id: int
+    task_id: int
+    user_id: int
+    repo_url: Optional[str] = None
+    demo_url: Optional[str] = None
+    approach_notes: Optional[str] = None
+    submitted_at: datetime.datetime
+    mentor_score: Optional[int] = None
+    mentor_feedback: Optional[str] = None
+    reviewed_at: Optional[datetime.datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
     status: str = "todo" # 'todo' | 'in_progress' | 'review' | 'done'
-    assigned_to_id: Optional[int] = None
     github_pr_url: Optional[str] = None
+    task_mode: str = "individual" # 'individual' | 'competitive'
+    difficulty: Optional[str] = None # 'easy' | 'medium' | 'hard'
+    due_date: Optional[datetime.datetime] = None
 
 class TaskCreate(TaskBase):
     pass
@@ -17,13 +42,15 @@ class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
-    assigned_to_id: Optional[int] = None
     github_pr_url: Optional[str] = None
+    task_mode: Optional[str] = None
+    difficulty: Optional[str] = None
+    due_date: Optional[datetime.datetime] = None
 
 class TaskResponse(TaskBase):
     id: int
     sprint_id: int
-    assignee: Optional[UserResponse] = None
+    assignments: List[TaskAssignmentResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 

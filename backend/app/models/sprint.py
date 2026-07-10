@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, DateTime, ForeignKey, Text
+from sqlalchemy import String, Integer, DateTime, ForeignKey, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.session import Base
 import datetime
@@ -22,12 +22,50 @@ class Task(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     sprint_id: Mapped[int] = mapped_column(Integer, ForeignKey("sprints.id", ondelete="CASCADE"), nullable=False)
-    assigned_to_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="todo", nullable=False) # 'todo' | 'in_progress' | 'review' | 'done'
     github_pr_url: Mapped[str] = mapped_column(String(255), nullable=True)
+    
+    # Extended fields
+    task_mode: Mapped[str] = mapped_column(String(50), default="individual", nullable=False) # 'individual' | 'competitive'
+    difficulty: Mapped[str] = mapped_column(String(50), nullable=True) # 'easy' | 'medium' | 'hard'
+    due_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     sprint: Mapped["Sprint"] = relationship("Sprint", back_populates="tasks")
-    assignee: Mapped["User"] = relationship("User", back_populates="assigned_tasks")
+    assignments: Mapped[list["TaskAssignment"]] = relationship("TaskAssignment", back_populates="task", cascade="all, delete-orphan")
+    task_submissions: Mapped[list["TaskSubmission"]] = relationship("TaskSubmission", back_populates="task", cascade="all, delete-orphan")
+
+class TaskAssignment(Base):
+    __tablename__ = "task_assignments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    task_id: Mapped[int] = mapped_column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    assigned_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    assigned_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="assigned", nullable=False) # 'assigned' | 'in_progress' | 'submitted' | 'reviewed'
+
+    # Relationships
+    task: Mapped["Task"] = relationship("Task", back_populates="assignments")
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id], back_populates="task_assignments")
+    assigner: Mapped["User"] = relationship("User", foreign_keys=[assigned_by_id], back_populates="assigned_by_tasks")
+
+class TaskSubmission(Base):
+    __tablename__ = "task_submissions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    task_id: Mapped[int] = mapped_column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    repo_url: Mapped[str] = mapped_column(String(255), nullable=True)
+    demo_url: Mapped[str] = mapped_column(String(255), nullable=True)
+    approach_notes: Mapped[str] = mapped_column(Text, nullable=True)
+    submitted_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
+    mentor_score: Mapped[int] = mapped_column(Integer, nullable=True) # 0-100, nullable until reviewed
+    mentor_feedback: Mapped[str] = mapped_column(Text, nullable=True)
+    reviewed_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+
+    # Relationships
+    task: Mapped["Task"] = relationship("Task", back_populates="task_submissions")
+    user: Mapped["User"] = relationship("User", back_populates="task_submissions")

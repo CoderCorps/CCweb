@@ -119,13 +119,13 @@ export function CyberScene() {
     window.addEventListener("mousemove", handleMouseMove);
 
     // 6. Animation Loop
-    let clock = new THREE.Clock();
+    const startTime = Date.now();
     let animationFrameId: number;
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      const elapsed = clock.getElapsedTime();
+      const elapsed = (Date.now() - startTime) / 1000;
       const positionAttr = geometry.attributes.position as THREE.BufferAttribute;
       const array = positionAttr.array as Float32Array;
 

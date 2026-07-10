@@ -21,6 +21,7 @@ class Project(Base):
     sprints: Mapped[list["Sprint"]] = relationship("Sprint", back_populates="project", cascade="all, delete-orphan")
     submissions: Mapped[list["Submission"]] = relationship("Submission", back_populates="project", cascade="all, delete-orphan")
     certificates: Mapped[list["Certificate"]] = relationship("Certificate", back_populates="project")
+    room: Mapped["Room"] = relationship("Room", back_populates="project", uselist=False, cascade="all, delete-orphan")
 
 class ProjectMember(Base):
     __tablename__ = "project_members"

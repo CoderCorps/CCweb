@@ -17,10 +17,16 @@ class User(Base):
     # Relationships
     profile: Mapped["Profile"] = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     project_memberships: Mapped[list["ProjectMember"]] = relationship("ProjectMember", back_populates="user", cascade="all, delete-orphan")
-    assigned_tasks: Mapped[list["Task"]] = relationship("Task", back_populates="assignee")
+    task_assignments: Mapped[list["TaskAssignment"]] = relationship("TaskAssignment", foreign_keys="[TaskAssignment.user_id]", back_populates="user", cascade="all, delete-orphan")
+    assigned_by_tasks: Mapped[list["TaskAssignment"]] = relationship("TaskAssignment", foreign_keys="[TaskAssignment.assigned_by_id]", back_populates="assigner")
+    task_submissions: Mapped[list["TaskSubmission"]] = relationship("TaskSubmission", back_populates="user", cascade="all, delete-orphan")
+    daily_todos: Mapped[list["DailyTodo"]] = relationship("DailyTodo", back_populates="user", cascade="all, delete-orphan")
+    daily_reports: Mapped[list["DailyReport"]] = relationship("DailyReport", foreign_keys="[DailyReport.user_id]", back_populates="user", cascade="all, delete-orphan")
+    assigned_mentor_reports: Mapped[list["DailyReport"]] = relationship("DailyReport", foreign_keys="[DailyReport.mentor_id]", back_populates="mentor")
     submissions: Mapped[list["Submission"]] = relationship("Submission", foreign_keys="[Submission.user_id]", back_populates="user")
     reviewed_submissions: Mapped[list["Submission"]] = relationship("Submission", foreign_keys="[Submission.reviewed_by_id]", back_populates="reviewer")
     certificates: Mapped[list["Certificate"]] = relationship("Certificate", back_populates="user")
+    notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
 
 class Profile(Base):
     __tablename__ = "profiles"

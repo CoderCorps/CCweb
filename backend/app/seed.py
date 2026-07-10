@@ -5,13 +5,21 @@ from app.core import security
 from app.models.user import User, Profile
 from app.models.program import Program
 from app.models.project import Project, ProjectMember
-from app.models.sprint import Sprint, Task
+from app.models.sprint import Sprint, Task, TaskAssignment, TaskSubmission
 from app.models.submission import Submission, Certificate
+from app.models.daily_activity import DailyTodo, DailyReport
+from app.models.communication import Room, RoomMessage
 
 def seed_db():
     db = SessionLocal()
     try:
         # Clear existing data in reverse order of relationships
+        db.query(RoomMessage).delete()
+        db.query(Room).delete()
+        db.query(DailyTodo).delete()
+        db.query(DailyReport).delete()
+        db.query(TaskSubmission).delete()
+        db.query(TaskAssignment).delete()
         db.query(Certificate).delete()
         db.query(Submission).delete()
         db.query(Task).delete()
@@ -162,29 +170,85 @@ def seed_db():
         # 7. Create Tasks
         task1 = Task(
             sprint_id=sprint1.id,
-            assigned_to_id=student1.id,
             title="Design core DB schema & implement SQLAlchemy models",
             description="Establish standard user, project, sprint, task, and submission tables using clean foreign key integrity.",
             status="done",
-            github_pr_url="https://github.com/codercorps/ecommerce-api/pull/1"
+            github_pr_url="https://github.com/codercorps/ecommerce-api/pull/1",
+            task_mode="individual",
+            difficulty="medium",
+            due_date=datetime.datetime.now() + datetime.timedelta(days=7)
         )
         task2 = Task(
             sprint_id=sprint1.id,
-            assigned_to_id=student2.id,
             title="Set up JWT Authentication & Route Guards",
             description="Implement backend login/signup/refresh logic and frontend route protection context.",
             status="in_progress",
-            github_pr_url=None
+            github_pr_url=None,
+            task_mode="individual",
+            difficulty="hard",
+            due_date=datetime.datetime.now() + datetime.timedelta(days=10)
         )
         task3 = Task(
             sprint_id=sprint1.id,
-            assigned_to_id=student1.id,
             title="Create Docker Compose configuration for local testing",
             description="Configure Postgres and backend containers for quick team onboarding.",
             status="todo",
-            github_pr_url=None
+            github_pr_url=None,
+            task_mode="competitive",
+            difficulty="easy",
+            due_date=datetime.datetime.now() + datetime.timedelta(days=5)
         )
         db.add_all([task1, task2, task3])
+        db.commit()
+        db.refresh(task1)
+        db.refresh(task2)
+        db.refresh(task3)
+
+        # 8. Create Task Assignments
+        assign1 = TaskAssignment(
+            task_id=task1.id,
+            user_id=student1.id,
+            assigned_by_id=mentor.id,
+            status="reviewed"
+        )
+        assign2 = TaskAssignment(
+            task_id=task2.id,
+            user_id=student2.id,
+            assigned_by_id=mentor.id,
+            status="in_progress"
+        )
+        assign3_1 = TaskAssignment(
+            task_id=task3.id,
+            user_id=student1.id,
+            assigned_by_id=mentor.id,
+            status="assigned"
+        )
+        assign3_2 = TaskAssignment(
+            task_id=task3.id,
+            user_id=student2.id,
+            assigned_by_id=mentor.id,
+            status="assigned"
+        )
+        db.add_all([assign1, assign2, assign3_1, assign3_2])
+        db.commit()
+
+        # 9. Create Room and Room Messages
+        room = Room(project_id=project.id)
+        db.add(room)
+        db.commit()
+        db.refresh(room)
+
+        msg1 = RoomMessage(
+            room_id=room.id,
+            user_id=mentor.id,
+            content="Welcome to the Distributed E-Commerce API Engine team room! Let's build something scalable."
+        )
+        msg2 = RoomMessage(
+            room_id=room.id,
+            user_id=student1.id,
+            content="Thanks Siddharth! Ready to design the SQLAlchemy schemas."
+        )
+        db.add_all([msg1, msg2])
         db.commit()
 
         print("Database successfully seeded with mock data!")

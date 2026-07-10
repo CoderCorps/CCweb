@@ -19,10 +19,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // If already logged in, redirect to dashboard
+  // If already logged in, redirect to today (students) or dashboard (mentors/admins)
   useEffect(() => {
     if (!loading && user) {
-      router.push("/dashboard");
+      if (user.role === "student") {
+        router.push("/today");
+      } else {
+        router.push("/dashboard");
+      }
     }
   }, [user, loading, router]);
 
@@ -34,7 +38,7 @@ export default function LoginPage() {
     try {
       const success = await login(email, password);
       if (success) {
-        router.push("/dashboard");
+        // Will be redirected by useEffect once user state updates
       } else {
         setError("Invalid email or password. Please try again.");
       }
@@ -52,7 +56,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         <div className="text-center mb-6 flex flex-col items-center">
           <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity mb-2">
-            <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={38} height={38} className="object-contain" />
+            <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={38} height={38} className="object-contain" unoptimized priority />
             <span className="font-bold text-2xl tracking-tight text-foreground">Coder<span className="text-primary">Corps</span></span>
           </Link>
           <p className="text-xs text-muted-foreground font-mono">WORKSPACE AUTH SERVICE</p>

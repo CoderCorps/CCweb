@@ -19,7 +19,8 @@ import {
   AlertCircle,
   Users,
   Settings,
-  UserPlus
+  UserPlus,
+  Trophy
 } from "lucide-react";
 
 interface User {
@@ -326,6 +327,35 @@ export default function ProjectWorkspacePage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
+          {/* Team Chat Room */}
+          <Button 
+            variant="outline" 
+            className="font-semibold gap-1.5 border border-border bg-card/40 hover:bg-card/80 text-white"
+            onClick={() => router.push(`/projects/${id}/room`)}
+          >
+            <MessageSquare className="h-4 w-4 text-indigo-400" /> Team Room
+          </Button>
+
+          {/* Leaderboard */}
+          <Button 
+            variant="outline" 
+            className="font-semibold gap-1.5 border border-border bg-card/40 hover:bg-card/80 text-white"
+            onClick={() => router.push(`/projects/${id}/leaderboard`)}
+          >
+            <Trophy className="h-4 w-4 text-yellow-400" /> Leaderboard
+          </Button>
+
+          {/* Manage Board (Mentor/Admin Only) */}
+          {isMentor && (
+            <Button 
+              variant="outline" 
+              className="font-semibold gap-1.5 border border-border bg-card/40 hover:bg-card/80 text-white"
+              onClick={() => router.push(`/projects/${id}/manage`)}
+            >
+              <Settings className="h-4 w-4 text-indigo-400" /> Manage Board
+            </Button>
+          )}
+
           {/* Submit Project (Student Only) */}
           {!isMentor && (
             <Dialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
@@ -399,7 +429,7 @@ export default function ProjectWorkspacePage() {
                       required
                       value={selectedAssigneeId}
                       onChange={(e) => setSelectedAssigneeId(e.target.value ? Number(e.target.value) : "")}
-                      className="flex h-9 w-full rounded-md border border-input bg-card/60 px-3 py-1 text-sm shadow-sm text-foreground"
+                      className="w-full h-9 rounded-md border border-input bg-card/60 px-3 text-sm shadow-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
                       <option value="" className="bg-card text-muted-foreground">Choose an unassigned student...</option>
                       {assignableStudents.map((student) => (
@@ -516,7 +546,7 @@ export default function ProjectWorkspacePage() {
                       id="t_assignee"
                       value={taskAssigneeId || ""}
                       onChange={(e) => setTaskAssigneeId(e.target.value ? Number(e.target.value) : null)}
-                      className="flex h-9 w-full rounded-md border border-input bg-card/60 px-3 py-1 text-sm shadow-sm"
+                      className="w-full h-9 rounded-md border border-input bg-card/60 px-3 text-sm shadow-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
                       <option value="" className="bg-card">Unassigned</option>
                       {project.members.map((m) => (
@@ -643,7 +673,7 @@ export default function ProjectWorkspacePage() {
                   <select
                     value={selectedTaskStatus}
                     onChange={(e) => setSelectedTaskStatus(e.target.value as any)}
-                    className="flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 text-sm shadow-sm"
+                    className="w-full h-9 rounded-md border border-input bg-card px-3 text-sm shadow-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   >
                     <option value="todo" className="bg-card">To Do</option>
                     <option value="in_progress" className="bg-card">In Progress</option>

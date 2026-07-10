@@ -6,10 +6,10 @@ import datetime
 from app.deps import get_db, get_current_user, get_current_mentor
 from app.models.user import User
 from app.models.project import Project, ProjectMember
-from app.models.sprint import Sprint, Task
+from app.models.sprint import Sprint, Task, TaskAssignment, TaskSubmission
 from app.models.activity import ActivityEvent
 from app.schemas.project import ProjectCreate, ProjectResponse
-from app.schemas.sprint import SprintCreate, SprintResponse, TaskCreate, TaskUpdate, TaskResponse
+from app.schemas.sprint import SprintCreate, SprintResponse, TaskCreate, TaskUpdate, TaskResponse, TaskAssignmentResponse
 
 router = APIRouter()
 
@@ -214,6 +214,161 @@ def get_assignable_students(
         for u in assignable
     ]
 
+# --- Project Members & Leaderboard ---
+
+class MemberAssignPayload(BaseModel):
+    student_id: int
+
+@router.post("/{id}/members")
+def assign_member(
+    id: int, 
+    payload: MemberAssignPayload, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        
+    if current_user.role != "admin" and (current_user.role != "mentor" or project.mentor_id != current_user.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: You are not the mentor of this project")
+        
+    student = db.query(User).filter(User.id == payload.student_id, User.role == "student").first()
+    if not student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+        
+    existing = db.query(ProjectMember).filter(ProjectMember.project_id == id, ProjectMember.user_id == payload.student_id).first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Already a member")
+        
+    db_member = ProjectMember(project_id=id, user_id=payload.student_id, role="contributor")
+    db.add(db_member)
+    db.commit()
+    return {"status": "success", "message": "Member assigned"}
+
+@router.delete("/{id}/members/{user_id}")
+def remove_member(
+    id: int, 
+    user_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        
+    if current_user.role != "admin" and (current_user.role != "mentor" or project.mentor_id != current_user.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: You are not the mentor of this project")
+        
+    member = db.query(ProjectMember).filter(ProjectMember.project_id == id, ProjectMember.user_id == user_id).first()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
+        
+    db.delete(member)
+    db.commit()
+    return {"status": "success", "message": "Member removed"}
+
+@router.get("/{id}/members")
+def get_members(
+    id: int, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        
+    is_member = db.query(ProjectMember).filter(ProjectMember.project_id == id, ProjectMember.user_id == current_user.id).first() is not None
+    if current_user.role != "admin" and project.mentor_id != current_user.id and not is_member:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        
+    members = db.query(ProjectMember).filter(ProjectMember.project_id == id).all()
+    res = []
+    for m in members:
+        user = db.query(User).filter(User.id == m.user_id).first()
+        if user:
+            res.append({
+                "user_id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "role": user.role,
+                "project_role": m.role
+            })
+    return res
+
+@router.post("/{id}/sprints/{sprint_id}/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+def create_project_sprint_task(
+    id: int,
+    sprint_id: int,
+    task_in: TaskCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        
+    if current_user.role != "admin" and (current_user.role != "mentor" or project.mentor_id != current_user.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: You do not manage this project")
+        
+    sprint = db.query(Sprint).filter(Sprint.id == sprint_id, Sprint.project_id == id).first()
+    if not sprint:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sprint not found under this project")
+        
+    db_task = Task(
+        sprint_id=sprint_id,
+        title=task_in.title,
+        description=task_in.description,
+        status=task_in.status,
+        github_pr_url=task_in.github_pr_url,
+        task_mode=task_in.task_mode,
+        difficulty=task_in.difficulty,
+        due_date=task_in.due_date
+    )
+    db.add(db_task)
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
+@router.get("/{id}/leaderboard")
+def get_project_leaderboard(
+    id: int, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        
+    is_member = db.query(ProjectMember).filter(ProjectMember.project_id == id, ProjectMember.user_id == current_user.id).first() is not None
+    if current_user.role != "admin" and project.mentor_id != current_user.id and not is_member:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        
+    members = db.query(ProjectMember).filter(ProjectMember.project_id == id, ProjectMember.role == "contributor").all()
+    leaderboard = []
+    for m in members:
+        subs = db.query(TaskSubmission).join(Task).join(Sprint).filter(
+            Sprint.project_id == id,
+            TaskSubmission.user_id == m.user_id,
+            TaskSubmission.mentor_score.isnot(None)
+        ).all()
+        
+        total_score = sum(s.mentor_score for s in subs)
+        tasks_completed = len(subs)
+        
+        user = db.query(User).filter(User.id == m.user_id).first()
+        if user:
+            leaderboard.append({
+                "user_id": user.id,
+                "name": user.name,
+                "avatar_url": user.avatar_url,
+                "total_score": total_score,
+                "tasks_completed": tasks_completed
+            })
+            
+    leaderboard.sort(key=lambda x: (x["total_score"], x["tasks_completed"]), reverse=True)
+    return leaderboard
+
 # --- Sprints ---
 
 @router.get("/{id}/sprints", response_model=List[SprintResponse])
@@ -287,11 +442,13 @@ def create_sprint_task(
 
     db_task = Task(
         sprint_id=sprint_id,
-        assigned_to_id=task_in.assigned_to_id,
         title=task_in.title,
         description=task_in.description,
         status=task_in.status,
-        github_pr_url=task_in.github_pr_url
+        github_pr_url=task_in.github_pr_url,
+        task_mode=task_in.task_mode,
+        difficulty=task_in.difficulty,
+        due_date=task_in.due_date
     )
     db.add(db_task)
     db.commit()
