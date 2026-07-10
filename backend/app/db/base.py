@@ -5,3 +5,4 @@ from app.models.program import Program
 from app.models.project import Project, ProjectMember
 from app.models.sprint import Sprint, Task
 from app.models.submission import Submission, Certificate
+from app.models.activity import ActivityEvent

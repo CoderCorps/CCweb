@@ -11,7 +11,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), default="student", nullable=False) # 'student' | 'mentor' | 'admin'
-    avatar_url: Mapped[str] = mapped_column(String(255), nullable=True)
+    avatar_url: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
 
     # Relationships
@@ -34,6 +34,8 @@ class Profile(Base):
     linkedin_url: Mapped[str] = mapped_column(String(255), nullable=True)
     resume_url: Mapped[str] = mapped_column(String(255), nullable=True)
     is_public: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Mentor availability / office hours — plain text or Markdown
+    availability: Mapped[str] = mapped_column(Text, nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="profile")

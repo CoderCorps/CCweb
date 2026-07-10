@@ -7,6 +7,7 @@ from app.deps import get_db, get_current_user, get_current_mentor
 from app.models.user import User
 from app.models.project import Project
 from app.models.submission import Submission, Certificate
+from app.models.activity import ActivityEvent
 from app.schemas.submission import SubmissionCreate, SubmissionResponse, SubmissionReview, CertificateResponse
 
 router = APIRouter()
@@ -94,6 +95,15 @@ def review_submission(
     db.commit()
     db.refresh(submission)
     
+    # Write activity event for submission approved
+    db.add(ActivityEvent(
+        event_type="submission_approved",
+        actor_user_id=submission.user_id,
+        project_id=submission.project_id,
+        event_metadata={"project_title": submission.project.title if submission.project else "", "mentor_name": current_mentor.name}
+    ))
+    db.commit()
+    
     # Server-Side Certificate Generation:
     # If approved, generate certificate immediately in the database
     if review_in.status == "approved":
@@ -124,6 +134,16 @@ def review_submission(
                 criteria_met=criteria
             )
             db.add(db_cert)
+            db.commit()
+            db.refresh(db_cert)
+
+            # Write activity event for certificate issued
+            db.add(ActivityEvent(
+                event_type="certificate_issued",
+                actor_user_id=submission.user_id,
+                project_id=submission.project_id,
+                event_metadata={"project_title": project.title, "certificate_id": db_cert.id, "mentor_name": current_mentor.name}
+            ))
             db.commit()
             
     return submission

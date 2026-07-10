@@ -1,22 +1,115 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Code, ShieldCheck, Cpu, Terminal, Users, Award, BookOpen, Calendar, MapPin } from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowRight, Code, ShieldCheck, Cpu, Terminal, Users, Award, BookOpen, Calendar, MapPin, GitMerge, CheckCircle2, Star, Zap } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { CyberScene } from "@/components/ui/cyber-scene";
+import dynamic from "next/dynamic";
+
+const CyberScene = dynamic(
+  () => import("@/components/ui/cyber-scene").then((mod) => mod.CyberScene),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/20 via-background to-background -z-10 animate-pulse" />
+    ),
+  }
+);
 import { TiltCard } from "@/components/ui/tilt-card";
+import { getAssetUrl } from "@/lib/utils";
+
+interface ActivityEvent {
+  id: number;
+  event_type: string;
+  actor_name: string;
+  actor_avatar_url?: string;
+  project_title?: string;
+  created_at: string;
+  metadata: Record<string, string>;
+}
+
+const MOCK_ACTIVITY: ActivityEvent[] = [
+  { id: 1, event_type: "certificate_issued", actor_name: "Rohan Verma", project_title: "Distributed E-Commerce API Engine", created_at: new Date(Date.now() - 3600000).toISOString(), metadata: { mentor_name: "Atul Sharma" } },
+  { id: 2, event_type: "submission_approved", actor_name: "Priya Singh", project_title: "Real-Time ML Inference API", created_at: new Date(Date.now() - 7200000).toISOString(), metadata: { mentor_name: "Divakar Singh" } },
+  { id: 3, event_type: "project_started", actor_name: "Atul Sharma", project_title: "CoderCorps CLI Toolchain", created_at: new Date(Date.now() - 86400000).toISOString(), metadata: {} },
+  { id: 4, event_type: "certificate_issued", actor_name: "Aditya Kumar", project_title: "Async Job Queue System", created_at: new Date(Date.now() - 172800000).toISOString(), metadata: { mentor_name: "Devansh Rathaur" } },
+  { id: 5, event_type: "submission_approved", actor_name: "Meera Joshi", project_title: "LLM-Powered Code Review Bot", created_at: new Date(Date.now() - 259200000).toISOString(), metadata: { mentor_name: "Atul Sharma" } },
+];
+
+function getEventIcon(eventType: string) {
+  switch (eventType) {
+    case "certificate_issued": return <Award className="h-4 w-4 text-yellow-400" />;
+    case "submission_approved": return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
+    case "project_started": return <Zap className="h-4 w-4 text-indigo-400" />;
+    case "pr_merged": return <GitMerge className="h-4 w-4 text-cyan-400" />;
+    default: return <Star className="h-4 w-4 text-primary" />;
+  }
+}
+
+function getEventLabel(ev: ActivityEvent) {
+  switch (ev.event_type) {
+    case "certificate_issued": return <><strong>{ev.actor_name}</strong> earned a certificate for <em>{ev.project_title}</em></>;
+    case "submission_approved": return <><strong>{ev.actor_name}</strong>&apos;s submission was approved on <em>{ev.project_title}</em></>;
+    case "project_started": return <>New project launched: <em>{ev.project_title}</em></>;
+    case "pr_merged": return <><strong>{ev.actor_name}</strong> merged a PR into <em>{ev.project_title}</em></>;
+    default: return <><strong>{ev.actor_name}</strong> completed an action</>;
+  }
+}
+
+function timeAgo(iso: string) {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
 
 export default function HomePage() {
+  const shouldReduceMotion = useReducedMotion();
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [activityVisible, setActivityVisible] = useState(8);
+  const animProps = (delay = 0) => 
+    shouldReduceMotion 
+      ? { initial: { opacity: 1, y: 0 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0 } }
+      : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, delay } };
+
+  const scaleAnimProps = shouldReduceMotion
+    ? { initial: { opacity: 1, scale: 1 }, animate: { opacity: 1, scale: 1 }, transition: { duration: 0 } }
+    : { initial: { opacity: 0, scale: 0.95 }, animate: { opacity: 1, scale: 1 }, transition: { duration: 0.8 } };
+
   const containerRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
   const stepsRefs = useRef<HTMLDivElement[]>([]);
 
   useEffect(() => {
+    // Fetch live activity feed, fall back to mock data
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/activity/recent?limit=20`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (Array.isArray(data) && data.length > 0) setActivityEvents(data); else setActivityEvents(MOCK_ACTIVITY); })
+      .catch(() => setActivityEvents(MOCK_ACTIVITY));
+  }, []);
+
+  useEffect(() => {
+    // Check system preference for reduced motion
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      const path = pathRef.current;
+      if (path) {
+        gsap.set(path, { strokeDashoffset: 0 });
+      }
+      stepsRefs.current.filter(Boolean).forEach((step) => {
+        gsap.set(step, {
+          borderColor: "#6366f1",
+          backgroundColor: "rgba(99, 102, 241, 0.15)",
+        });
+      });
+      return;
+    }
+
     gsap.registerPlugin(ScrollTrigger);
 
     const path = pathRef.current;
@@ -142,7 +235,7 @@ export default function HomePage() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover -z-20"
         >
-          <source src="/assets/intro.mp4" type="video/mp4" />
+          <source src={getAssetUrl("/assets/intro.mp4")} type="video/mp4" />
         </video>
 
         {/* WebGL Interactive Particle canvas */}
@@ -156,19 +249,15 @@ export default function HomePage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center w-full">
           <div className="lg:col-span-7 flex flex-col gap-6 text-left">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              {...animProps(0)}
               className="inline-flex items-center gap-2 bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 px-3 py-1.5 rounded-full text-xs font-semibold w-fit backdrop-blur-sm"
             >
               <Terminal className="h-3.5 w-3.5" />
               <span>COMMUNITY-LED ENGINEERING ACCELERATOR</span>
             </motion.div>
-
+ 
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+              {...animProps(0.1)}
               className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-none text-white"
             >
               We Do Not Sell Certificates.<br />
@@ -176,22 +265,18 @@ export default function HomePage() {
                 We Build Engineers.
               </span>
             </motion.h1>
-
+ 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              {...animProps(0.2)}
               className="text-lg text-slate-200 max-w-2xl leading-relaxed"
             >
               CoderCorps is an active software development community. Bridge the gap between
               academic theory and high-scale production systems through real code review,
               sprints, and CI/CD pipelines.
             </motion.p>
-
+ 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              {...animProps(0.3)}
               className="flex flex-col sm:flex-row gap-4 mt-4"
             >
               <Link href="/signup">
@@ -206,12 +291,10 @@ export default function HomePage() {
               </Link>
             </motion.div>
           </div>
-
+ 
           {/* Real logo + terminal card (with 3D Hover Tilt wrapper) */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
+            {...scaleAnimProps}
             className="lg:col-span-5 w-full flex flex-col items-center gap-6"
           >
             <TiltCard className="w-full flex flex-col items-center gap-6 p-4 rounded-3xl" scale={1.03}>
@@ -219,7 +302,7 @@ export default function HomePage() {
               <div className="relative">
                 <div className="absolute inset-0 rounded-full bg-indigo-500/20 blur-3xl scale-150" />
                 <Image
-                  src="/assets/logo.gif"
+                  src={getAssetUrl("/assets/logo.gif")}
                   alt="CoderCorps"
                   width={200}
                   height={200}
@@ -265,10 +348,10 @@ export default function HomePage() {
           ].map((stat, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 10 }}
+              initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { delay: i * 0.1 }}
             >
               <p className="text-3xl font-extrabold text-primary">{stat.value}</p>
               <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider mt-1">{stat.label}</p>
@@ -281,7 +364,7 @@ export default function HomePage() {
       <section ref={containerRef} className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Circuit board background image */}
         <div className="absolute inset-0 opacity-[0.04] dark:opacity-[0.06]">
-          <Image src="/assets/circuit-blue.jpg" alt="" fill className="object-cover" />
+          <Image src={getAssetUrl("/assets/circuit-blue.jpg")} alt="" fill className="object-cover" />
         </div>
         <div className="relative z-10 max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
@@ -340,11 +423,62 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── LIVE ACTIVITY FEED ─────────────────────────────────── */}
+      <section className="relative py-24 px-4 sm:px-6 lg:px-8 border-t border-border/20">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-semibold mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              LIVE ACTIVITY
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3">Community in Motion</h2>
+            <p className="text-muted-foreground text-sm">Real-time achievements from engineers in our community.</p>
+          </div>
+
+          <div className="space-y-3">
+            {(activityEvents.length > 0 ? activityEvents : MOCK_ACTIVITY).slice(0, activityVisible).map((ev, i) => (
+              <motion.div
+                key={ev.id}
+                initial={shouldReduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -16 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={shouldReduceMotion ? { duration: 0 } : { delay: i * 0.06, duration: 0.4 }}
+                className="glass border border-border/40 rounded-xl px-5 py-4 flex items-center gap-4 hover:border-primary/20 transition-colors"
+              >
+                <div className="p-2 rounded-lg bg-border/40 border border-border/60 shrink-0">
+                  {getEventIcon(ev.event_type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground leading-snug">
+                    {getEventLabel(ev)}
+                  </p>
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground whitespace-nowrap shrink-0">
+                  {timeAgo(ev.created_at)}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+
+          {activityVisible < (activityEvents.length > 0 ? activityEvents : MOCK_ACTIVITY).length && (
+            <div className="text-center mt-8">
+              <Button
+                variant="outline"
+                onClick={() => setActivityVisible(v => v + 8)}
+                className="font-mono text-xs"
+              >
+                Show More Activity
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* ── COMMUNITY EVENTS SECTION with real photo ──────────── */}
       <section className="relative py-24 px-4 sm:px-6 lg:px-8 border-t border-border/20 overflow-hidden">
         {/* Orange circuit texture background */}
         <div className="absolute inset-0 opacity-[0.05] dark:opacity-[0.08]">
-          <Image src="/assets/circuit-bg.jpg" alt="" fill className="object-cover" />
+          <Image src={getAssetUrl("/assets/circuit-bg.jpg")} alt="" fill className="object-cover" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto">
@@ -365,7 +499,7 @@ export default function HomePage() {
           <TiltCard className="mb-12 rounded-2xl border border-border/40 shadow-2xl w-full" scale={1.01}>
             <div className="relative group overflow-hidden w-full h-64 md:h-96">
               <Image
-                src="/assets/event-rpa.png"
+                src={getAssetUrl("/assets/event-rpa.png")}
                 alt="CoderCorps RPA Workshop — Jan 2022"
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-700"
@@ -411,7 +545,7 @@ export default function HomePage() {
       <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Hero neon circuit background — very subtle */}
         <div className="absolute inset-0 opacity-[0.05] dark:opacity-[0.08]">
-          <Image src="/assets/hero-bg.jpg" alt="" fill className="object-cover" />
+          <Image src={getAssetUrl("/assets/hero-bg.jpg")} alt="" fill className="object-cover" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background" />
 
@@ -465,7 +599,7 @@ export default function HomePage() {
       <section className="relative py-20 px-4 overflow-hidden border-t border-border/20">
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-primary/5 to-cyan-600/10" />
         <div className="relative z-10 max-w-3xl mx-auto text-center flex flex-col items-center gap-6">
-          <Image src="/assets/logo.gif" alt="CoderCorps" width={80} height={80} className="drop-shadow-xl" />
+          <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={80} height={80} className="drop-shadow-xl" />
           <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
             Ready to commit your first <span className="text-primary">real</span> line of code?
           </h2>

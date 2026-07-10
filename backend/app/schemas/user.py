@@ -10,6 +10,7 @@ class ProfileBase(BaseModel):
     linkedin_url: Optional[str] = None
     resume_url: Optional[str] = None
     is_public: bool = True
+    availability: Optional[str] = None  # Mentor office hours / notes
 
 class ProfileCreate(ProfileBase):
     pass
@@ -50,3 +51,16 @@ class Token(BaseModel):
 class TokenPayload(BaseModel):
     sub: Optional[str] = None
     type: Optional[str] = None
+
+class PortfolioUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    college: Optional[str] = None
+    skills: List[str] = []
+    github_url: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    resume_url: Optional[str] = None
+    is_public: bool = True
+    availability: Optional[str] = None  # Mentor office hours / notes

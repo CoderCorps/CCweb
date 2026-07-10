@@ -17,6 +17,8 @@ class ProjectBase(BaseModel):
     description: str
     status: str = "planning" # 'planning' | 'active' | 'completed'
     mentor_id: Optional[int] = None
+    start_date: Optional[datetime.datetime] = None
+    end_date: Optional[datetime.datetime] = None
 
 class ProjectCreate(ProjectBase):
     pass

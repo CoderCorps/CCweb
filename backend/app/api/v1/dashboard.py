@@ -11,12 +11,71 @@ from app.models.submission import Submission, Certificate
 
 router = APIRouter()
 
+from pydantic import BaseModel
+
+class RoleUpdate(BaseModel):
+    role: str
+
 @router.get("/summary", response_model=Dict[str, Any])
 def get_dashboard_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if current_user.role in ["mentor", "admin"]:
+    if current_user.role == "admin":
+        # --- Admin Dashboard Statistics ---
+        # 1. Total projects in the platform
+        total_projects = db.query(func.count(Project.id)).scalar() or 0
+        # 2. Total registered students
+        total_students = db.query(func.count(User.id)).filter(User.role == "student").scalar() or 0
+        # 3. Total registered mentors
+        total_mentors = db.query(func.count(User.id)).filter(User.role == "mentor").scalar() or 0
+        # 4. Total certificates issued system-wide
+        total_certificates = db.query(func.count(Certificate.id)).scalar() or 0
+        # 5. Total pending reviews system-wide
+        total_pending = db.query(func.count(Submission.id)).filter(Submission.status == "submitted").scalar() or 0
+        
+        # Recent submissions across all projects
+        recent_submissions = db.query(Submission).order_by(Submission.created_at.desc()).limit(10).all()
+        submission_list = [
+            {
+                "id": s.id,
+                "project_title": s.project.title,
+                "student_name": s.user.name,
+                "submitted_at": s.created_at.isoformat(),
+                "repo_url": s.repo_url,
+                "demo_url": s.demo_url,
+                "status": s.status
+            }
+            for s in recent_submissions
+        ]
+        
+        # System users catalog (for role updates)
+        users_db = db.query(User).order_by(User.name).all()
+        users_list = [
+            {
+                "id": u.id,
+                "name": u.name,
+                "email": u.email,
+                "role": u.role,
+                "created_at": u.created_at.isoformat() if hasattr(u, 'created_at') and u.created_at else None
+            }
+            for u in users_db
+        ]
+
+        return {
+            "role": "admin",
+            "stats": {
+                "active_projects": total_projects,
+                "total_students": total_students,
+                "total_mentors": total_mentors,
+                "pending_reviews": total_pending,
+                "approved_certificates": total_certificates
+            },
+            "recent_submissions": submission_list,
+            "users": users_list
+        }
+
+    elif current_user.role == "mentor":
         # --- Mentor Dashboard Statistics ---
         # 1. Projects managed by the mentor
         managed_projects = db.query(Project).filter(Project.mentor_id == current_user.id).all()
@@ -63,7 +122,7 @@ def get_dashboard_summary(
             ).scalar() or 0
 
         return {
-            "role": current_user.role,
+            "role": "mentor",
             "stats": {
                 "active_projects": len(managed_projects),
                 "total_students": students_count,
@@ -124,3 +183,35 @@ def get_dashboard_summary(
             "active_tasks": active_tasks_list,
             "certificates": cert_list
         }
+
+@router.patch("/users/{user_id}/role")
+def update_user_role(
+    user_id: int,
+    payload: RoleUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can manage user roles."
+        )
+    
+    if payload.role not in ["student", "mentor", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid role specified."
+        )
+        
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found."
+        )
+        
+    user.role = payload.role
+    db.commit()
+    db.refresh(user)
+    
+    return {"status": "success", "message": f"User {user.name} role updated to {payload.role}"}

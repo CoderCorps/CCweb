@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { CommandPalette } from "@/components/ui/command-palette";
+import { getAssetUrl } from "@/lib/utils";
+
 import { 
   LayoutDashboard, 
   FolderGit2, 
@@ -14,7 +17,9 @@ import {
   ClipboardList, 
   LogOut, 
   Terminal,
-  ChevronRight
+  ChevronRight,
+  Settings,
+  Users
 } from "lucide-react";
 
 export default function PlatformLayout({
@@ -25,6 +30,19 @@ export default function PlatformLayout({
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [cmdOpen, setCmdOpen] = useState(false);
+
+  // Cmd+K / Ctrl+K global keyboard shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   // Route Guard: redirect to login if user is guest
   useEffect(() => {
@@ -50,14 +68,20 @@ export default function PlatformLayout({
     { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
     { name: "Projects", href: "/projects", icon: <FolderGit2 className="h-4 w-4" /> },
     { name: "My Portfolio", href: "/portfolio", icon: <UserCircle className="h-4 w-4" /> },
+    { name: "Settings", href: "/settings", icon: <Settings className="h-4 w-4" /> },
   ];
 
-  // Mentors get reviews link
+  // Mentors get reviews and students links
   if (user.role === "mentor" || user.role === "admin") {
     navLinks.push({
       name: "Reviews Board",
       href: "/mentor/reviews",
       icon: <ClipboardList className="h-4 w-4" />
+    });
+    navLinks.push({
+      name: "Students Roster",
+      href: "/mentor/students",
+      icon: <Users className="h-4 w-4" />
     });
   }
 
@@ -68,23 +92,26 @@ export default function PlatformLayout({
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
       {/* Sidebar Navigation */}
       <aside className="w-64 border-r border-border bg-card flex flex-col justify-between fixed top-0 bottom-0 left-0 z-30">
         <div>
           {/* Brand header */}
           <div className="h-16 flex items-center px-6 border-b border-border">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-              <Image src="/assets/logo.gif" alt="CoderCorps" width={32} height={32} className="object-contain" />
+              <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={32} height={32} className="object-contain" />
               <span className="font-bold text-lg text-foreground">Coder<span className="text-primary">Corps</span></span>
             </Link>
           </div>
 
           {/* User info widget */}
           <div className="p-4 border-b border-border/40 flex items-center gap-3">
-            <img 
+            <Image 
               src={user.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`} 
               alt={user.name} 
-              className="w-10 h-10 rounded-full object-cover border border-border"
+              width={40}
+              height={40}
+              className="rounded-full object-cover border border-border"
             />
             <div className="overflow-hidden">
               <p className="text-sm font-bold text-foreground truncate">{user.name}</p>
@@ -136,6 +163,13 @@ export default function PlatformLayout({
             {pathname === "/dashboard" ? "ENGINEERING DASHBOARD" : pathname.startsWith("/projects") ? "LABS WORKSPACE" : pathname.startsWith("/portfolio") ? "MY PORTFOLIO" : "REVIEWS DASHBOARD"}
           </h2>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCmdOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground font-mono hover:text-foreground transition-colors border border-border/40 rounded px-2 py-1 bg-card/40 hover:bg-card/80"
+              title="Open command palette"
+            >
+              <span>⌘K</span>
+            </button>
             <span className="text-xs text-muted-foreground font-mono hidden sm:block">
               STATUS: <span className="text-emerald-400">ACTIVE</span>
             </span>

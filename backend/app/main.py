@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1 import auth, programs, projects, submissions, portfolio, dashboard, contact
+from app.api.v1 import auth, programs, projects, submissions, portfolio, dashboard, contact, mentors, activity, certificates
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -26,7 +26,14 @@ app.include_router(submissions.router, prefix=f"{settings.API_V1_STR}/submission
 app.include_router(portfolio.router, prefix=f"{settings.API_V1_STR}/portfolio", tags=["portfolio"])
 app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["dashboard"])
 app.include_router(contact.router, prefix=f"{settings.API_V1_STR}/contact", tags=["contact"])
+app.include_router(mentors.router, prefix=f"{settings.API_V1_STR}/mentors", tags=["mentors"])
+app.include_router(activity.router, prefix=f"{settings.API_V1_STR}/activity", tags=["activity"])
+app.include_router(certificates.router, prefix=f"{settings.API_V1_STR}/certificates", tags=["certificates"])
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to CoderCorps API. Go to /docs for Swagger documentation."}
+
+@app.get("/health")
+def read_health():
+    return {"status": "ok"}

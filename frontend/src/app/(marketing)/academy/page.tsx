@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Cpu, Globe, Database, Shield, Terminal, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { TiltCard } from "@/components/ui/tilt-card";
+import { getAssetUrl } from "@/lib/utils";
+
 
 const VIDEO_POOL = [
   "/assets/track-ai.mp4",
@@ -117,7 +119,7 @@ export default function AcademyPage() {
                         playsInline
                         className="absolute inset-0 w-full h-full object-cover -z-20 opacity-30 dark:opacity-20 group-hover:scale-105 transition-transform duration-500"
                       >
-                        <source src={currentVideo} type="video/mp4" />
+                        <source src={getAssetUrl(currentVideo)} type="video/mp4" />
                       </video>
                     )}
                     {/* Subtle dark backdrop inside the card for readability */}

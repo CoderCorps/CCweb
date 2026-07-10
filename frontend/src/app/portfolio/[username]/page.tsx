@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { 
   FileText, 
@@ -16,6 +17,8 @@ import {
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/ui/icons";
 import { TiltCard } from "@/components/ui/tilt-card";
+import { GitHubGraph } from "@/components/ui/github-graph";
+import Link from "next/link";
 
 interface Profile {
   bio: string;
@@ -25,6 +28,7 @@ interface Profile {
   linkedin_url: string;
   resume_url: string;
   is_public: boolean;
+  availability?: string | null;
 }
 
 interface User {
@@ -163,10 +167,12 @@ export default function PublicPortfolioPage() {
         <TiltCard scale={1.01} maxRotation={8}>
           <Card className="glass-premium border-border/40 p-8 flex flex-col md:flex-row items-center md:items-start justify-between gap-6 w-full">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-              <img 
+              <Image 
                 src={profileData.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.name)}`} 
                 alt={profileData.name} 
-                className="w-28 h-28 rounded-full object-cover border-2 border-primary/50 shadow-lg"
+                width={112}
+                height={112}
+                className="rounded-full object-cover border-2 border-primary/50 shadow-lg"
               />
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono">
@@ -215,6 +221,13 @@ export default function PublicPortfolioPage() {
           </Card>
         )}
 
+        {/* GitHub Contribution Graph — shown only if github_url is set */}
+        {profile.github_url && (
+          <div data-github-graph>
+            <GitHubGraph github_url={profile.github_url} name={profileData.name} />
+          </div>
+        )}
+
         {/* Verifiable Credentials Section */}
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-foreground font-mono uppercase tracking-wider pl-1">Audited Project Commits</h2>
@@ -253,6 +266,14 @@ export default function PublicPortfolioPage() {
                           </a>
                         )}
                       </div>
+                    {/* Verify link */}
+                      <Link
+                        href={`/certify/${cert.id}`}
+                        className="inline-flex items-center gap-1 text-xs font-mono text-emerald-400 hover:text-emerald-300 hover:underline transition-colors"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Verify Certificate
+                      </Link>
                     </div>
 
                     <div className="flex flex-col justify-end text-left md:text-right border-t md:border-t-0 border-border/40 pt-4 md:pt-0">

@@ -18,6 +18,21 @@ export const metadata: Metadata = {
   title: "CoderCorps — Engineering Community & Verifiable Portfolios",
   description: "Accelerate your software engineering career. Build real projects, get code reviews from industry mentors, and earn verifiable certificates backed by code audits.",
   metadataBase: new URL("https://codercorps.com"),
+  openGraph: {
+    title: "CoderCorps — Engineering Community & Verifiable Portfolios",
+    description: "Accelerate your software engineering career. Build real projects, get code reviews from industry mentors, and earn verifiable certificates backed by code audits.",
+    url: "https://codercorps.com",
+    siteName: "CoderCorps",
+    images: [
+      {
+        url: "/assets/logo-full.png",
+        width: 1200,
+        height: 630,
+        alt: "CoderCorps Engineering Platform",
+      },
+    ],
+    type: "website",
+  },
 };
 
 export default function RootLayout({

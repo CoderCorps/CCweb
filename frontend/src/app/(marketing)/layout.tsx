@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import { getAssetUrl } from "@/lib/utils";
 
 export default function MarketingLayout({
   children,
@@ -18,12 +19,29 @@ export default function MarketingLayout({
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "CoderCorps",
+            "url": "https://codercorps.com",
+            "logo": "https://codercorps.com/assets/logo-full.png",
+            "sameAs": [
+              "https://github.com/CoderCorps",
+              "https://linkedin.com/company/codercorps"
+            ]
+          })
+        }}
+      />
       {/* Header */}
       <header className="fixed top-0 w-full z-40 border-b border-border/40 bg-background/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-              <Image src="/assets/logo.gif" alt="CoderCorps" width={38} height={38} className="object-contain" />
+              <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={38} height={38} className="object-contain" />
               <span className="font-bold text-xl tracking-tight text-foreground">Coder<span className="text-primary">Corps</span></span>
             </Link>
             
@@ -106,7 +124,7 @@ export default function MarketingLayout({
       <footer className="bg-card border-t border-border py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <Image src="/assets/logo.gif" alt="CoderCorps" width={32} height={32} className="object-contain" />
+            <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={32} height={32} className="object-contain" />
             <span className="font-bold text-lg text-foreground">Coder<span className="text-primary">Corps</span></span>
           </div>
           <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">

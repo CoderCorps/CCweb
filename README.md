@@ -1,5 +1,7 @@
 # CoderCorps Platform 🚀
 
+[![CI Pipeline](https://github.com/CoderCorps/CCweb/actions/workflows/ci.yml/badge.svg)](https://github.com/CoderCorps/CCweb/actions/workflows/ci.yml)
+
 A modern engineering accelerator platform built for community-led project development, code reviews, and verifiable project completion credentials.
 
 ## 🏗️ Tech Stack
@@ -62,3 +64,14 @@ npm run dev
 ```
 
 Visit the app at [http://localhost:3000](http://localhost:3000).
+
+---
+
+## 🌟 New Features (Phase 6)
+
+1. **Public Activity Feed**: A real-time activity feed on the homepage showing community highlights (submission reviews, project starts, certificate completions). Backed by a clean backend logging table and Framer Motion animation.
+2. **Verifiable Certificates**: Public `/certify/[id]` routes displaying verified credentials without exposing private data. Includes custom Open Graph sharing templates and clipboard linking.
+3. **GitHub Contribution Graphs**: Automatic SVG contribution graph embeds integrated directly into public developer portfolios, using `ghchart.rshah.org`.
+4. **Mentor Availability Widget**: Allows mentors to state their office hours/mentorship availability inside settings, displayed publicly on the Core Board flip cards.
+5. **Command Palette (⌘K)**: Quick, keyboard-accessible command menu (`Cmd+K`/`Ctrl+K`) for seamless navigation between platform workspaces. Role-aware dashboard routing.
+

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import Image from "next/image";
 import { ShieldAlert } from "lucide-react";
+import { getAssetUrl } from "@/lib/utils";
 
 export default function LoginPage() {
   const { user, login, loading } = useAuth();
@@ -51,7 +52,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         <div className="text-center mb-6 flex flex-col items-center">
           <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity mb-2">
-            <Image src="/assets/logo.gif" alt="CoderCorps" width={38} height={38} className="object-contain" />
+            <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={38} height={38} className="object-contain" />
             <span className="font-bold text-2xl tracking-tight text-foreground">Coder<span className="text-primary">Corps</span></span>
           </Link>
           <p className="text-xs text-muted-foreground font-mono">WORKSPACE AUTH SERVICE</p>

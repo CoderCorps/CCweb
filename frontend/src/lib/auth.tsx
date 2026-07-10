@@ -11,6 +11,7 @@ interface Profile {
   linkedin_url: string;
   resume_url: string;
   is_public: boolean;
+  availability?: string | null;
 }
 
 interface User {

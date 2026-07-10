@@ -473,6 +473,13 @@ export function handleMockRequest(path: string, method: string, body?: any) {
   }
 
   // --- Portfolio ---
+  if (path === "/portfolio" && method === "GET") {
+    const publicSlugs = mockUsers
+      .filter(u => u.profile?.is_public)
+      .map(u => u.name.toLowerCase().replace(/\s+/g, "-"));
+    return { status: 200, ok: true, json: async () => publicSlugs };
+  }
+
   if (path.startsWith("/portfolio/") && method === "GET") {
     const username = path.split("/")[2];
     const user = mockUsers.find(u => u.name.toLowerCase().replace(/\s+/g, "-") === username.toLowerCase() || u.id === parseInt(username));
@@ -513,6 +520,62 @@ export function handleMockRequest(path: string, method: string, body?: any) {
     return { status: 200, ok: true, json: async () => mockCurrentUser };
   }
 
+  // --- Auth Extensions (forgot password and account updates) ---
+  if (path === "/auth/forgot-password" && method === "POST") {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({ message: "If this email exists in our system, a password reset link has been sent." })
+    };
+  }
+
+  if (path === "/auth/account" && method === "PATCH") {
+    if (!mockCurrentUser) return { status: 401, ok: false, json: async () => ({ detail: "Not authenticated" }) };
+
+    if (body.email) {
+      mockCurrentUser.email = body.email;
+    }
+    // Simulate updating mockCurrentUser in mockUsers catalog
+    const uIdx = mockUsers.findIndex(u => u.id === mockCurrentUser!.id);
+    if (uIdx !== -1) mockUsers[uIdx] = mockCurrentUser;
+
+    return { status: 200, ok: true, json: async () => ({ status: "success", message: "Account updated successfully." }) };
+  }
+
+  // --- Mentor Student Roster ---
+  if (path.startsWith("/mentors/") && path.endsWith("/students") && method === "GET") {
+    const mentorId = parseInt(path.split("/")[2]);
+    const projects = mockProjects.filter(p => p.mentor_id === mentorId);
+    const projIds = projects.map(p => p.id);
+
+    const studentsInProjects = mockUsers.filter(u => {
+      if (u.role !== "student") return false;
+      return mockProjects.some(p => projIds.includes(p.id) && p.members.some(m => m.user_id === u.id));
+    });
+
+    const result = studentsInProjects.map(student => {
+      const studentProject = projects.find(p => p.members.some(m => m.user_id === student.id));
+      const activeSprint = studentProject ? mockSprints.find(s => s.project_id === studentProject.id) : null;
+      const inProgressTasks = activeSprint
+        ? activeSprint.tasks.filter(t => t.assigned_to_id === student.id && t.status !== "done").length
+        : 0;
+
+      return {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        college: student.profile?.college || "",
+        avatar_url: student.avatar_url,
+        project_title: studentProject ? studentProject.title : "None",
+        sprint_number: activeSprint ? activeSprint.sprint_number : 1,
+        tasks_in_progress: inProgressTasks,
+        last_activity_date: new Date().toISOString()
+      };
+    });
+
+    return { status: 200, ok: true, json: async () => result };
+  }
+
   // --- Contact Submission ---
   if (path === "/contact" && method === "POST") {
     return { 
@@ -523,6 +586,40 @@ export function handleMockRequest(path: string, method: string, body?: any) {
         message: "Logged successfully (Frontend Sandbox Fallback active)"
       }) 
     };
+  }
+
+  // --- Live Activity Feed ---
+  if (path.startsWith("/activity/recent") && method === "GET") {
+    const mockEvents = [
+      { id: 1, event_type: "certificate_issued", actor_name: "Rohan Verma", project_title: "Distributed E-Commerce API Engine", created_at: new Date(Date.now() - 3600000).toISOString(), metadata: { mentor_name: "Atul Sharma" } },
+      { id: 2, event_type: "submission_approved", actor_name: "Priya Singh", project_title: "Real-Time ML Inference API", created_at: new Date(Date.now() - 7200000).toISOString(), metadata: { mentor_name: "Divakar Singh" } },
+      { id: 3, event_type: "project_started", actor_name: "Atul Sharma", project_title: "CoderCorps CLI Toolchain", created_at: new Date(Date.now() - 86400000).toISOString(), metadata: {} },
+      { id: 4, event_type: "certificate_issued", actor_name: "Aditya Kumar", project_title: "Async Job Queue System", created_at: new Date(Date.now() - 172800000).toISOString(), metadata: { mentor_name: "Devansh Rathaur" } },
+      { id: 5, event_type: "submission_approved", actor_name: "Meera Joshi", project_title: "LLM-Powered Code Review Bot", created_at: new Date(Date.now() - 259200000).toISOString(), metadata: { mentor_name: "Atul Sharma" } }
+    ];
+    return { status: 200, ok: true, json: async () => mockEvents };
+  }
+
+  // --- Public Certificate Details ---
+  if (path.startsWith("/certificates/") && method === "GET") {
+    const certId = parseInt(path.split("/")[2]);
+    const mockCert = {
+      id: certId,
+      holder_name: "Rohan Verma",
+      project_title: "Distributed E-Commerce API Engine",
+      issued_at: new Date().toISOString(),
+      criteria_met: {
+        student_name: "Rohan Verma",
+        project_title: "Distributed E-Commerce API Engine",
+        mentor_name: "Atul Sharma",
+        demo_url: "https://youtube.com/watch?v=mockdemo",
+        repo_url: "https://github.com/codercorps/ecommerce-api",
+        approved_at: new Date().toISOString(),
+        audit_message: "Verifiable Software Engineering Achievement. This certificate validates actual codebase contributions (GitHub Pull Requests merged, functional demo delivered, and code reviewed by a professional engineering mentor)."
+      },
+      mentor_name: "Atul Sharma"
+    };
+    return { status: 200, ok: true, json: async () => mockCert };
   }
 
   return { status: 404, ok: false, json: async () => ({ detail: "Not found" }) };

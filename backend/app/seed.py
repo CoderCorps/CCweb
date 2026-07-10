@@ -124,11 +124,15 @@ def seed_db():
         db.commit()
 
         # 4. Create Project
+        p_start = datetime.datetime.now()
+        p_end = p_start + datetime.timedelta(days=45)
         project = Project(
             title="Distributed E-Commerce API Engine",
             description="A high-performance e-commerce API supporting bulk catalogs, real-time inventory updates, and order placement under load.",
             status="active",
-            mentor_id=mentor.id
+            mentor_id=mentor.id,
+            start_date=p_start,
+            end_date=p_end
         )
         db.add(project)
         db.commit()

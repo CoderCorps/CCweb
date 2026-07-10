@@ -4,9 +4,10 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, GitPullRequest, Code2, Users, ShieldAlert, ArrowDown } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 export default function LabsPage() {
+  const shouldReduceMotion = useReducedMotion();
   const steps = [
     {
       step: "01",
@@ -54,10 +55,10 @@ export default function LabsPage() {
           {steps.map((item, idx) => (
             <motion.div 
               key={idx}
-              initial={{ opacity: 0, x: -20 }}
+              initial={shouldReduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.5, delay: idx * 0.1 }}
               className="relative"
             >
               {/* Dot indicator */}

@@ -15,7 +15,8 @@ import {
   Plus, 
   AlertCircle,
   ShieldAlert,
-  GitBranch
+  GitBranch,
+  Calendar
 } from "lucide-react";
 
 interface Project {
@@ -24,6 +25,8 @@ interface Project {
   description: string;
   status: string;
   created_at: string;
+  start_date?: string;
+  end_date?: string;
   mentor?: {
     id: number;
     name: string;
@@ -44,6 +47,8 @@ export default function ProjectsPage() {
   // Creation State (Mentor)
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [newStartDate, setNewStartDate] = useState("");
+  const [newEndDate, setNewEndDate] = useState("");
   const [submittingProject, setSubmittingProject] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -83,13 +88,17 @@ export default function ProjectsPage() {
       const res = await api.post("/projects", {
         title: newTitle,
         description: newDescription,
-        status: "active"
+        status: "active",
+        start_date: newStartDate ? new Date(newStartDate).toISOString() : null,
+        end_date: newEndDate ? new Date(newEndDate).toISOString() : null
       });
 
       if (res.ok) {
         setDialogOpen(false);
         setNewTitle("");
         setNewDescription("");
+        setNewStartDate("");
+        setNewEndDate("");
         fetchProjects(); // Reload list
       } else {
         alert("Failed to create project");
@@ -162,6 +171,26 @@ export default function ProjectsPage() {
                     required 
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="p_start" className="text-xs font-semibold text-foreground font-mono">START DATE</label>
+                    <Input 
+                      id="p_start" 
+                      type="date" 
+                      value={newStartDate} 
+                      onChange={(e) => setNewStartDate(e.target.value)} 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="p_end" className="text-xs font-semibold text-foreground font-mono">END DATE</label>
+                    <Input 
+                      id="p_end" 
+                      type="date" 
+                      value={newEndDate} 
+                      onChange={(e) => setNewEndDate(e.target.value)} 
+                    />
+                  </div>
+                </div>
                 <div className="space-y-1.5">
                   <label htmlFor="p_desc" className="text-xs font-semibold text-foreground font-mono">DESCRIPTION</label>
                   <textarea
@@ -203,6 +232,19 @@ export default function ProjectsPage() {
               </CardHeader>
               <CardContent className="py-2">
                 <p className="text-xs text-muted-foreground leading-relaxed h-12 overflow-hidden">{proj.description}</p>
+                
+                {/* Timeline Dates */}
+                {(proj.start_date || proj.end_date) && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-3 bg-muted/40 border border-border/30 rounded-lg px-2.5 py-1.5 w-fit">
+                    <Calendar className="h-3.5 w-3.5 text-indigo-400" />
+                    <span>
+                      {proj.start_date ? new Date(proj.start_date).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'}) : "N/A"}
+                      {" - "}
+                      {proj.end_date ? new Date(proj.end_date).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'}) : "N/A"}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex gap-4 text-[10px] font-mono text-muted-foreground pt-4">
                   <span>CONTRIBUTORS: {proj.members.filter(m => m.role === "contributor").length}</span>
                   <span>STATUS: <span className="text-emerald-400">{proj.status.toUpperCase()}</span></span>

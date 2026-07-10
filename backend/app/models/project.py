@@ -11,6 +11,8 @@ class Project(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(50), default="planning", nullable=False) # 'planning' | 'active' | 'completed'
     mentor_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    start_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+    end_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
 
     # Relationships

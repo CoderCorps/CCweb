@@ -18,7 +18,8 @@ import {
   FileText,
   AlertCircle,
   Users,
-  Settings
+  Settings,
+  UserPlus
 } from "lucide-react";
 
 interface User {
@@ -97,6 +98,12 @@ export default function ProjectWorkspacePage() {
   const [repoUrl, setRepoUrl] = useState("");
   const [submittingProject, setSubmittingProject] = useState(false);
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+
+  // Student Assignment States (Mentor/Admin)
+  const [assignableStudents, setAssignableStudents] = useState<Array<{ id: number; name: string; email: string }>>([]);
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState<number | "">("");
+  const [assigningStudent, setAssigningStudent] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
   async function fetchWorkspace() {
     try {
@@ -184,6 +191,41 @@ export default function ProjectWorkspacePage() {
       alert("Error creating task.");
     } finally {
       setTaskSubmitting(false);
+    }
+  };
+
+  async function fetchAssignableStudents() {
+    try {
+      const res = await api.get(`/projects/${id}/assignable-students`);
+      if (res.ok) {
+        const json = await res.json();
+        setAssignableStudents(json);
+      }
+    } catch (err) {
+      console.error("Failed to load assignable students", err);
+    }
+  }
+
+  const handleAssignStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAssigneeId) return;
+    setAssigningStudent(true);
+    try {
+      const res = await api.post(`/projects/${id}/assign`, {
+        student_id: Number(selectedAssigneeId)
+      });
+      if (res.ok) {
+        setAssignDialogOpen(false);
+        setSelectedAssigneeId("");
+        fetchWorkspace();
+      } else {
+        const errorMsg = await res.json().catch(() => ({}));
+        alert(errorMsg.detail || "Failed to assign student");
+      }
+    } catch (err) {
+      alert("Error assigning student");
+    } finally {
+      setAssigningStudent(false);
     }
   };
 
@@ -324,6 +366,57 @@ export default function ProjectWorkspacePage() {
                   <DialogFooter className="pt-2">
                     <Button type="submit" disabled={submittingProject} className="w-full font-semibold">
                       {submittingProject ? "Submitting..." : "Submit Deliverables"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Assign Student Dialog (Mentor & Admin only) */}
+          {isMentor && (
+            <Dialog open={assignDialogOpen} onOpenChange={(open) => {
+              setAssignDialogOpen(open);
+              if (open) fetchAssignableStudents();
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="font-semibold gap-1.5 border border-border">
+                  <UserPlus className="h-4 w-4" /> Assign Student
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="glass-premium border-border/60">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Assign Student to Project</DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground">
+                    Add a new student contributor to this active project workspace.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleAssignStudent} className="space-y-4 py-2">
+                  <div className="space-y-1.5">
+                    <label htmlFor="student_select" className="text-xs font-semibold text-slate-300 font-mono">SELECT STUDENT</label>
+                    <select
+                      id="student_select"
+                      required
+                      value={selectedAssigneeId}
+                      onChange={(e) => setSelectedAssigneeId(e.target.value ? Number(e.target.value) : "")}
+                      className="flex h-9 w-full rounded-md border border-input bg-card/60 px-3 py-1 text-sm shadow-sm text-foreground"
+                    >
+                      <option value="" className="bg-card text-muted-foreground">Choose an unassigned student...</option>
+                      {assignableStudents.map((student) => (
+                        <option key={student.id} value={student.id} className="bg-card text-foreground">
+                          {student.name} ({student.email})
+                        </option>
+                      ))}
+                    </select>
+                    {assignableStudents.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        All active student accounts are already assigned to this project stream.
+                      </p>
+                    )}
+                  </div>
+                  <DialogFooter className="pt-2">
+                    <Button type="submit" disabled={assigningStudent || !selectedAssigneeId} className="w-full font-semibold">
+                      {assigningStudent ? "Assigning..." : "Assign Student"}
                     </Button>
                   </DialogFooter>
                 </form>

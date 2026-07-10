@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Calendar } from "lucide-react";
 import { Github, Linkedin } from "@/components/ui/icons";
 import { motion } from "framer-motion";
+import { getAssetUrl } from "@/lib/utils";
+import Image from "next/image";
 
 export default function MentorsPage() {
   const mentors = [
@@ -12,32 +14,36 @@ export default function MentorsPage() {
       title: "Founder & Lead Backend Architect",
       company: "Founder at CoderCorps",
       bio: "Backend Engineer with 2+ years of experience building scalable Python systems and cloud-native applications. Specializes in optimizing workflows, high-performance APIs, data pipelines, and production AI solutions.",
-      avatar: "/assets/mentors/atul.png",
+      avatar: getAssetUrl("/mentors/atul.png"),
       skills: ["Python", "FastAPI", "Cloud Native", "Data Pipelines", "LLMs", "RAG"],
       github: "https://github.com/atul120212",
-      linkedin: "https://www.linkedin.com/in/imatul-sharma/"
+      linkedin: "https://www.linkedin.com/in/imatul-sharma/",
+      availability: "Mon–Fri, 8–10 PM IST · Book via LinkedIn DM"
     },
     {
       name: "Devansh Rathaur",
       title: "Distributed Systems & Infrastructure Lead",
       company: "Core Architect at CoderCorps · Founder of CodeInCampus",
       bio: "Software Developer, Python Trainer & tech community builder. Honed skills in Python, Core Java, Flask, Django, MySQL, AWS, and mentored in open-source programs like GirlScript Summer of Code.",
-      avatar: "/assets/mentors/devansh.jpg",
+      avatar: getAssetUrl("/mentors/devansh.jpg"),
       skills: ["Python", "Flask/Django", "MySQL", "AWS", "Docker/K8s", "Git"],
       github: "https://github.com/Devansh80",
-      linkedin: "https://www.linkedin.com/in/devanshrathaur/"
+      linkedin: "https://www.linkedin.com/in/devanshrathaur/",
+      availability: "Weekends, 6–9 PM IST"
     },
     {
       name: "Divakar Singh",
       title: "AI Backend & Systems Lead",
       company: "AI Engineer at Blackcoffer · Tech Lead",
       bio: "AI Backend Engineer building LLM applications, RAG systems, and FastAPI microservices. Experienced in training deep learning models (ImageNets, LSTM) and building serious AI infrastructure.",
-      avatar: "/assets/mentors/divakar.jpg",
+      avatar: getAssetUrl("/mentors/divakar.jpg"),
       skills: ["Deep Learning", "FastAPI", "RAG Systems", "PyTorch", "LangChain", "Docker"],
       github: "https://github.com/divakar166",
-      linkedin: "https://www.linkedin.com/in/divakar-singh/"
+      linkedin: "https://www.linkedin.com/in/divakar-singh/",
+      availability: "Tue & Thu, 9–11 PM IST"
     }
   ];
+
 
   return (
     <div className="bg-background text-foreground py-20 px-4 sm:px-6 lg:px-8">
@@ -83,10 +89,12 @@ function MentorCard({ mentor }: { mentor: any }) {
         {/* Front side */}
         <div className="absolute inset-0 w-full h-full rounded-2xl glass-premium border border-border/40 p-6 flex flex-col items-center justify-between backface-hidden">
           <div className="flex flex-col items-center gap-4 text-center mt-4">
-            <img 
+            <Image 
               src={mentor.avatar} 
               alt={mentor.name} 
-              className="w-24 h-24 rounded-full object-cover border-2 border-primary/50 shadow-md"
+              width={96}
+              height={96}
+              className="rounded-full object-cover border-2 border-primary/50 shadow-md"
             />
             <div>
               <h3 className="text-xl font-bold text-foreground">{mentor.name}</h3>
@@ -132,6 +140,17 @@ function MentorCard({ mentor }: { mentor: any }) {
                 ))}
               </div>
             </div>
+
+            {/* Availability / Office Hours */}
+            {mentor.availability && (
+              <div className="flex items-start gap-2 bg-indigo-500/5 border border-indigo-500/15 rounded-lg px-3 py-2">
+                <Calendar className="h-3.5 w-3.5 text-indigo-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[9px] font-mono text-indigo-400 uppercase tracking-wider mb-0.5">Office Hours</p>
+                  <p className="text-xs text-muted-foreground">{mentor.availability}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/30">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -16,8 +17,10 @@ import {
   Download, 
   CheckCircle,
   ExternalLink,
-  MessageSquare,
-  FileText
+  Shield,
+  ShieldCheck,
+  Zap,
+  ArrowRightLeft
 } from "lucide-react";
 
 interface SummaryData {
@@ -28,6 +31,7 @@ interface SummaryData {
     tasks_total?: number;
     certificates_earned?: number;
     total_students?: number;
+    total_mentors?: number;
     pending_reviews?: number;
     approved_certificates?: number;
   };
@@ -52,6 +56,22 @@ interface SummaryData {
     repo_url: string;
     demo_url: string;
   }>;
+  recent_submissions?: Array<{
+    id: number;
+    project_title: string;
+    student_name: string;
+    submitted_at: string;
+    repo_url: string;
+    demo_url: string;
+    status: string;
+  }>;
+  users?: Array<{
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    created_at?: string;
+  }>;
 }
 
 export default function DashboardPage() {
@@ -60,12 +80,16 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Review states (for mentors)
+  // Review states (for mentors/admins)
   const [reviewId, setReviewId] = useState<number | null>(null);
   const [feedback, setFeedback] = useState("");
   const [reviewStatus, setReviewStatus] = useState<"approved" | "needs_revision">("approved");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // User role update states
+  const [updatingUserId, setUpdatingUserId] = useState<number | null>(null);
+  const [updatingRole, setUpdatingRole] = useState(false);
 
   async function fetchSummary() {
     try {
@@ -112,6 +136,35 @@ export default function DashboardPage() {
     }
   };
 
+  const handleRoleChange = async (targetUserId: number, currentRole: string) => {
+    // Cycles role: student -> mentor -> admin -> student
+    let nextRole = "student";
+    if (currentRole === "student") nextRole = "mentor";
+    else if (currentRole === "mentor") nextRole = "admin";
+    else if (currentRole === "admin") nextRole = "student";
+
+    setUpdatingUserId(targetUserId);
+    setUpdatingRole(true);
+
+    try {
+      const res = await api.patch(`/dashboard/users/${targetUserId}/role`, {
+        role: nextRole
+      });
+
+      if (res.ok) {
+        fetchSummary();
+      } else {
+        const errDetail = await res.json().catch(() => ({}));
+        alert(errDetail.detail || "Failed to update role");
+      }
+    } catch (err) {
+      alert("Error contacting api server");
+    } finally {
+      setUpdatingUserId(null);
+      setUpdatingRole(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
@@ -134,85 +187,257 @@ export default function DashboardPage() {
     );
   }
 
-  const isMentor = data.role === "mentor" || data.role === "admin";
+  const role = data.role;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Stats Widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-mono text-muted-foreground uppercase">Active Projects</p>
-            <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.active_projects}</p>
-          </div>
-          <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
-            <FolderGit2 className="h-6 w-6" />
-          </div>
-        </Card>
+      {/* ------------------- KPI METRICS CARDS ------------------- */}
+      {role === "admin" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Total Projects</p>
+              <p className="text-2xl font-extrabold text-foreground mt-1">{data.stats.active_projects}</p>
+            </div>
+            <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
+              <FolderGit2 className="h-5 w-5" />
+            </div>
+          </Card>
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Students Enrolled</p>
+              <p className="text-2xl font-extrabold text-foreground mt-1">{data.stats.total_students}</p>
+            </div>
+            <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
+              <Users className="h-5 w-5" />
+            </div>
+          </Card>
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Platform Mentors</p>
+              <p className="text-2xl font-extrabold text-foreground mt-1">{data.stats.total_mentors}</p>
+            </div>
+            <div className="p-2.5 bg-violet-500/10 border border-violet-500/20 text-violet-400 rounded-xl">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+          </Card>
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Pending Submissions</p>
+              <p className="text-2xl font-extrabold text-foreground mt-1">{data.stats.pending_reviews}</p>
+            </div>
+            <div className="p-2.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-xl">
+              <AlertCircle className="h-5 w-5" />
+            </div>
+          </Card>
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Total Audited Certs</p>
+              <p className="text-2xl font-extrabold text-foreground mt-1">{data.stats.approved_certificates}</p>
+            </div>
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+              <Award className="h-5 w-5" />
+            </div>
+          </Card>
+        </div>
+      )}
 
-        {isMentor ? (
+      {role === "mentor" && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase">My Active Projects</p>
+              <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.active_projects}</p>
+            </div>
+            <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
+              <FolderGit2 className="h-6 w-6" />
+            </div>
+          </Card>
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase">Mentored Students</p>
+              <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.total_students}</p>
+            </div>
+            <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
+              <Users className="h-6 w-6" />
+            </div>
+          </Card>
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase">Pending Audits</p>
+              <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.pending_reviews}</p>
+            </div>
+            <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-xl">
+              <AlertCircle className="h-6 w-6" />
+            </div>
+          </Card>
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase">Approved Certificates</p>
+              <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.approved_certificates}</p>
+            </div>
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+              <Award className="h-6 w-6" />
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {role === "student" && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase">Joined Projects</p>
+              <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.active_projects}</p>
+            </div>
+            <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
+              <FolderGit2 className="h-6 w-6" />
+            </div>
+          </Card>
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase">Completed Tasks</p>
+              <p className="text-3xl font-extrabold text-foreground mt-1">
+                {data.stats.tasks_completed} <span className="text-sm font-normal text-muted-foreground">/ {data.stats.tasks_total}</span>
+              </p>
+            </div>
+            <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
+              <CheckSquare className="h-6 w-6" />
+            </div>
+          </Card>
+          <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase">Certificates Earned</p>
+              <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.certificates_earned}</p>
+            </div>
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+              <Award className="h-6 w-6" />
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ------------------- MAIN ROLES WIDGET LAYOUTS ------------------- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* ADMIN DASHBOARD PANELS */}
+        {role === "admin" && (
           <>
-            <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-mono text-muted-foreground uppercase">Total Students</p>
-                <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.total_students}</p>
-              </div>
-              <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
-                <Users className="h-6 w-6" />
-              </div>
+            {/* User Roles Manager Control Center */}
+            <Card className="lg:col-span-8 glass border-border/40">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg text-foreground">User Management Panel</CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground">
+                    Promote or demote user access coordinates across the CoderCorps ecosystem.
+                  </CardDescription>
+                </div>
+                <Zap className="h-5 w-5 text-violet-400" />
+              </CardHeader>
+              <CardContent>
+                {data.users && data.users.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-border/40 font-mono text-[11px] text-muted-foreground uppercase">
+                          <th className="pb-3 font-semibold">User Details</th>
+                          <th className="pb-3 font-semibold">Email</th>
+                          <th className="pb-3 font-semibold">System Role</th>
+                          <th className="pb-3 text-right font-semibold">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/20 font-sans">
+                        {data.users.map((item) => (
+                          <tr key={item.id} className="align-middle">
+                            <td className="py-3.5 font-bold text-foreground">{item.name}</td>
+                            <td className="py-3.5 text-xs text-muted-foreground font-mono">{item.email}</td>
+                            <td className="py-3.5">
+                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded border uppercase ${
+                                item.role === "admin" 
+                                  ? "bg-red-500/10 border-red-500/20 text-red-400"
+                                  : item.role === "mentor"
+                                    ? "bg-violet-500/10 border-violet-500/20 text-violet-400"
+                                    : "bg-cyan-500/10 border-cyan-500/20 text-cyan-400"
+                              }`}>
+                                {item.role}
+                              </span>
+                            </td>
+                            <td className="py-3.5 text-right">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleRoleChange(item.id, item.role)}
+                                disabled={updatingRole && updatingUserId === item.id}
+                                className="text-xs font-semibold text-primary hover:bg-primary/10 gap-1.5"
+                              >
+                                <ArrowRightLeft className="h-3 w-3" />
+                                {updatingRole && updatingUserId === item.id ? "Updating..." : "Cycle Role"}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6 font-mono">NO REGISTERED USERS FOUND.</p>
+                )}
+              </CardContent>
             </Card>
 
-            <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-mono text-muted-foreground uppercase">Pending Reviews</p>
-                <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.pending_reviews}</p>
-              </div>
-              <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-xl">
-                <AlertCircle className="h-6 w-6" />
-              </div>
-            </Card>
-
-            <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-mono text-muted-foreground uppercase">Approved Audits</p>
-                <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.approved_certificates}</p>
-              </div>
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
-                <Award className="h-6 w-6" />
-              </div>
-            </Card>
-          </>
-        ) : (
-          <>
-            <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-mono text-muted-foreground uppercase">Tasks Completed</p>
-                <p className="text-3xl font-extrabold text-foreground mt-1">
-                  {data.stats.tasks_completed} <span className="text-sm font-normal text-muted-foreground">/ {data.stats.tasks_total}</span>
-                </p>
-              </div>
-              <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
-                <CheckSquare className="h-6 w-6" />
-              </div>
-            </Card>
-
-            <Card className="glass-premium border-border/40 p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-mono text-muted-foreground uppercase">Certificates Earned</p>
-                <p className="text-3xl font-extrabold text-foreground mt-1">{data.stats.certificates_earned}</p>
-              </div>
-              <div className="p-3 bg-teal-500/10 border border-teal-500/20 text-teal-400 rounded-xl">
-                <Award className="h-6 w-6" />
-              </div>
+            {/* System-wide Activity Audits */}
+            <Card className="lg:col-span-4 glass border-border/40">
+              <CardHeader>
+                <CardTitle className="text-lg text-foreground">Global Activity Log</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
+                  Recent developer submissions system-wide.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {data.recent_submissions && data.recent_submissions.length > 0 ? (
+                  <div className="space-y-4 font-sans text-xs">
+                    {data.recent_submissions.map((sub) => (
+                      <div key={sub.id} className="p-3 bg-card/30 border border-border/60 rounded-xl space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-bold text-foreground">{sub.project_title}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">By: {sub.student_name}</p>
+                          </div>
+                          <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border uppercase ${
+                            sub.status === "approved"
+                              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                              : sub.status === "needs_revision"
+                                ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                                : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                          }`}>
+                            {sub.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 font-mono text-[10px] pt-1">
+                          {sub.repo_url && (
+                            <a href={sub.repo_url} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline flex items-center gap-0.5">
+                              <ExternalLink className="h-2.5 w-2.5" /> Repo
+                            </a>
+                          )}
+                          {sub.demo_url && (
+                            <a href={sub.demo_url} target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline flex items-center gap-0.5">
+                              <ExternalLink className="h-2.5 w-2.5" /> Demo
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6 font-mono">NO SUBMISSIONS SUBMITTED YET.</p>
+                )}
+              </CardContent>
             </Card>
           </>
         )}
-      </div>
 
-      {/* Main Action Tables / Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {isMentor ? (
-          /* MENTOR VIEW: Pending Submissions review board */
+        {/* MENTOR DASHBOARD PANELS */}
+        {role === "mentor" && (
           <Card className="lg:col-span-12 glass border-border/40">
             <CardHeader>
               <CardTitle className="text-lg text-foreground">Pending Submissions Review Board</CardTitle>
@@ -317,8 +542,10 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
-        ) : (
-          /* STUDENT VIEW: Assigned Tasks & Certificates */
+        )}
+
+        {/* STUDENT DASHBOARD PANELS */}
+        {role === "student" && (
           <>
             {/* Active Tasks */}
             <Card className="lg:col-span-7 glass border-border/40">
@@ -374,17 +601,23 @@ export default function DashboardPage() {
                             Approved by: {cert.criteria?.mentor_name || "Staff Mentor"}
                           </p>
                         </div>
-                        {/* Download JSON Mock */}
-                        <Button variant="ghost" size="icon" onClick={() => {
-                          const blob = new Blob([JSON.stringify(cert.criteria, null, 2)], {type : 'application/json'});
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = `codercorps-certificate-${cert.id}.json`;
-                          a.click();
-                        }} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/15">
-                          <Download className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Link href={`/certify/${cert.id}`}>
+                            <Button variant="ghost" size="icon" title="View public certificate" className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/15">
+                              <ShieldCheck className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Button variant="ghost" size="icon" onClick={() => {
+                            const blob = new Blob([JSON.stringify(cert.criteria, null, 2)], {type : 'application/json'});
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `codercorps-certificate-${cert.id}.json`;
+                            a.click();
+                          }} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/15">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -395,6 +628,7 @@ export default function DashboardPage() {
             </Card>
           </>
         )}
+
       </div>
     </div>
   );

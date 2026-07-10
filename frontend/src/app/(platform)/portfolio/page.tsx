@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
 import { 
   UserCircle, 
   FileText, 
@@ -14,14 +15,20 @@ import {
   Copy,
   ExternalLink,
   ShieldCheck,
-  Check
+  Check,
+  Camera,
+  Upload
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/ui/icons";
 
 export default function PortfolioEditorPage() {
   const { user, refreshUser } = useAuth();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   // Editor form state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [bio, setBio] = useState("");
   const [college, setCollege] = useState("");
   const [skills, setSkills] = useState(""); // comma separated
@@ -34,15 +41,35 @@ export default function PortfolioEditorPage() {
   const [success, setSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Image file size should be less than 2MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   useEffect(() => {
-    if (user?.profile) {
-      setBio(user.profile.bio || "");
-      setCollege(user.profile.college || "");
-      setSkills(user.profile.skills?.join(", ") || "");
-      setGithubUrl(user.profile.github_url || "");
-      setLinkedinUrl(user.profile.linkedin_url || "");
-      setResumeUrl(user.profile.resume_url || "");
-      setIsPublic(user.profile.is_public);
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+      setAvatarUrl(user.avatar_url || "");
+      if (user.profile) {
+        setBio(user.profile.bio || "");
+        setCollege(user.profile.college || "");
+        setSkills(user.profile.skills?.join(", ") || "");
+        setGithubUrl(user.profile.github_url || "");
+        setLinkedinUrl(user.profile.linkedin_url || "");
+        setResumeUrl(user.profile.resume_url || "");
+        setIsPublic(user.profile.is_public);
+      }
     }
   }, [user]);
 
@@ -59,6 +86,9 @@ export default function PortfolioEditorPage() {
 
     try {
       const res = await api.patch("/portfolio/me", {
+        name,
+        email,
+        avatar_url: avatarUrl || null,
         bio,
         college,
         skills: skillsList,
@@ -85,7 +115,7 @@ export default function PortfolioEditorPage() {
   if (!user) return null;
 
   // Generate public portfolio link slug
-  const slugName = user.name.toLowerCase().replace(/\s+/g, "-");
+  const slugName = name.toLowerCase().replace(/\s+/g, "-");
   const publicUrl = typeof window !== "undefined" 
     ? `${window.location.origin}/portfolio/${slugName}`
     : `/portfolio/${slugName}`;
@@ -120,6 +150,94 @@ export default function PortfolioEditorPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Profile Image & Personal Info Block */}
+                <div className="flex flex-col sm:flex-row gap-6 items-center p-4 bg-muted/40 border border-border/40 rounded-xl mb-6">
+                  <div className="relative group flex-shrink-0">
+                    <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-primary/40 bg-card flex items-center justify-center relative">
+                      {avatarUrl ? (
+                        <Image 
+                          src={avatarUrl} 
+                          alt="Avatar Preview" 
+                          width={80}
+                          height={80}
+                          unoptimized
+                          className="h-full w-full object-cover"
+                          onError={() => {
+                            setAvatarUrl(`https://api.dicebear.com/7.x/bottts/svg?seed=${name || 'default'}`);
+                          }}
+                        />
+                      ) : (
+                        <UserCircle className="h-12 w-12 text-muted-foreground" />
+                      )}
+
+                      {/* Hover Overlay */}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[9px] font-semibold cursor-pointer"
+                      >
+                        <Camera className="h-4 w-4 mb-1 text-indigo-400" />
+                        <span>CHANGE</span>
+                      </button>
+                    </div>
+
+                    {/* Hidden File Input */}
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
+                  </div>
+
+                  <div className="flex-grow w-full space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label htmlFor="p_name" className="text-[10px] font-bold text-muted-foreground font-mono uppercase">Full Name</label>
+                        <Input 
+                          id="p_name"
+                          type="text"
+                          required
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Atul Sharma"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label htmlFor="p_email" className="text-[10px] font-bold text-muted-foreground font-mono uppercase">Email Address</label>
+                        <Input 
+                          id="p_email"
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="atul@example.com"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label htmlFor="p_avatar" className="text-[10px] font-bold text-muted-foreground font-mono uppercase">Profile Image URL</label>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Upload className="h-3 w-3" /> UPLOAD IMAGE FILE
+                        </button>
+                      </div>
+                      <Input 
+                        id="p_avatar"
+                        type="url"
+                        value={avatarUrl}
+                        onChange={(e) => setAvatarUrl(e.target.value)}
+                        placeholder="https://images.unsplash.com/... or upload a local file"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label htmlFor="p_college" className="text-xs font-semibold text-muted-foreground font-mono">COLLEGE / ALMA MATER</label>
