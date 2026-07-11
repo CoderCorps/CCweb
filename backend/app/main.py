@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1 import auth, programs, projects, submissions, portfolio, dashboard, contact, mentors, activity, certificates, tasks, daily, rooms, notifications
+from app.api.v1 import messages, task_comments, announcements, stuck_flags, peer_reviews, reactions, resources
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -33,6 +34,13 @@ app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}", tags=["tasks"]
 app.include_router(daily.router, prefix=f"{settings.API_V1_STR}/daily", tags=["daily"])
 app.include_router(rooms.router, tags=["rooms"])
 app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}/notifications", tags=["notifications"])
+app.include_router(messages.router, prefix=f"{settings.API_V1_STR}/messages", tags=["messages"])
+app.include_router(reactions.router, prefix=f"{settings.API_V1_STR}/reactions", tags=["reactions"])
+app.include_router(task_comments.router, prefix=f"{settings.API_V1_STR}/task-comments", tags=["task-comments"])
+app.include_router(announcements.router, prefix=f"{settings.API_V1_STR}/announcements", tags=["announcements"])
+app.include_router(stuck_flags.router, prefix=f"{settings.API_V1_STR}/stuck-flags", tags=["stuck-flags"])
+app.include_router(peer_reviews.router, prefix=f"{settings.API_V1_STR}/peer-review", tags=["peer-reviews"])
+app.include_router(resources.router, prefix=f"{settings.API_V1_STR}/resources", tags=["resources"])
 
 @app.get("/")
 def read_root():

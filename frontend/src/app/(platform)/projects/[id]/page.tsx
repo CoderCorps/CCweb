@@ -22,6 +22,7 @@ import {
   UserPlus,
   Trophy
 } from "lucide-react";
+import { ResourcesTab } from "@/components/projects/resources-tab";
 
 interface User {
   id: number;
@@ -651,6 +652,9 @@ export default function ProjectWorkspacePage() {
           </div>
         </div>
       )}
+
+      {/* Project Resources */}
+      <ResourcesTab projectId={Number(id)} />
 
       {/* Task Details Dialog (Linked to Card Click) */}
       <Dialog open={taskDetailDialogOpen} onOpenChange={setTaskDetailDialogOpen}>

@@ -13,10 +13,10 @@ import {
   Layers, 
   Plus, 
   Trash2, 
-  UserPlus, 
   AlertCircle,
   CheckCircle2,
-  Lock
+  Lock,
+  Megaphone
 } from "lucide-react";
 
 interface User {
@@ -89,6 +89,10 @@ export default function ProjectManagePage() {
   const [taskDifficulty, setTaskDifficulty] = useState("medium");
   const [taskDueDate, setTaskDueDate] = useState("");
   const [taskSubmitting, setTaskSubmitting] = useState(false);
+
+  // Announcement state
+  const [announcement, setAnnouncement] = useState("");
+  const [announcing, setAnnouncing] = useState(false);
 
   // Task assignments selections: task_id -> list of user_ids
   const [assignmentsMap, setAssignmentsMap] = useState<Record<number, number[]>>({});
@@ -273,6 +277,27 @@ export default function ProjectManagePage() {
     }
   };
 
+  const handlePostAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!announcement.trim()) return;
+    setAnnouncing(true);
+    try {
+      const res = await api.post(`/projects/${projectId}/announcements`, {
+        content: announcement
+      });
+      if (res.ok) {
+        alert("Announcement posted successfully!");
+        setAnnouncement("");
+      } else {
+        alert("Failed to post announcement");
+      }
+    } catch (err) {
+      alert("Error posting announcement");
+    } finally {
+      setAnnouncing(false);
+    }
+  };
+
   const filteredAssignable = assignableStudents.filter(
     (s) =>
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -410,6 +435,30 @@ export default function ProjectManagePage() {
         {/* Right Columns: Sprints & Tasks */}
         <div className="lg:col-span-2 space-y-6">
           
+          {/* Announcements Card */}
+          <Card className="glass border-border/40">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2 text-md">
+                <Megaphone className="h-4 w-4 text-indigo-400" /> Post Announcement
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePostAnnouncement} className="space-y-3">
+                <textarea
+                  required
+                  rows={2}
+                  value={announcement}
+                  onChange={(e) => setAnnouncement(e.target.value)}
+                  placeholder="Broadcast a message to the project room..."
+                  className="flex w-full rounded-md border border-input bg-black/20 px-3 py-2 text-xs shadow-sm text-foreground"
+                />
+                <Button type="submit" disabled={announcing} className="w-full h-8 text-xs font-semibold">
+                  {announcing ? "Posting..." : "Post Announcement"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
           {/* Sprint controls */}
           <Card className="glass border-border/40">
             <CardHeader>

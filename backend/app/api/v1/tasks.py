@@ -286,3 +286,113 @@ def review_submission(
     db.commit()
     db.refresh(sub)
     return sub
+    
+# --- Phase 2: Task-Level Interactions ---
+
+from app.models.sprint import TaskComment, StuckFlag, PeerReviewRequest
+from app.schemas.interaction import (
+    TaskCommentCreate, TaskCommentResponse, 
+    StuckFlagCreate, StuckFlagResponse,
+    PeerReviewCreate, PeerReviewResponse
+)
+
+@router.get("/{id}/comments", response_model=List[TaskCommentResponse])
+def get_task_comments(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    task = db.query(Task).filter(Task.id == id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+        
+    comments = db.query(TaskComment).filter(TaskComment.task_id == id).order_by(TaskComment.created_at.asc()).all()
+    return comments
+
+@router.post("/{id}/comments", response_model=TaskCommentResponse, status_code=status.HTTP_201_CREATED)
+def create_task_comment(
+    id: int,
+    payload: TaskCommentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    task = db.query(Task).filter(Task.id == id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+        
+    new_comment = TaskComment(
+        task_id=id,
+        user_id=current_user.id,
+        content=payload.content,
+        parent_comment_id=payload.parent_comment_id
+    )
+    db.add(new_comment)
+    db.commit()
+    db.refresh(new_comment)
+    return new_comment
+
+@router.post("/{id}/stuck", response_model=StuckFlagResponse, status_code=status.HTTP_201_CREATED)
+def create_stuck_flag(
+    id: int,
+    payload: StuckFlagCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    task = db.query(Task).filter(Task.id == id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+        
+    new_flag = StuckFlag(
+        task_id=id,
+        user_id=current_user.id,
+        note=payload.note
+    )
+    db.add(new_flag)
+    
+    # Notify mentor
+    mentor_id = task.sprint.project.mentor_id
+    if mentor_id:
+        notif = Notification(
+            user_id=mentor_id,
+            type="student_stuck",
+            message=f"{current_user.name} is stuck on task '{task.title}'",
+            link=f"/projects/{task.sprint.project_id}/tasks/{task.id}"
+        )
+        db.add(notif)
+        
+    db.commit()
+    db.refresh(new_flag)
+    return new_flag
+
+@router.post("/{id}/peer-review", response_model=PeerReviewResponse, status_code=status.HTTP_201_CREATED)
+def create_peer_review_request(
+    id: int,
+    payload: PeerReviewCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    task = db.query(Task).filter(Task.id == id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+        
+    if payload.reviewer_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot request peer review from yourself")
+        
+    new_request = PeerReviewRequest(
+        task_id=id,
+        requester_id=current_user.id,
+        reviewer_id=payload.reviewer_id
+    )
+    db.add(new_request)
+    
+    notif = Notification(
+        user_id=payload.reviewer_id,
+        type="peer_review_requested",
+        message=f"{current_user.name} requested your review on task '{task.title}'",
+        link=f"/peer-reviews"
+    )
+    db.add(notif)
+    
+    db.commit()
+    db.refresh(new_request)
+    return new_request

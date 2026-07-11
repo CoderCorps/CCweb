@@ -17,6 +17,8 @@ import {
   AlertCircle
 } from "lucide-react";
 import Image from "next/image";
+import { AnnouncementBanner } from "@/components/projects/announcement-banner";
+import { ReactionBar } from "@/components/reactions/reaction-bar";
 
 interface Project {
   id: number;
@@ -35,8 +37,9 @@ export default function ProjectRoomPage() {
   const [error, setError] = useState<string | null>(null);
   const [inputText, setInputText] = useState("");
 
-  const { messages, setMessages, connected, sendMessage } = useRoomSocket(projectId);
+  const { messages, setMessages, connected, sendMessage, sendTyping, typingUsers, onlineUsers } = useRoomSocket(projectId);
   const messageEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 1. Fetch Project Details & Messages history on mount
   useEffect(() => {
@@ -77,6 +80,18 @@ export default function ProjectRoomPage() {
     if (!inputText.trim()) return;
     sendMessage(inputText.trim());
     setInputText("");
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputText(e.target.value);
+    if (e.target.value.trim().length > 0) {
+      if (!typingTimeoutRef.current) {
+        sendTyping();
+        typingTimeoutRef.current = setTimeout(() => {
+          typingTimeoutRef.current = null;
+        }, 2000);
+      }
+    }
   };
 
   const getInitials = (name: string) => {
@@ -126,7 +141,12 @@ export default function ProjectRoomPage() {
               <MessageSquare className="h-5 w-5 text-indigo-400" />
               {project.title} Team Chat
             </h1>
-            <p className="text-xs text-muted-foreground hidden sm:block">Collaborate with your project team and mentor in real-time.</p>
+            <p className="text-xs text-muted-foreground hidden sm:block">
+              {onlineUsers.size > 0 
+                ? <span className="text-emerald-400 flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> {onlineUsers.size} member{onlineUsers.size !== 1 ? 's' : ''} online</span>
+                : "Collaborate with your project team in real-time."
+              }
+            </p>
           </div>
         </div>
 
@@ -147,6 +167,8 @@ export default function ProjectRoomPage() {
           )}
         </div>
       </div>
+
+      <AnnouncementBanner projectId={projectId} />
 
       {/* Main chat interface card */}
       <Card className="glass border-border/40 overflow-hidden flex flex-col h-[550px] sm:h-[600px]">
@@ -194,10 +216,13 @@ export default function ProjectRoomPage() {
                       {msg.content}
                     </div>
 
-                    {/* Time Stamp */}
-                    <span className="text-[9px] text-muted-foreground font-mono block px-1">
-                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    {/* Time Stamp & Reactions */}
+                    <div className={`flex items-center gap-2 px-1 ${isSelf ? "justify-end flex-row-reverse" : "justify-start"}`}>
+                      <span className="text-[9px] text-muted-foreground font-mono block">
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <ReactionBar targetType="message" targetId={msg.id} />
+                    </div>
                   </div>
                 </div>
               );
@@ -211,6 +236,16 @@ export default function ProjectRoomPage() {
               </div>
             </div>
           )}
+          {typingUsers.size > 0 && (
+            <div className="text-[10px] text-muted-foreground font-mono flex items-center gap-2 animate-pulse pl-4">
+              <span className="flex gap-0.5">
+                <span className="h-1 w-1 bg-indigo-400 rounded-full animate-bounce"></span>
+                <span className="h-1 w-1 bg-indigo-400 rounded-full animate-bounce delay-75"></span>
+                <span className="h-1 w-1 bg-indigo-400 rounded-full animate-bounce delay-150"></span>
+              </span>
+              Someone is typing...
+            </div>
+          )}
           <div ref={messageEndRef} />
         </CardContent>
 
@@ -219,7 +254,7 @@ export default function ProjectRoomPage() {
           <form onSubmit={handleSend} className="flex gap-2 items-center">
             <Input
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={handleInputChange}
               placeholder="Type your message..."
               disabled={!connected}
               className="flex-1 border border-border bg-black/20 focus-visible:ring-indigo-500/50"

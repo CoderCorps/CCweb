@@ -488,3 +488,116 @@ def update_task(
     db.commit()
     db.refresh(db_task)
     return db_task
+    
+# --- Phase 2: Project-Level Interactions ---
+
+from app.models.communication import Announcement
+from app.models.project import Resource
+from app.models.sprint import StuckFlag
+from app.schemas.communication import AnnouncementCreate, AnnouncementResponse
+from app.schemas.interaction import ResourceCreate, ResourceResponse, StuckFlagResponse
+
+@router.get("/{id}/announcements", response_model=List[AnnouncementResponse])
+def get_project_announcements(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    announcements = db.query(Announcement).filter(
+        Announcement.project_id == id
+    ).order_by(Announcement.created_at.desc()).all()
+    
+    return announcements
+
+@router.post("/{id}/announcements", response_model=AnnouncementResponse, status_code=status.HTTP_201_CREATED)
+def create_project_announcement(
+    id: int,
+    payload: AnnouncementCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if current_user.role != "admin" and (current_user.role != "mentor" or project.mentor_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Only the project mentor can create announcements")
+        
+    new_announcement = Announcement(
+        project_id=id,
+        mentor_id=current_user.id,
+        content=payload.content,
+        pinned=payload.pinned
+    )
+    db.add(new_announcement)
+    db.commit()
+    db.refresh(new_announcement)
+    return new_announcement
+
+@router.get("/{id}/stuck-flags", response_model=List[StuckFlagResponse])
+def get_project_stuck_flags(
+    id: int,
+    active: bool = True,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if current_user.role != "admin" and (current_user.role != "mentor" or project.mentor_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Only the project mentor can view all stuck flags")
+        
+    query = db.query(StuckFlag).join(Task).join(Sprint).filter(Sprint.project_id == id)
+    
+    if active:
+        query = query.filter(StuckFlag.resolved_at.is_(None))
+        
+    return query.order_by(StuckFlag.created_at.desc()).all()
+
+@router.get("/{id}/resources", response_model=List[ResourceResponse])
+def get_project_resources(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    resources = db.query(Resource).filter(Resource.project_id == id).order_by(Resource.created_at.desc()).all()
+    return resources
+
+@router.post("/{id}/resources", response_model=ResourceResponse, status_code=status.HTTP_201_CREATED)
+def create_project_resource(
+    id: int,
+    payload: ResourceCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    # Anyone in the project can add resources (mentor or member)
+    is_member = db.query(ProjectMember).filter(ProjectMember.project_id == id, ProjectMember.user_id == current_user.id).first()
+    is_mentor = (project.mentor_id == current_user.id)
+    
+    if not is_member and not is_mentor and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Must be a project member to add resources")
+        
+    new_resource = Resource(
+        project_id=id,
+        added_by=current_user.id,
+        title=payload.title,
+        url=payload.url,
+        description=payload.description
+    )
+    db.add(new_resource)
+    db.commit()
+    db.refresh(new_resource)
+    return new_resource

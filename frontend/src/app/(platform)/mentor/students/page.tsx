@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { 
   Users, 
@@ -14,7 +15,8 @@ import {
   Calendar,
   Layers,
   CheckCircle2,
-  Bookmark
+  Bookmark,
+  MessageSquare
 } from "lucide-react";
 
 interface Student {
@@ -154,11 +156,18 @@ export default function MentorStudentsPage() {
                           </div>
                         </td>
                         <td className="py-4 text-right">
-                          <a href={publicPortfolioUrl} target="_blank" rel="noreferrer">
-                            <Button variant="ghost" size="sm" className="text-xs font-semibold text-primary hover:bg-primary/10 gap-1">
-                              <ExternalLink className="h-3.5 w-3.5" /> Portfolio
-                            </Button>
-                          </a>
+                          <div className="flex justify-end gap-2">
+                            <Link href={`/messages?user=${student.id}`}>
+                              <Button variant="secondary" size="sm" className="text-xs font-semibold gap-1">
+                                <MessageSquare className="h-3.5 w-3.5" /> Message
+                              </Button>
+                            </Link>
+                            <a href={publicPortfolioUrl} target="_blank" rel="noreferrer">
+                              <Button variant="ghost" size="sm" className="text-xs font-semibold text-primary hover:bg-primary/10 gap-1">
+                                <ExternalLink className="h-3.5 w-3.5" /> Portfolio
+                              </Button>
+                            </a>
+                          </div>
                         </td>
                       </tr>
                     );

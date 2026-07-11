@@ -16,6 +16,8 @@ export interface Message {
 export function useRoomSocket(projectId: number) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [connected, setConnected] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Set<number>>(new Set());
+  const [onlineUsers, setOnlineUsers] = useState<Set<number>>(new Set());
   const { user, loading } = useAuth();
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -66,6 +68,34 @@ export function useRoomSocket(projectId: number) {
     socket.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
+        if (msg.type === "typing") {
+          if (msg.user_id === user?.id) return;
+          setTypingUsers(prev => {
+            const next = new Set(prev);
+            next.add(msg.user_id);
+            return next;
+          });
+          // Auto remove typing indicator after 3 seconds
+          setTimeout(() => {
+            setTypingUsers(prev => {
+              const next = new Set(prev);
+              next.delete(msg.user_id);
+              return next;
+            });
+          }, 3000);
+          return;
+        }
+        
+        if (msg.type === "presence") {
+          setOnlineUsers(prev => {
+            const next = new Set(prev);
+            if (msg.status === "online") next.add(msg.user_id);
+            else next.delete(msg.user_id);
+            return next;
+          });
+          return;
+        }
+
         setMessages((prev) => {
           // Avoid duplicate incoming messages
           if (prev.some((m) => m.id === msg.id)) return prev;
@@ -111,9 +141,15 @@ export function useRoomSocket(projectId: number) {
 
   const sendMessage = useCallback((content: string) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ content }));
+      socketRef.current.send(JSON.stringify({ type: "message", content }));
     } else {
       console.warn("Unable to send: WebSocket is not open.");
+    }
+  }, []);
+
+  const sendTyping = useCallback(() => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ type: "typing" }));
     }
   }, []);
 
@@ -121,6 +157,9 @@ export function useRoomSocket(projectId: number) {
     messages,
     setMessages,
     connected,
-    sendMessage
+    sendMessage,
+    sendTyping,
+    typingUsers,
+    onlineUsers
   };
 }

@@ -143,9 +143,18 @@ async def websocket_room(
     # Accept and store connection
     await manager.connect(room.id, websocket)
     
+    # Broadcast presence (online)
+    await manager.broadcast(room.id, {"type": "presence", "user_id": user.id, "status": "online"})
+    
     try:
         while True:
             data = await websocket.receive_json()
+            event_type = data.get("type", "message")
+            
+            if event_type == "typing":
+                await manager.broadcast(room.id, {"type": "typing", "user_id": user.id})
+                continue
+                
             content = data.get("content")
             if not content:
                 continue
@@ -183,3 +192,5 @@ async def websocket_room(
                 
     except WebSocketDisconnect:
         manager.disconnect(room.id, websocket)
+        # Broadcast presence (offline)
+        await manager.broadcast(room.id, {"type": "presence", "user_id": user.id, "status": "offline"})

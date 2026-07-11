@@ -27,6 +27,8 @@ class User(Base):
     reviewed_submissions: Mapped[list["Submission"]] = relationship("Submission", foreign_keys="[Submission.reviewed_by_id]", back_populates="reviewer")
     certificates: Mapped[list["Certificate"]] = relationship("Certificate", back_populates="user")
     notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    messages_sent: Mapped[list["DirectMessage"]] = relationship("DirectMessage", foreign_keys="[DirectMessage.sender_id]", back_populates="sender", cascade="all, delete-orphan")
+    messages_received: Mapped[list["DirectMessage"]] = relationship("DirectMessage", foreign_keys="[DirectMessage.recipient_id]", back_populates="recipient", cascade="all, delete-orphan")
 
 class Profile(Base):
     __tablename__ = "profiles"

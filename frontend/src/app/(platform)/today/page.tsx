@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import DailyReportForm from "@/components/dashboard/DailyReportForm";
+import { StuckFlagButton } from "@/components/tasks/stuck-flag-button";
+import { PeerReviewPanel } from "@/components/dashboard/peer-review-panel";
 import { 
   Sun, 
   Play, 
@@ -470,15 +472,25 @@ export default function StudentTodayPage() {
                     <span className="text-xs font-bold leading-relaxed">{todo.description}</span>
                   </div>
 
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded font-mono border uppercase shrink-0 ${statusColor}`}>
-                    {statusText}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded font-mono border uppercase shrink-0 ${statusColor}`}>
+                      {statusText}
+                    </span>
+                    {todo.task_id && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <StuckFlagButton taskId={todo.task_id} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </CardContent>
         </Card>
       )}
+
+      {/* Peer Review Panel */}
+      {started && <PeerReviewPanel />}
 
     </div>
   );

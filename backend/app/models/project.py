@@ -22,6 +22,8 @@ class Project(Base):
     submissions: Mapped[list["Submission"]] = relationship("Submission", back_populates="project", cascade="all, delete-orphan")
     certificates: Mapped[list["Certificate"]] = relationship("Certificate", back_populates="project")
     room: Mapped["Room"] = relationship("Room", back_populates="project", uselist=False, cascade="all, delete-orphan")
+    announcements: Mapped[list["Announcement"]] = relationship("Announcement", back_populates="project", cascade="all, delete-orphan")
+    resources: Mapped[list["Resource"]] = relationship("Resource", back_populates="project", cascade="all, delete-orphan")
 
 class ProjectMember(Base):
     __tablename__ = "project_members"
@@ -33,3 +35,18 @@ class ProjectMember(Base):
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="members")
     user: Mapped["User"] = relationship("User", back_populates="project_memberships")
+
+class Resource(Base):
+    __tablename__ = "resources"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    added_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
+
+    # Relationships
+    project: Mapped["Project"] = relationship("Project", back_populates="resources")
+    user: Mapped["User"] = relationship("User", foreign_keys=[added_by])

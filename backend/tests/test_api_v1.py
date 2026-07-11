@@ -236,8 +236,14 @@ def test_websocket_room(setup_test_data, db_session):
     token = security.create_access_token(subject=str(student1.id))
 
     with client.websocket_connect(f"/ws/rooms/{project.id}?token={token}") as websocket:
+        # Receive presence broadcast
+        presence = websocket.receive_json()
+        assert presence["type"] == "presence"
+        assert presence["status"] == "online"
+
         # Send message
         websocket.send_json({"content": "Hello from WebSocket test!"})
+        
         # Receive broadcast
         data = websocket.receive_json()
         assert data["content"] == "Hello from WebSocket test!"

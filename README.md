@@ -91,12 +91,14 @@ source venv/bin/activate  # Unix/macOS
 
 # Run accountability job
 python -m app.cron.accountability
+
+# Run digest jobs (Daily or Weekly)
+python -m app.cron.digest --daily
+python -m app.cron.digest --weekly
 ```
 
 ---
 
 ## 🚧 Not Yet Implemented
 
-1. **Email Notification Dispatch**: Live email delivery (e.g. via Resend or SMTP hooks) is not yet active. Notifications are dispatched and stored exclusively in-app via the notifications table. Integrating an external email service provider (like Resend) remains a developer roadmap TODO.
-
-
+1. **Email Notification Dispatch**: Live email delivery (e.g. via Resend or SMTP hooks) is not yet active. Notifications (including the daily/weekly mentor digests and accountability alerts) are dispatched and stored exclusively in-app via the notifications table. Integrating an external email service provider (like Resend) remains a developer roadmap TODO.

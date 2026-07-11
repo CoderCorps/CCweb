@@ -20,6 +20,8 @@ import {
   Bookmark,
   Users
 } from "lucide-react";
+import { TaskComments } from "@/components/tasks/task-comments";
+import { StuckFlagButton } from "@/components/tasks/stuck-flag-button";
 
 interface LeaderboardEntry {
   user_id: number;
@@ -363,13 +365,18 @@ export default function LeaderboardPage() {
                             {selectedTask.description || "No description logged for this task."}
                           </CardDescription>
                         </div>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border font-mono uppercase shrink-0 ${
-                          selectedTask.task_mode === "competitive" 
-                            ? "bg-amber-500/10 text-amber-400 border-amber-500/20" 
-                            : "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                        }`}>
-                          {selectedTask.task_mode}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border font-mono uppercase shrink-0 ${
+                            selectedTask.task_mode === "competitive" 
+                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20" 
+                              : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                          }`}>
+                            {selectedTask.task_mode}
+                          </span>
+                          {!isMentor && (
+                            <StuckFlagButton taskId={selectedTask.id} />
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-4 space-y-4 text-xs font-sans">
@@ -565,6 +572,8 @@ export default function LeaderboardPage() {
                         </div>
                       )}
 
+                      {/* Comments Thread */}
+                      <TaskComments taskId={selectedTask.id} />
                     </CardContent>
                   </Card>
                 )}

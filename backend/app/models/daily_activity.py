@@ -1,5 +1,5 @@
 from sqlalchemy import String, Integer, DateTime, ForeignKey, Date, Numeric, JSON, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 from app.db.session import Base
 import datetime
 
@@ -47,3 +47,9 @@ class DailyReport(Base):
     user: Mapped["User"] = relationship("User", foreign_keys=[user_id], back_populates="daily_reports")
     project: Mapped["Project"] = relationship("Project")
     mentor: Mapped["User"] = relationship("User", foreign_keys=[mentor_id], back_populates="assigned_mentor_reports")
+    reactions: Mapped[list["MessageReaction"]] = relationship(
+        "MessageReaction",
+        primaryjoin="and_(MessageReaction.target_type=='daily_report', foreign(MessageReaction.target_id)==DailyReport.id)",
+        cascade="all, delete-orphan",
+        viewonly=True,
+    )

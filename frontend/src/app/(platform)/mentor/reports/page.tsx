@@ -17,6 +17,7 @@ import {
   ChevronDown
 } from "lucide-react";
 import Image from "next/image";
+import { ReactionBar } from "@/components/reactions/reaction-bar";
 
 interface Project {
   id: number;
@@ -337,6 +338,7 @@ export default function MentorReportsPage() {
                     <pre className="p-3 bg-black/25 rounded-xl border border-border/30 text-[11px] text-slate-200 leading-relaxed font-sans whitespace-pre-wrap">
                       {report.summary}
                     </pre>
+                    <ReactionBar targetType="report" targetId={report.id} />
                   </div>
 
                   {/* Checklist items snapshot */}

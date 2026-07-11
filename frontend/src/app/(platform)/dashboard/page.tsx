@@ -22,6 +22,7 @@ import {
   Zap,
   ArrowRightLeft
 } from "lucide-react";
+import { StuckStudentsWidget } from "@/components/dashboard/stuck-students-widget";
 
 interface SummaryData {
   role: string;
@@ -438,7 +439,9 @@ export default function DashboardPage() {
 
         {/* MENTOR DASHBOARD PANELS */}
         {role === "mentor" && (
-          <Card className="lg:col-span-12 glass border-border/40">
+          <div className="lg:col-span-12 space-y-6">
+            <StuckStudentsWidget />
+            <Card className="glass border-border/40">
             <CardHeader>
               <CardTitle className="text-lg text-foreground">Pending Submissions Review Board</CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
