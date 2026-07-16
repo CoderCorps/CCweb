@@ -7,7 +7,17 @@ export interface User {
   role: "student" | "mentor" | "admin";
   avatar_url: string | null;
   created_at: string;
-  profile: any;
+  profile: MockProfile | null;
+}
+
+export interface MockProfile {
+  bio: string;
+  college: string;
+  skills: string[];
+  github_url: string;
+  linkedin_url: string;
+  resume_url: string;
+  is_public: boolean;
 }
 
 export interface MockTask {
@@ -146,15 +156,37 @@ let mockSprints: MockSprint[] = [
   }
 ];
 
-let mockSubmissions: any[] = [];
-let mockCertificates: any[] = [];
+interface MockSubmission {
+  id: number;
+  project_id: number;
+  user_id: number;
+  demo_url: string;
+  repo_url: string;
+  reviewed_by_id: number | null;
+  feedback: string | null;
+  status: string;
+  created_at: string;
+}
+
+interface MockCertificate {
+  id: number;
+  user_id: number;
+  project_id: number;
+  issued_at: string;
+  criteria_met: Record<string, unknown>;
+}
+
+let mockSubmissions: MockSubmission[] = [];
+let mockCertificates: MockCertificate[] = [];
 let mockCurrentUser: User | null = null;
 
 // Helper to find a user by ID
 const findUser = (id: number) => mockUsers.find(u => u.id === id) || null;
 
-export function handleMockRequest(path: string, method: string, body?: any) {
+export function handleMockRequest(path: string, method: string, body?: Record<string, unknown> | FormData) {
   console.log(`[Mock DB Intercept] ${method} ${path}`, body);
+  // Treat body as a plain object for all mock handlers (FormData is only used in login path)
+  const bodyObj = (body instanceof FormData ? {} : body ?? {}) as Record<string, unknown>;
 
   // --- Auth endpoints ---
   if (path === "/auth/me" && method === "GET") {
@@ -163,8 +195,8 @@ export function handleMockRequest(path: string, method: string, body?: any) {
   }
 
   if (path === "/auth/login" && method === "POST") {
-    // Body is FormData for OAuth2
-    const username = body?.get ? body.get("username") : body?.username;
+    // Body is FormData for OAuth2 or a plain JSON object
+    const username = body instanceof FormData ? body.get("username") : (body as Record<string, unknown>)?.username;
     const user = mockUsers.find(u => u.email === username);
     if (!user) {
       return { status: 400, ok: false, json: async () => ({ detail: "Incorrect email or password" }) };
@@ -183,7 +215,9 @@ export function handleMockRequest(path: string, method: string, body?: any) {
   }
 
   if (path === "/auth/signup" && method === "POST") {
-    const { name, email, role } = body;
+    const name = bodyObj.name as string;
+    const email = bodyObj.email as string;
+    const role = bodyObj.role as any;
     const existing = mockUsers.find(u => u.email === email);
     if (existing) return { status: 400, ok: false, json: async () => ({ detail: "User already exists" }) };
 
@@ -315,7 +349,8 @@ export function handleMockRequest(path: string, method: string, body?: any) {
   }
 
   if (path === "/projects" && method === "POST") {
-    const { title, description } = body;
+    const title = bodyObj.title as string;
+    const description = bodyObj.description as string;
     const newProj = {
       id: mockProjects.length + 1,
       title,
@@ -363,7 +398,10 @@ export function handleMockRequest(path: string, method: string, body?: any) {
 
   if (path.startsWith("/projects/") && path.endsWith("/sprints") && method === "POST") {
     const pId = parseInt(path.split("/")[2]);
-    const { sprint_number, goal, start_date, end_date } = body;
+    const sprint_number = bodyObj.sprint_number as number;
+    const goal = bodyObj.goal as string;
+    const start_date = bodyObj.start_date as string;
+    const end_date = bodyObj.end_date as string;
     const newSprint = {
       id: mockSprints.length + 1,
       project_id: pId,
@@ -383,7 +421,9 @@ export function handleMockRequest(path: string, method: string, body?: any) {
     const sprint = mockSprints.find(s => s.id === sId);
     if (!sprint) return { status: 404, ok: false, json: async () => ({ detail: "Sprint not found" }) };
 
-    const { title, description, assigned_to_id } = body;
+    const title = bodyObj.title as string;
+    const description = bodyObj.description as string;
+    const assigned_to_id = bodyObj.assigned_to_id as number | undefined;
     const assignee = assigned_to_id ? findUser(assigned_to_id) : null;
     const newTask = {
       id: Math.max(0, ...mockSprints.flatMap(s => s.tasks.map(t => t.id))) + 1,
@@ -407,7 +447,7 @@ export function handleMockRequest(path: string, method: string, body?: any) {
       const idx = sprint.tasks.findIndex(t => t.id === tId);
       if (idx !== -1) {
         foundTask = sprint.tasks[idx];
-        const updateData = body || {};
+        const updateData = bodyObj || {};
         if (updateData.status) foundTask.status = updateData.status;
         if (updateData.github_pr_url !== undefined) foundTask.github_pr_url = updateData.github_pr_url;
         break;
@@ -420,7 +460,9 @@ export function handleMockRequest(path: string, method: string, body?: any) {
 
   // --- Submissions & Reviews ---
   if (path === "/submissions" && method === "POST") {
-    const { project_id, demo_url, repo_url } = body;
+    const project_id = bodyObj.project_id as number;
+    const demo_url = bodyObj.demo_url as string;
+    const repo_url = bodyObj.repo_url as string;
     const newSubmission = {
       id: mockSubmissions.length + 1,
       project_id,
@@ -441,7 +483,8 @@ export function handleMockRequest(path: string, method: string, body?: any) {
     const sub = mockSubmissions.find(s => s.id === sId);
     if (!sub) return { status: 404, ok: false, json: async () => ({ detail: "Submission not found" }) };
 
-    const { status, feedback } = body;
+    const status = bodyObj.status as string;
+    const feedback = bodyObj.feedback as string | null;
     sub.status = status;
     sub.feedback = feedback;
     sub.reviewed_by_id = mockCurrentUser!.id;
@@ -533,7 +576,7 @@ export function handleMockRequest(path: string, method: string, body?: any) {
     if (!mockCurrentUser) return { status: 401, ok: false, json: async () => ({ detail: "Not authenticated" }) };
 
     if (body.email) {
-      mockCurrentUser.email = body.email;
+      mockCurrentUser.email = bodyObj.email as string;
     }
     // Simulate updating mockCurrentUser in mockUsers catalog
     const uIdx = mockUsers.findIndex(u => u.id === mockCurrentUser!.id);

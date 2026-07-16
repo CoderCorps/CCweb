@@ -7,8 +7,9 @@ from pydantic import BaseModel
 from app.deps import get_db, get_current_user
 from app.models.user import User
 from app.models.project import Project, ProjectMember
-from app.models.sprint import Task, TaskAssignment, TaskSubmission
+from app.models.sprint import Sprint, Task, TaskAssignment, TaskSubmission
 from app.models.notification import Notification
+from app.services.badge_evaluator import evaluate_blocker_crusher, evaluate_system_architect
 from app.schemas.sprint import (
     TaskAssignmentResponse, 
     TaskSubmissionResponse, 
@@ -285,6 +286,11 @@ def review_submission(
         
     db.commit()
     db.refresh(sub)
+    
+    # Check for badges
+    evaluate_blocker_crusher(db, sub.user_id)
+    evaluate_system_architect(db, sub.user_id)
+    
     return sub
     
 # --- Phase 2: Task-Level Interactions ---

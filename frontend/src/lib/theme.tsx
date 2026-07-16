@@ -14,17 +14,22 @@ const ThemeContext = createContext<ThemeContextType>({
   toggleTheme: () => {},
 });
 
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") return "dark";
+  const stored = localStorage.getItem("codercorps-theme") as Theme | null;
+  if (stored === "dark" || stored === "light") return stored;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem("codercorps-theme") as Theme | null;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initial = stored ?? (prefersDark ? "dark" : "light");
+    const initial = getInitialTheme();
     setTheme(initial);
     document.documentElement.setAttribute("data-theme", initial);
+    setMounted(true);
   }, []);
 
   const toggleTheme = () => {
@@ -46,3 +51,4 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useTheme = () => useContext(ThemeContext);
+

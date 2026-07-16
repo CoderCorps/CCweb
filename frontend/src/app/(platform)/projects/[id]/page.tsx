@@ -27,6 +27,7 @@ import { ResourcesTab } from "@/components/projects/resources-tab";
 interface User {
   id: number;
   name: string;
+  avatar_url?: string | null;
 }
 
 interface Task {
@@ -652,6 +653,46 @@ export default function ProjectWorkspacePage() {
           </div>
         </div>
       )}
+
+      {/* Project Team Roster */}
+      <div className="space-y-4 pt-4 border-t border-border/40">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-white font-mono uppercase">Project Roster</h2>
+          <span className="text-xs text-muted-foreground font-mono bg-card px-2 py-1 rounded border border-border/60">
+            {project.members.length} Members
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {project.members.map((member) => (
+            <Card key={member.user_id} className="glass p-4 flex items-center justify-between gap-3 border-border/40 hover:border-indigo-500/30 transition-colors">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="h-10 w-10 rounded-full bg-card border border-border flex items-center justify-center text-sm font-bold text-indigo-400 shrink-0 overflow-hidden">
+                  {member.user.avatar_url ? (
+                    <img src={member.user.avatar_url} alt={member.user.name} className="h-full w-full object-cover" />
+                  ) : (
+                    member.user.name.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-bold text-white truncate">{member.user.name}</span>
+                  <span className="text-[10px] text-indigo-400/80 font-mono uppercase truncate">{member.role}</span>
+                </div>
+              </div>
+              {user?.id !== member.user_id && (
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-8 w-8 p-0 rounded-full hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 shrink-0"
+                  onClick={() => router.push(`/messages?user=${member.user_id}`)}
+                  title="Direct Message"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </Button>
+              )}
+            </Card>
+          ))}
+        </div>
+      </div>
 
       {/* Project Resources */}
       <ResourcesTab projectId={Number(id)} />

@@ -73,7 +73,7 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
   }
 
   if (FORCE_MOCK) {
-    const mockRes = handleMockRequest(path, method, requestBody);
+    const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
     return mockRes as unknown as Response;
   }
 
@@ -114,7 +114,7 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
     return response;
   } catch (err) {
     console.warn("Backend API server unreachable. Falling back to frontend mock database.", err);
-    const mockRes = handleMockRequest(path, method, requestBody);
+    const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
     return mockRes as unknown as Response;
   }
 }
@@ -123,21 +123,21 @@ export const api = {
   get: (path: string, options?: RequestOptions) =>
     apiRequest(path, { ...options, method: "GET" }),
   
-  post: (path: string, body: any, options?: RequestOptions) =>
+  post: (path: string, body: Record<string, unknown> | FormData, options?: RequestOptions) =>
     apiRequest(path, {
       ...options,
       method: "POST",
       body: body instanceof FormData ? body : JSON.stringify(body),
     }),
   
-  patch: (path: string, body: any, options?: RequestOptions) =>
+  patch: (path: string, body: Record<string, unknown> | FormData, options?: RequestOptions) =>
     apiRequest(path, {
       ...options,
       method: "PATCH",
       body: body instanceof FormData ? body : JSON.stringify(body),
     }),
   
-  put: (path: string, body: any, options?: RequestOptions) =>
+  put: (path: string, body: Record<string, unknown> | FormData, options?: RequestOptions) =>
     apiRequest(path, {
       ...options,
       method: "PUT",

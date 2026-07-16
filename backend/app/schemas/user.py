@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Literal
 import datetime
 
 class ProfileBase(BaseModel):
@@ -24,7 +24,7 @@ class ProfileResponse(ProfileBase):
 class UserBase(BaseModel):
     name: str
     email: EmailStr
-    role: str = "student" # 'student' | 'mentor' | 'admin'
+    role: Literal["student", "mentor", "admin"] = "student"
     avatar_url: Optional[str] = None
 
 class UserCreate(UserBase):
@@ -38,6 +38,8 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     id: int
     created_at: datetime.datetime
+    unlocked_skills: List[str] = []
+    skill_points: int = 0
     profile: Optional[ProfileResponse] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -12,6 +12,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), default="student", nullable=False) # 'student' | 'mentor' | 'admin'
     avatar_url: Mapped[str] = mapped_column(Text, nullable=True)
+    unlocked_skills: Mapped[dict] = mapped_column(JSON, default=list, nullable=False)
+    skill_points: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
 
     # Relationships
@@ -29,6 +31,7 @@ class User(Base):
     notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     messages_sent: Mapped[list["DirectMessage"]] = relationship("DirectMessage", foreign_keys="[DirectMessage.sender_id]", back_populates="sender", cascade="all, delete-orphan")
     messages_received: Mapped[list["DirectMessage"]] = relationship("DirectMessage", foreign_keys="[DirectMessage.recipient_id]", back_populates="recipient", cascade="all, delete-orphan")
+    badges: Mapped[list["UserBadge"]] = relationship("UserBadge", back_populates="user", cascade="all, delete-orphan")
 
 class Profile(Base):
     __tablename__ = "profiles"

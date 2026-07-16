@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -14,7 +14,6 @@ import {
   ArrowRight, 
   Plus, 
   AlertCircle,
-  ShieldAlert,
   GitBranch,
   Calendar
 } from "lucide-react";
@@ -52,7 +51,7 @@ export default function ProjectsPage() {
   const [submittingProject, setSubmittingProject] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  async function fetchProjects() {
+  const fetchProjects = useCallback(async () => {
     try {
       const res = await api.get("/projects");
       if (res.ok) {
@@ -61,24 +60,16 @@ export default function ProjectsPage() {
       } else {
         setError("Failed to load your projects.");
       }
-
-      // If student, also check other projects they can join
-      if (user?.role === "student") {
-        // Fetch all projects for join catalog (in a production app we'd have a separate catalog route, 
-        // but here we can mock or query from the main route by bypassing student filter on backend 
-        // or simulating a mock selection. Let's do a mock lookup catalog for demo purposes)
-        const allRes = await api.get("/projects"); // in mock seed, they are already part of it
-      }
-    } catch (err) {
+    } catch {
       setError("Server connection failed.");
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     fetchProjects();
-  }, [user]);
+  }, [fetchProjects]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();

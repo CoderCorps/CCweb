@@ -8,6 +8,7 @@ from app.models.user import User, Profile
 from app.models.project import Project, ProjectMember
 from app.models.sprint import Sprint, Task
 from app.models.submission import Submission, Certificate
+from app.models.badge import UserBadge
 
 router = APIRouter()
 
@@ -172,6 +173,19 @@ def get_dashboard_summary(
             for t in active_tasks_db
         ]
 
+        # 5. Earned Badges
+        badges_db = db.query(UserBadge).filter(UserBadge.user_id == current_user.id).all()
+        badges_list = [
+            {
+                "id": b.id,
+                "name": b.badge.name,
+                "description": b.badge.description,
+                "image_url": b.badge.image_url,
+                "earned_at": b.earned_at.isoformat()
+            }
+            for b in badges_db
+        ]
+
         return {
             "role": current_user.role,
             "stats": {
@@ -181,7 +195,8 @@ def get_dashboard_summary(
                 "certificates_earned": len(cert_list)
             },
             "active_tasks": active_tasks_list,
-            "certificates": cert_list
+            "certificates": cert_list,
+            "badges": badges_list
         }
 
 @router.patch("/users/{user_id}/role")

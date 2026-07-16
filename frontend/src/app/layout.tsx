@@ -1,18 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Inter font is loaded via CSS @import in globals.css — no build-time network fetch needed.
 
 export const metadata: Metadata = {
   title: "CoderCorps — Engineering Community & Verifiable Portfolios",
@@ -41,8 +32,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-background text-foreground flex flex-col">
+    <html lang="en" className="h-full antialiased">
+      <body className="min-h-full bg-background text-foreground flex flex-col font-sans">
         <ThemeProvider>
           <AuthProvider>
             {children}
@@ -52,4 +43,3 @@ export default function RootLayout({
     </html>
   );
 }
-

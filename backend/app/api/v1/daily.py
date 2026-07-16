@@ -9,6 +9,7 @@ from app.models.user import User
 from app.models.project import Project, ProjectMember
 from app.models.daily_activity import DailyTodo, DailyReport
 from app.models.notification import Notification
+from app.services.badge_evaluator import evaluate_streak
 from app.schemas.daily import (
     DailyTodoResponse, 
     DailyReportResponse, 
@@ -143,6 +144,10 @@ def create_daily_report(
         
     db.commit()
     db.refresh(report)
+    
+    # Check for streak badge
+    evaluate_streak(db, current_user.id)
+    
     return report
 
 @router.get("/reports", response_model=List[DailyReportResponse])

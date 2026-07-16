@@ -16,7 +16,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Lock,
-  Megaphone
+  Megaphone,
+  UserPlus
 } from "lucide-react";
 
 interface User {

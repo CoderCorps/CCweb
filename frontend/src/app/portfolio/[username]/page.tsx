@@ -13,11 +13,14 @@ import {
   ExternalLink,
   ShieldCheck,
   Terminal,
-  ArrowLeft
+  ArrowLeft,
+  User as UserIcon
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/ui/icons";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { GitHubGraph } from "@/components/ui/github-graph";
+import { SkillGalaxy3D } from "@/components/ui/SkillGalaxy3D";
+import { BadgeTooltip } from "@/components/ui/BadgeTooltip";
 import Link from "next/link";
 
 interface Profile {
@@ -37,6 +40,9 @@ interface User {
   email: string;
   role: string;
   avatar_url: string | null;
+  unlocked_skills?: string[];
+  skill_points?: number;
+  badges?: any[];
   profile: Profile | null;
 }
 
@@ -70,43 +76,8 @@ export default function PublicPortfolioPage() {
         if (res.ok) {
           const data = await res.json();
           setProfileData(data);
-          
-          // Also fetch certificates if the profile exists (in our mock they are in the summary, 
-          // but we can query them from dashboard mock or extract them from a mocked/actual dashboard summary fetch)
-          // To be secure, let's fetch summary or simulated certs since it's a public portfolio
-          // In seed, student1 has no certificates yet, but Siddharth Roy approved student 1's submission will issue one.
-          // Let's check: can we fetch their certificates?
-          // Since the public endpoint /portfolio/{username} returns the User object, we can add the certificates in the query
-          // or simulate mock database lookup. In our FastAPI backend, User.certificates is a relationship!
-          // So user.certificates is automatically serialized under UserResponse in the backend if we configure it!
-          // Let's verify: yes, UserResponse has no certs by default, but we can look for it in data.certificates or mock it.
-          // Let's look up data.certificates or user.certificates in JSON.
           if (data.certificates) {
             setCerts(data.certificates);
-          } else if (data.id) {
-            // Simulated fetch for public certs
-            // In a production backend we would have a GET /portfolio/{username}/certificates route,
-            // but for seed data let's simulate the query from the serialized User relationships or seed
-            const certsMock = [
-              {
-                id: 101,
-                project_title: "Distributed E-Commerce API Engine",
-                issued_at: new Date().toISOString(),
-                criteria: {
-                  student_name: data.name,
-                  project_title: "Distributed E-Commerce API Engine",
-                  mentor_name: "Siddharth Roy",
-                  demo_url: "https://youtube.com/watch?v=mockdemo",
-                  repo_url: "https://github.com/codercorps/ecommerce-api",
-                  approved_at: new Date().toISOString(),
-                  audit_message: "Verifiable Software Engineering Achievement. This certificate validates actual codebase contributions (GitHub Pull Requests merged, functional demo delivered, and code reviewed by a professional engineering mentor)."
-                }
-              }
-            ];
-            // Only show mock cert for Atul (student1) to simulate verified state
-            if (data.name.toLowerCase().includes("atul")) {
-              setCerts(certsMock);
-            }
           }
         } else {
           setError("Portfolio is private or does not exist.");
@@ -167,13 +138,21 @@ export default function PublicPortfolioPage() {
         <TiltCard scale={1.01} maxRotation={8}>
           <Card className="glass-premium border-border/40 p-8 flex flex-col md:flex-row items-center md:items-start justify-between gap-6 w-full">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-              <Image 
-                src={profileData.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.name)}`} 
-                alt={profileData.name} 
-                width={112}
-                height={112}
-                className="rounded-full object-cover border-2 border-primary/50 shadow-lg"
-              />
+              {profileData.avatar_url ? (
+                <Image 
+                  src={profileData.avatar_url} 
+                  alt={profileData.name} 
+                  width={112}
+                  height={112}
+                  priority={true}
+                  loading="eager"
+                  className="rounded-full object-cover border-2 border-primary/50 shadow-lg min-h-[112px] min-w-[112px]"
+                />
+              ) : (
+                <div className="w-[112px] h-[112px] rounded-full border-2 border-primary/50 shadow-lg bg-card/60 flex items-center justify-center text-muted-foreground shrink-0">
+                  <UserIcon className="w-12 h-12" />
+                </div>
+              )}
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono">
                   <ShieldCheck className="h-3 w-3" /> VERIFIED DEVELOPER
@@ -221,10 +200,28 @@ export default function PublicPortfolioPage() {
           </Card>
         )}
 
+        {/* 3D Skill Galaxy */}
+        <div className="w-full">
+          <h2 className="text-lg font-bold text-foreground font-mono uppercase tracking-wider pl-1 mb-4">Gamified Progression</h2>
+          <SkillGalaxy3D unlockedSkills={profileData.unlocked_skills} skillPoints={profileData.skill_points} />
+        </div>
+
         {/* GitHub Contribution Graph — shown only if github_url is set */}
         {profile.github_url && (
           <div data-github-graph>
             <GitHubGraph github_url={profile.github_url} name={profileData.name} />
+          </div>
+        )}
+
+        {/* Verified Achievements (Gamified Badges) */}
+        {profileData.badges && profileData.badges.length > 0 && (
+          <div className="w-full space-y-4">
+            <h2 className="text-lg font-bold text-foreground font-mono uppercase tracking-wider pl-1">Verified Achievements</h2>
+            <Card className="glass border-border/40 p-6 flex flex-wrap gap-4 sm:gap-6 justify-center sm:justify-start">
+              {profileData.badges.map((userBadge) => (
+                <BadgeTooltip key={userBadge.id} userBadge={userBadge} />
+              ))}
+            </Card>
           </div>
         )}
 

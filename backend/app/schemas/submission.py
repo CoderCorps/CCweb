@@ -1,11 +1,11 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, AnyHttpUrl
 from typing import Optional
 import datetime
 from app.schemas.user import UserResponse
 
 class SubmissionBase(BaseModel):
-    demo_url: Optional[str] = None
-    repo_url: Optional[str] = None
+    demo_url: Optional[AnyHttpUrl] = None
+    repo_url: Optional[AnyHttpUrl] = None
 
 class SubmissionCreate(SubmissionBase):
     project_id: int

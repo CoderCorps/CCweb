@@ -73,6 +73,13 @@ interface SummaryData {
     role: string;
     created_at?: string;
   }>;
+  badges?: Array<{
+    id: number;
+    name: string;
+    description: string;
+    image_url: string;
+    earned_at: string;
+  }>;
 }
 
 export default function DashboardPage() {
@@ -545,6 +552,7 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
+          </div>
         )}
 
         {/* STUDENT DASHBOARD PANELS */}
@@ -626,6 +634,33 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-6 font-mono">NO CERTIFICATES ISSUED YET.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* My Achievements / Badges */}
+            <Card className="lg:col-span-12 glass border-border/40">
+              <CardHeader>
+                <CardTitle className="text-lg text-foreground">My Achievements</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
+                  Badges earned for your consistency, bug smashing, and architectural mastery.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {data.badges && data.badges.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    {data.badges.map((badge) => (
+                      <div key={badge.id} className="p-4 rounded-xl bg-card/40 border border-border/60 flex flex-col items-center text-center gap-2 hover:bg-card/60 transition-colors">
+                        <img src={badge.image_url} alt={badge.name} className="w-16 h-16 drop-shadow-lg" />
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-foreground leading-tight">{badge.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{badge.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6 font-mono">NO BADGES EARNED YET. KEEP BUILDING!</p>
                 )}
               </CardContent>
             </Card>

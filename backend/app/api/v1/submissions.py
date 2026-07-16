@@ -41,8 +41,8 @@ def create_submission(
     db_submission = Submission(
         project_id=submission_in.project_id,
         user_id=current_user.id,
-        demo_url=submission_in.demo_url,
-        repo_url=submission_in.repo_url,
+        demo_url=str(submission_in.demo_url) if submission_in.demo_url else None,
+        repo_url=str(submission_in.repo_url) if submission_in.repo_url else None,
         status="submitted"
     )
     db.add(db_submission)

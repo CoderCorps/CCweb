@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Icons } from "@/components/ui/icons";
+import { Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 export default function MessagesPage() {
@@ -51,7 +51,7 @@ export default function MessagesPage() {
     }
   };
 
-  const fetchMessages = async (id: int) => {
+  const fetchMessages = async (id: number) => {
     setLoadingMessages(true);
     try {
       const res = await api.get(`/messages/thread/${id}`);
@@ -213,7 +213,7 @@ export default function MessagesPage() {
                 className="flex-1 bg-background/50 border-none"
               />
               <Button type="submit" size="icon" disabled={!newMessage.trim()}>
-                <Icons.send className="w-4 h-4" />
+                <Send className="w-4 h-4" />
               </Button>
             </form>
           </>

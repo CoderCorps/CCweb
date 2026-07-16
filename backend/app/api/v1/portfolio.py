@@ -6,6 +6,12 @@ from typing import List
 from app.deps import get_db, get_current_user
 from app.models.user import User, Profile
 from app.schemas.user import UserResponse, PortfolioUpdate
+from app.schemas.badge import UserBadge
+from app.schemas.submission import CertificateResponse
+
+class PortfolioResponse(UserResponse):
+    badges: List[UserBadge] = []
+    certificates: List[CertificateResponse] = []
 
 router = APIRouter()
 
@@ -15,7 +21,7 @@ def list_public_portfolios(db: Session = Depends(get_db)):
     return [u.name.lower().replace(" ", "-") for u in users]
 
 
-@router.get("/{username}", response_model=UserResponse)
+@router.get("/{username}", response_model=PortfolioResponse)
 def get_public_portfolio(username: str, db: Session = Depends(get_db)):
     # Match user where slugified name matches username. E.g. "atul-sharma" matches "Atul Sharma"
     # Replace spaces with hyphens, lowercase it

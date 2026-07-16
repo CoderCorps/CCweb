@@ -98,8 +98,8 @@ export function CyberScene() {
       blending: THREE.AdditiveBlending,
     });
 
-    let lineGeometry = new THREE.BufferGeometry();
-    let linePositions = new Float32Array(particleCount * 6); // Mock line pairs
+    const lineGeometry = new THREE.BufferGeometry();
+    const linePositions = new Float32Array(particleCount * 6); // Mock line pairs
     lineGeometry.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
     const connections = new THREE.LineSegments(lineGeometry, lineMaterial);
     scene.add(connections);

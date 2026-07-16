@@ -5,7 +5,6 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Icons } from "@/components/ui/icons";
 import { formatDistanceToNow } from "date-fns";
 import { MessageSquare, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 
