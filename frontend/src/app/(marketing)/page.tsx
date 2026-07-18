@@ -307,6 +307,7 @@ export default function HomePage() {
                   width={200}
                   height={200}
                   className="relative z-10 drop-shadow-2xl"
+                  style={{ height: "auto" }}
                   unoptimized
                   priority
                 />
@@ -601,7 +602,7 @@ export default function HomePage() {
       <section className="relative py-20 px-4 overflow-hidden border-t border-border/20">
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-primary/5 to-cyan-600/10" />
         <div className="relative z-10 max-w-3xl mx-auto text-center flex flex-col items-center gap-6">
-          <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={80} height={80} className="drop-shadow-xl" unoptimized priority />
+          <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={80} height={80} className="drop-shadow-xl" style={{ height: "auto" }} unoptimized priority />
           <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
             Ready to commit your first <span className="text-primary">real</span> line of code?
           </h2>

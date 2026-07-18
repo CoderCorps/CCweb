@@ -113,7 +113,7 @@ export default function PlatformLayout({
           {/* Brand header */}
           <div className="h-16 flex items-center px-6 border-b border-border">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-              <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={32} height={32} className="object-contain" unoptimized priority />
+              <Image src={getAssetUrl("/assets/logo.gif")} alt="CoderCorps" width={32} height={32} className="object-contain" style={{ height: "auto" }} unoptimized priority />
               <span className="font-bold text-lg text-foreground">Coder<span className="text-primary">Corps</span></span>
             </Link>
           </div>

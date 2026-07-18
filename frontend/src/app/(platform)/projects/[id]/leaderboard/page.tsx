@@ -192,7 +192,7 @@ export default function LeaderboardPage() {
     setSavingReviewId(submissionId);
 
     try {
-      const res = await api.patch(`/submissions/${submissionId}/review`, {
+      const res = await api.patch(`/task-submissions/${submissionId}/review`, {
         mentor_score: Number(score),
         mentor_feedback: feedback.trim()
       });
