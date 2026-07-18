@@ -247,7 +247,7 @@ def get_task_submissions(
         for s in submissions
     ]
 
-@router.patch("/submissions/{id}/review", response_model=TaskSubmissionResponse)
+@router.patch("/task-submissions/{id}/review", response_model=TaskSubmissionResponse)
 def review_submission(
     id: int, 
     payload: TaskReviewPayload, 

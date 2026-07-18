@@ -68,6 +68,7 @@ class TaskSubmission(Base):
     mentor_score: Mapped[int] = mapped_column(Integer, nullable=True) # 0-100, nullable until reviewed
     mentor_feedback: Mapped[str] = mapped_column(Text, nullable=True)
     reviewed_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+    submission_source: Mapped[str] = mapped_column(String(50), default="platform", nullable=False) # 'platform' | 'google_form'
 
     # Relationships
     task: Mapped["Task"] = relationship("Task", back_populates="task_submissions")
