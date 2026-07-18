@@ -302,7 +302,7 @@ from app.schemas.interaction import (
     PeerReviewCreate, PeerReviewResponse
 )
 
-@router.get("/{id}/comments", response_model=List[TaskCommentResponse])
+@router.get("/tasks/{id}/comments", response_model=List[TaskCommentResponse])
 def get_task_comments(
     id: int,
     db: Session = Depends(get_db),
@@ -315,7 +315,7 @@ def get_task_comments(
     comments = db.query(TaskComment).filter(TaskComment.task_id == id).order_by(TaskComment.created_at.asc()).all()
     return comments
 
-@router.post("/{id}/comments", response_model=TaskCommentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/tasks/{id}/comments", response_model=TaskCommentResponse, status_code=status.HTTP_201_CREATED)
 def create_task_comment(
     id: int,
     payload: TaskCommentCreate,
@@ -337,7 +337,7 @@ def create_task_comment(
     db.refresh(new_comment)
     return new_comment
 
-@router.post("/{id}/stuck", response_model=StuckFlagResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/tasks/{id}/stuck", response_model=StuckFlagResponse, status_code=status.HTTP_201_CREATED)
 def create_stuck_flag(
     id: int,
     payload: StuckFlagCreate,
@@ -370,7 +370,7 @@ def create_stuck_flag(
     db.refresh(new_flag)
     return new_flag
 
-@router.post("/{id}/peer-review", response_model=PeerReviewResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/tasks/{id}/peer-review", response_model=PeerReviewResponse, status_code=status.HTTP_201_CREATED)
 def create_peer_review_request(
     id: int,
     payload: PeerReviewCreate,

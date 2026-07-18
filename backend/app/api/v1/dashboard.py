@@ -6,7 +6,7 @@ from typing import Dict, Any, List
 from app.deps import get_db, get_current_user
 from app.models.user import User, Profile
 from app.models.project import Project, ProjectMember
-from app.models.sprint import Sprint, Task
+from app.models.sprint import Sprint, Task, TaskAssignment
 from app.models.submission import Submission, Certificate
 from app.models.badge import UserBadge
 
@@ -139,9 +139,9 @@ def get_dashboard_summary(
         project_ids = [m.project_id for m in memberships]
         
         # 2. Tasks completed vs total assigned to the student
-        total_tasks = db.query(func.count(Task.id)).filter(Task.assigned_to_id == current_user.id).scalar() or 0
-        completed_tasks = db.query(func.count(Task.id)).filter(
-            Task.assigned_to_id == current_user.id,
+        total_tasks = db.query(func.count(Task.id)).join(Task.assignments).filter(TaskAssignment.user_id == current_user.id).scalar() or 0
+        completed_tasks = db.query(func.count(Task.id)).join(Task.assignments).filter(
+            TaskAssignment.user_id == current_user.id,
             Task.status == "done"
         ).scalar() or 0
 
@@ -158,8 +158,8 @@ def get_dashboard_summary(
         ]
 
         # 4. Active tasks list
-        active_tasks_db = db.query(Task).filter(
-            Task.assigned_to_id == current_user.id,
+        active_tasks_db = db.query(Task).join(Task.assignments).filter(
+            TaskAssignment.user_id == current_user.id,
             Task.status != "done"
         ).all()
         active_tasks_list = [
