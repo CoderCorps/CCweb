@@ -219,7 +219,7 @@ export default function ProjectRoomPage() {
                     {/* Time Stamp & Reactions */}
                     <div className={`flex items-center gap-2 px-1 ${isSelf ? "justify-end flex-row-reverse" : "justify-start"}`}>
                       <span className="text-[9px] text-muted-foreground font-mono block">
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.created_at.endsWith('Z') ? msg.created_at : msg.created_at + 'Z').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                       <ReactionBar targetType="message" targetId={msg.id} />
                     </div>

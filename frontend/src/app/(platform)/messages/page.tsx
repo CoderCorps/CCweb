@@ -195,7 +195,7 @@ export default function MessagesPage() {
                       >
                         {msg.content}
                         <div className={`text-[10px] mt-1 ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                          {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(msg.created_at.endsWith('Z') ? msg.created_at : msg.created_at + 'Z'), { addSuffix: true })}
                         </div>
                       </div>
                     </div>
