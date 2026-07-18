@@ -39,6 +39,8 @@ interface Task {
   status: "todo" | "in_progress" | "review" | "done";
   github_pr_url: string | null;
   assignee?: User | null;
+  ci_status?: string | null;
+  test_coverage?: number | null;
 }
 
 interface Sprint {
@@ -350,6 +352,14 @@ export default function ProjectWorkspacePage() {
             <Trophy className="h-4 w-4 text-yellow-400" /> Leaderboard
           </Button>
 
+          {/* Pair Programming */}
+          <Button 
+            className="font-semibold gap-1.5 shadow-lg bg-indigo-600 hover:bg-indigo-500 text-white"
+            onClick={() => router.push(`/projects/${id}/pair`)}
+          >
+            <Terminal className="h-4 w-4" /> Live Pair Room
+          </Button>
+
           {/* Manage Board (Mentor/Admin Only) */}
           {isMentor && (
             <Button 
@@ -628,9 +638,21 @@ export default function ProjectWorkspacePage() {
                             <span className="text-[9px] text-muted-foreground font-mono">
                               {task.assignee?.name || "Unassigned"}
                             </span>
-                            {task.github_pr_url && (
-                              <GitPullRequest className="h-3.5 w-3.5 text-indigo-400" />
-                            )}
+                            <div className="flex items-center gap-1.5">
+                              {task.ci_status && (
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded-sm font-mono ${task.ci_status === 'success' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+                                  CI: {task.ci_status.toUpperCase()}
+                                </span>
+                              )}
+                              {task.test_coverage && (
+                                <span className="text-[8px] px-1.5 py-0.5 rounded-sm font-mono bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                                  COV: {task.test_coverage}%
+                                </span>
+                              )}
+                              {task.github_pr_url && (
+                                <GitPullRequest className="h-3.5 w-3.5 text-indigo-400" />
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))

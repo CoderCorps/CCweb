@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, DateTime, ForeignKey, Text, func
+from sqlalchemy import String, Integer, DateTime, ForeignKey, Text, func, JSON, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.session import Base
 import datetime
@@ -31,6 +31,8 @@ class Task(Base):
     task_mode: Mapped[str] = mapped_column(String(50), default="individual", nullable=False) # 'individual' | 'competitive'
     difficulty: Mapped[str] = mapped_column(String(50), nullable=True) # 'easy' | 'medium' | 'hard'
     due_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+    ci_status: Mapped[str] = mapped_column(String(50), nullable=True) # 'pending', 'success', 'failed'
+    test_coverage: Mapped[float] = mapped_column(Float, nullable=True)
 
     # Relationships
     sprint: Mapped["Sprint"] = relationship("Sprint", back_populates="tasks")
@@ -69,6 +71,10 @@ class TaskSubmission(Base):
     mentor_feedback: Mapped[str] = mapped_column(Text, nullable=True)
     reviewed_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
     submission_source: Mapped[str] = mapped_column(String(50), default="platform", nullable=False) # 'platform' | 'google_form'
+    
+    # AI Pre-Review fields
+    ai_score: Mapped[int] = mapped_column(Integer, nullable=True)
+    ai_feedback_json: Mapped[dict] = mapped_column(JSON, nullable=True)
 
     # Relationships
     task: Mapped["Task"] = relationship("Task", back_populates="task_submissions")

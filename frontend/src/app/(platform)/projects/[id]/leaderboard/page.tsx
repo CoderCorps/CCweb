@@ -59,6 +59,8 @@ interface Submission {
   mentor_score: number | null;
   mentor_feedback: string | null;
   reviewed_at: string | null;
+  ai_score?: number | null;
+  ai_feedback_json?: any;
 }
 
 export default function LeaderboardPage() {
@@ -207,6 +209,26 @@ export default function LeaderboardPage() {
       alert("Error saving review");
     } finally {
       setSavingReviewId(null);
+    }
+  };
+
+  // Trigger AI Pre-Review
+  const [triggeringAi, setTriggeringAi] = useState<number | null>(null);
+  const handleTriggerAiReview = async (submissionId: number) => {
+    setTriggeringAi(submissionId);
+    try {
+      const res = await api.post(`/task-submissions/${submissionId}/ai-review`, {});
+      if (res.ok) {
+        alert("AI Pre-Review completed!");
+        if (selectedTask) fetchTaskSubmissions(selectedTask.id);
+        fetchLeaderboardAndTasks();
+      } else {
+        alert("Failed to run AI Pre-Review");
+      }
+    } catch (err) {
+      alert("Error triggering AI Pre-Review");
+    } finally {
+      setTriggeringAi(null);
     }
   };
 
@@ -529,6 +551,39 @@ export default function LeaderboardPage() {
                                 <div className="p-3 bg-black/20 rounded-xl border border-border/20 text-[11px] text-slate-200 leading-relaxed font-sans whitespace-pre-wrap">
                                   <strong>Approach Notes:</strong><br />
                                   {sub.approach_notes || "No approach notes written."}
+                                </div>
+
+                                {/* AI Pre-Review Section */}
+                                <div className="p-3 bg-indigo-950/30 rounded-xl border border-indigo-500/20 text-[11px] text-slate-200">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <strong className="text-indigo-400 font-mono">🤖 AI PRE-REVIEW</strong>
+                                    {sub.ai_score !== null && sub.ai_score !== undefined ? (
+                                      <span className="font-mono text-indigo-300 bg-indigo-900/50 px-2 py-0.5 rounded border border-indigo-500/30">
+                                        Score: {sub.ai_score}/100
+                                      </span>
+                                    ) : (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="h-6 text-[9px] font-mono"
+                                        onClick={() => handleTriggerAiReview(sub.id)}
+                                        disabled={triggeringAi === sub.id}
+                                      >
+                                        {triggeringAi === sub.id ? "Analyzing..." : "Trigger AI Review"}
+                                      </Button>
+                                    )}
+                                  </div>
+                                  {sub.ai_feedback_json && (
+                                    <div className="space-y-1.5 opacity-90">
+                                      <p><strong>Syntax:</strong> {sub.ai_feedback_json.syntax_score}/100</p>
+                                      <p><strong>Best Practices:</strong> {sub.ai_feedback_json.best_practices}</p>
+                                      <p><strong>Security:</strong> {sub.ai_feedback_json.security}</p>
+                                      <p><strong>Summary:</strong> {sub.ai_feedback_json.overall_summary}</p>
+                                    </div>
+                                  )}
+                                  {!sub.ai_feedback_json && sub.ai_score == null && (
+                                    <p className="opacity-60 text-[10px] italic">No AI review performed yet.</p>
+                                  )}
                                 </div>
 
                                 {/* Grade controls */}

@@ -99,6 +99,15 @@ export default function PlatformLayout({
     });
   }
 
+  // Recruiter Portal access
+  if (user.role === "recruiter" || user.role === "admin") {
+    navLinks.push({
+      name: "Recruiter Portal",
+      href: "/recruiters",
+      icon: <Users className="h-4 w-4" />
+    });
+  }
+
   const handleLogout = async () => {
     await logout();
     router.push("/");

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1 import auth, programs, projects, submissions, portfolio, dashboard, contact, mentors, activity, certificates, tasks, daily, rooms, notifications, badges
-from app.api.v1 import messages, task_comments, announcements, stuck_flags, peer_reviews, reactions, resources
+from app.api.v1 import messages, task_comments, announcements, stuck_flags, peer_reviews, reactions, resources, quizzes, webhooks, recruiters
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -42,6 +42,9 @@ app.include_router(announcements.router, prefix=f"{settings.API_V1_STR}/announce
 app.include_router(stuck_flags.router, prefix=f"{settings.API_V1_STR}/stuck-flags", tags=["stuck-flags"])
 app.include_router(peer_reviews.router, prefix=f"{settings.API_V1_STR}/peer-review", tags=["peer-reviews"])
 app.include_router(resources.router, prefix=f"{settings.API_V1_STR}/resources", tags=["resources"])
+app.include_router(quizzes.router, prefix=f"{settings.API_V1_STR}/quizzes", tags=["quizzes"])
+app.include_router(webhooks.router, prefix=f"{settings.API_V1_STR}/webhooks", tags=["webhooks"])
+app.include_router(recruiters.router, prefix=f"{settings.API_V1_STR}/recruiters", tags=["recruiters"])
 
 @app.get("/")
 def read_root():

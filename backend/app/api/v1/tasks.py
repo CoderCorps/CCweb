@@ -36,7 +36,58 @@ class TaskReviewPayload(BaseModel):
     mentor_score: int
     mentor_feedback: Optional[str] = None
 
+class GoogleFormSubmissionPayload(BaseModel):
+    task_id: int
+    email: str
+    repo_url: Optional[str] = None
+    demo_url: Optional[str] = None
+    approach_notes: Optional[str] = None
+    secret_key: str # Simple token-based authentication for the script
+
 # --- Endpoints ---
+
+@router.post("/external/google-form-submission", status_code=status.HTTP_201_CREATED)
+def external_google_form_submission(
+    payload: GoogleFormSubmissionPayload,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint for Google Apps Script to push submissions.
+    Matches student by email and task by ID.
+    """
+    # Simple security check (In production, use a more robust mechanism)
+    if payload.secret_key != "CODERCORPS_SECRET_INTEGRATION_KEY":
+        raise HTTPException(status_code=403, detail="Unauthorized external source")
+        
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User with email {payload.email} not found")
+        
+    task = db.query(Task).filter(Task.id == payload.task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+        
+    # Check if student is assigned
+    assign = db.query(TaskAssignment).filter(TaskAssignment.task_id == task.id, TaskAssignment.user_id == user.id).first()
+    if not assign:
+        raise HTTPException(status_code=403, detail="User is not assigned to this task")
+        
+    now = datetime.datetime.now(datetime.timezone.utc)
+    sub = TaskSubmission(
+        task_id=task.id,
+        user_id=user.id,
+        repo_url=payload.repo_url,
+        demo_url=payload.demo_url,
+        approach_notes=payload.approach_notes,
+        submitted_at=now,
+        submission_source="google_form"
+    )
+    db.add(sub)
+    
+    # Auto-update status to 'submitted'
+    assign.status = "submitted"
+    db.commit()
+    return {"status": "success", "submission_id": sub.id}
 
 @router.post("/tasks/{id}/assign")
 def assign_task(
@@ -196,7 +247,9 @@ def get_task_submissions(
                 "submitted_at": s.submitted_at,
                 "mentor_score": s.mentor_score,
                 "mentor_feedback": s.mentor_feedback,
-                "reviewed_at": s.reviewed_at
+                "reviewed_at": s.reviewed_at,
+                "ai_score": s.ai_score,
+                "ai_feedback_json": s.ai_feedback_json
             }
             for s in submissions
         ]
@@ -224,7 +277,9 @@ def get_task_submissions(
                 "submitted_at": s.submitted_at,
                 "mentor_score": s.mentor_score,
                 "mentor_feedback": s.mentor_feedback,
-                "reviewed_at": s.reviewed_at
+                "reviewed_at": s.reviewed_at,
+                "ai_score": s.ai_score,
+                "ai_feedback_json": s.ai_feedback_json
             }
             for s in student_subs
         ]
@@ -242,7 +297,9 @@ def get_task_submissions(
             "submitted_at": s.submitted_at,
             "mentor_score": s.mentor_score if s.user_id == current_user.id else None,
             "mentor_feedback": s.mentor_feedback if s.user_id == current_user.id else None,
-            "reviewed_at": s.reviewed_at
+            "reviewed_at": s.reviewed_at,
+            "ai_score": s.ai_score,
+            "ai_feedback_json": s.ai_feedback_json
         }
         for s in submissions
     ]
@@ -290,6 +347,35 @@ def review_submission(
     # Check for badges
     evaluate_blocker_crusher(db, sub.user_id)
     evaluate_system_architect(db, sub.user_id)
+    
+    return sub
+    
+@router.post("/task-submissions/{id}/ai-review", response_model=TaskSubmissionResponse)
+def trigger_ai_review(
+    id: int, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    sub = db.query(TaskSubmission).filter(TaskSubmission.id == id).first()
+    if not sub:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found")
+        
+    project = sub.task.sprint.project
+    if current_user.role != "admin" and (current_user.role != "mentor" or project.mentor_id != current_user.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: You do not manage this project")
+        
+    # Mock LLM API Call
+    mock_llm_response = {
+        "syntax_score": 85,
+        "best_practices": "Code is clean but missing some TypeScript interfaces.",
+        "security": "No apparent vulnerabilities.",
+        "overall_summary": "Solid implementation, ready for mentor review."
+    }
+    
+    sub.ai_score = 85
+    sub.ai_feedback_json = mock_llm_response
+    db.commit()
+    db.refresh(sub)
     
     return sub
     

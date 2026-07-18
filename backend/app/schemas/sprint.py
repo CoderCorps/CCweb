@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Dict
 import datetime
 
 class TaskAssignmentResponse(BaseModel):
@@ -23,6 +23,8 @@ class TaskSubmissionResponse(BaseModel):
     mentor_score: Optional[int] = None
     mentor_feedback: Optional[str] = None
     reviewed_at: Optional[datetime.datetime] = None
+    ai_score: Optional[int] = None
+    ai_feedback_json: Optional[Dict] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -34,6 +36,8 @@ class TaskBase(BaseModel):
     task_mode: str = "individual" # 'individual' | 'competitive'
     difficulty: Optional[str] = None # 'easy' | 'medium' | 'hard'
     due_date: Optional[datetime.datetime] = None
+    ci_status: Optional[str] = None
+    test_coverage: Optional[float] = None
 
 class TaskCreate(TaskBase):
     pass

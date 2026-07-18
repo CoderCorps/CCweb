@@ -48,12 +48,14 @@ The platform allows mentors to guide students through real-world software develo
 - **Leaderboards**: Track top performers within a project based on scores and task completion.
 - **Badges**: Earned for specific achievements (e.g., "Blocker Crusher" for resolving stuck flags, "System Architect" for high-scoring technical tasks).
 - **Skill Points**: Accumulated to unlock new "skills" on the user profile.
+- **Internship Gatekeeper Quizzes**: New users can take automated technical quizzes to qualify for internship programs. Pass marks automatically grant access to advanced project tracks.
 
 ### 5. Collaboration Tools
 - **Project Rooms**: Dedicated spaces for project members to communicate.
 - **Direct Messaging**: One-on-one communication between users.
 - **Announcements**: Mentors can broadcast important updates to all project members.
 - **Resource Sharing**: A centralized place for project-related documentation and links.
+- **Google Form Integration**: Support for assignment submissions via external Google Forms. Perfect for data-heavy submissions or non-GitHub deliverables. Uses a secure API bridge for automated intake.
 
 ### 6. Personal Branding
 - **Portfolio**: Automatically generated based on completed projects and tasks.
