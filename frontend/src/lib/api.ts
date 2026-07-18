@@ -97,6 +97,7 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
 
   try {
     const response = await fetch(url, {
+      cache: "no-store",
       ...options,
       headers,
       credentials: "include",
@@ -107,6 +108,7 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
       if (newToken) {
         headers.set("Authorization", `Bearer ${newToken}`);
         return fetch(url, {
+          cache: "no-store",
           ...options,
           headers,
           credentials: "include",

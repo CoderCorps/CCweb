@@ -125,11 +125,14 @@ export default function ProjectWorkspacePage() {
       if (sprintsRes.ok) {
         const sprintsData = await sprintsRes.json();
         setSprints(sprintsData);
-        // Set the latest sprint as the active sprint
-        if (sprintsData.length > 0) {
-          const latest = sprintsData[sprintsData.length - 1];
-          setActiveSprint(latest);
-        }
+        // Set the active sprint, preserving the current selection if it exists
+        setActiveSprint((prev) => {
+          if (prev) {
+            const updated = sprintsData.find((s: any) => s.id === prev.id);
+            return updated || sprintsData[sprintsData.length - 1];
+          }
+          return sprintsData.length > 0 ? sprintsData[sprintsData.length - 1] : null;
+        });
       }
     } catch (err) {
       setError("Failed to load workspace.");
