@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CoderCorps — Platform Flow Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #060912;
+      --surface: #0d1117;
+      --surface2: #161b24;
+      --surface3: #1c2333;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --text: #e6edf3;
+      --muted: #7d8590;
+      --indigo: #818cf8;
+      --indigo-dim: rgba(129,140,248,0.12);
+      --indigo-border: rgba(129,140,248,0.25);
+      --cyan: #22d3ee;
+      --cyan-dim: rgba(34,211,238,0.1);
+      --emerald: #34d399;
+      --emerald-dim: rgba(52,211,153,0.1);
+      --violet: #a78bfa;
+      --violet-dim: rgba(167,139,250,0.1);
+      --amber: #fbbf24;
+      --amber-dim: rgba(251,191,36,0.1);
+      --rose: #fb7185;
+      --rose-dim: rgba(251,113,133,0.1);
+      --admin-grad: linear-gradient(135deg, #f43f5e, #ec4899);
+      --mentor-grad: linear-gradient(135deg, #818cf8, #6366f1);
+      --student-grad: linear-gradient(135deg, #22d3ee, #0ea5e9);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ========= Background ========= */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(99,102,241,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(34,211,238,0.05) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(6,9,18,1) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .wrap { position: relative; z-index: 1; }
+
+    /* ========= Hero / Nav ========= */
+    .hero {
+      text-align: center;
+      padding: 80px 24px 60px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--indigo-dim);
+      border: 1px solid var(--indigo-border);
+      color: var(--indigo);
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .hero-badge::before { content: '◆'; font-size: 8px; }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #e6edf3 0%, #818cf8 50%, #22d3ee 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+    }
+    .hero p {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 620px;
+      margin: 0 auto 40px;
+      line-height: 1.75;
+    }
+
+    /* ========= Role Nav Tabs ========= */
+    .nav-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 60px;
+      padding: 0 24px;
+    }
+    .nav-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 12px;
+      border: 1px solid var(--border2);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .nav-tab:hover { border-color: var(--border2); color: var(--text); transform: translateY(-2px); }
+    .nav-tab.admin  { border-color: rgba(244,63,94,0.3); background: rgba(244,63,94,0.07); color: #fb7185; }
+    .nav-tab.mentor { border-color: rgba(129,140,248,0.3); background: rgba(129,140,248,0.07); color: #818cf8; }
+    .nav-tab.student { border-color: rgba(34,211,238,0.3); background: rgba(34,211,238,0.07); color: #22d3ee; }
+    .nav-tab .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .admin .dot { background: #fb7185; box-shadow: 0 0 6px #fb7185; }
+    .mentor .dot { background: #818cf8; box-shadow: 0 0 6px #818cf8; }
+    .student .dot { background: #22d3ee; box-shadow: 0 0 6px #22d3ee; }
+
+    /* ========= Main Layout ========= */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px 120px; }
+
+    /* ========= Section Header ========= */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 36px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .icon-admin  { background: rgba(244,63,94,0.12); border: 1px solid rgba(244,63,94,0.25); }
+    .icon-mentor { background: rgba(129,140,248,0.12); border: 1px solid rgba(129,140,248,0.25); }
+    .icon-student{ background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.25); }
+    .section-header h2 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .section-header p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+    .role-tag {
+      margin-left: auto;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 4px 12px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .tag-admin   { background: rgba(244,63,94,0.12);  border: 1px solid rgba(244,63,94,0.3);  color: #fb7185; }
+    .tag-mentor  { background: rgba(129,140,248,0.12); border: 1px solid rgba(129,140,248,0.3); color: #818cf8; }
+    .tag-student { background: rgba(34,211,238,0.12);  border: 1px solid rgba(34,211,238,0.3);  color: #22d3ee; }
+
+    /* ========= Phase Flow ========= */
+    .phase-flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0;
+      margin-bottom: 48px;
+      position: relative;
+    }
+    .phase-card {
+      position: relative;
+      padding: 24px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: border-color 0.2s;
+    }
+    .phase-card:first-child { border-radius: 16px 0 0 16px; }
+    .phase-card:last-child  { border-radius: 0 16px 16px 0; }
+    .phase-card:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      background: var(--surface3);
+      border: 1px solid var(--border2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      z-index: 2;
+      line-height: 28px;
+      text-align: center;
+    }
+    .phase-card:hover { border-color: var(--border2); }
+    .phase-num {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .phase-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .phase-items { list-style: none; }
+    .phase-items li {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 3px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .phase-items li::before { content: '›'; color: var(--indigo); font-weight: 700; }
+
+    /* ========= Capability Cards ========= */
+    .capability-grid {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 60px;
+    }
+    .cap-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .cap-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+    .cap-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .cap-num {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0;
+    }
+    .cap-num.mentor-num { background: var(--indigo-dim); color: var(--indigo); border: 1px solid var(--indigo-border); }
+    .cap-num.admin-num  { background: var(--rose-dim);   color: var(--rose);   border: 1px solid rgba(251,113,133,0.25); }
+    .cap-title { font-size: 15px; font-weight: 700; flex: 1; }
+    .cap-body { padding: 20px 24px; display: grid; gap: 16px; }
+
+    /* Endpoints block */
+    .endpoints-block { }
+    .endpoints-label {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .endpoint-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+    .method {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      letter-spacing: 0.05em;
+    }
+    .method.GET    { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+    .method.POST   { background: rgba(129,140,248,0.15); color: #818cf8; border: 1px solid rgba(129,140,248,0.3); }
+    .method.PATCH  { background: rgba(251,191,36,0.15);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+    .method.DELETE { background: rgba(251,113,133,0.15); color: #fb7185; border: 1px solid rgba(251,113,133,0.3); }
+    .method.WS     { background: rgba(167,139,250,0.15); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
+    .ep-path { color: var(--muted); font-size: 12px; }
+    .ep-path span { color: var(--indigo); }
+
+    /* Logic / Description block */
+    .desc-block {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .logic-list {
+      list-style: none;
+      margin-top: 8px;
+    }
+    .logic-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .logic-list li .idx {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--indigo-dim);
+      border: 1px solid var(--indigo-border);
+      color: var(--indigo);
+      font-size: 10px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 1px;
+    }
+    .frontend-view {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      background: rgba(34,211,238,0.05);
+      border: 1px solid rgba(34,211,238,0.15);
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--cyan);
+    }
+    .frontend-view::before { content: '↗'; font-size: 13px; }
+
+    /* ========= Example Flows ========= */
+    .scenario-section { margin-bottom: 60px; }
+    .scenario-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 24px;
+      padding: 10px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .scenario-title::before { content: '▶'; font-size: 10px; color: var(--indigo); }
+
+    .flow-steps { display: flex; flex-direction: column; gap: 0; }
+    .flow-step {
+      display: flex;
+      gap: 0;
+    }
+    .step-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 40px;
+      flex-shrink: 0;
+    }
+    .step-circle {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .step-line {
+      width: 2px;
+      flex: 1;
+      min-height: 20px;
+      background: var(--border);
+    }
+    .flow-step:last-child .step-line { display: none; }
+
+    .step-circle.admin-c   { background: rgba(244,63,94,0.15);  border: 1px solid rgba(244,63,94,0.3);  color: #fb7185; }
+    .step-circle.mentor-c  { background: rgba(129,140,248,0.15); border: 1px solid rgba(129,140,248,0.3); color: #818cf8; }
+    .step-circle.student-c { background: rgba(34,211,238,0.15);  border: 1px solid rgba(34,211,238,0.3);  color: #22d3ee; }
+
+    .step-content {
+      flex: 1;
+      padding: 4px 0 24px 18px;
+    }
+    .step-label {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .step-detail {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: grid;
+      gap: 10px;
+    }
+    .step-api {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .step-body-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+    .step-body-block .key   { color: #818cf8; }
+    .step-body-block .str   { color: #34d399; }
+    .step-body-block .num   { color: #fbbf24; }
+    .step-result {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--emerald);
+      font-weight: 600;
+    }
+    .step-result::before { content: '✓'; }
+
+    /* ========= Section Divider ========= */
+    .section-block {
+      margin-bottom: 80px;
+      scroll-margin-top: 80px;
+    }
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border2), transparent);
+      margin: 60px 0;
+    }
+
+    /* ========= Footer ========= */
+    footer {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    footer span { color: var(--indigo); }
+
+    /* ========= Responsive ========= */
+    @media (max-width: 640px) {
+      .phase-flow { grid-template-columns: 1fr; }
+      .phase-card:first-child { border-radius: 16px 16px 0 0; }
+      .phase-card:last-child  { border-radius: 0 0 16px 16px; }
+      .phase-card:not(:last-child)::after { display: none; }
+      .section-header { flex-wrap: wrap; }
+      .role-tag { margin-left: 0; }
+    }
+
+    /* ========= Sticky TOC ========= */
+    .toc {
+      position: sticky;
+      top: 20px;
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.5s ease forwards; }
+
+    /* Tags */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .tag-sys { background: var(--violet-dim); border: 1px solid rgba(167,139,250,0.3); color: var(--violet); }
+    .tag-auto { background: var(--emerald-dim); border: 1px solid rgba(52,211,153,0.3); color: var(--emerald); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge">CoderCorps Platform Documentation</div>
+    <h1>Complete Flow &amp;<br/>Role Architecture</h1>
+    <p>Comprehensive documentation of all user roles, platform capabilities, REST API endpoints, and end-to-end example flows for Admins, Mentors, and Students.</p>
+  </div>
+
+  <!-- NAV TABS -->
+  <div class="nav-tabs">
+    <a class="nav-tab mentor" href="#mentor-capabilities">
+      <div class="dot"></div> Mentor Capabilities
+    </a>
+    <a class="nav-tab admin" href="#admin-flow">
+      <div class="dot"></div> Admin Example Flow
+    </a>
+    <a class="nav-tab mentor" href="#mentor-flow">
+      <div class="dot"></div> Mentor Example Flow
+    </a>
+    <a class="nav-tab student" href="#student-flow">
+      <div class="dot"></div> Student Example Flow
+    </a>
+  </div>
+
+  <div class="container">
+
+    <!-- ===================== PART 1: MENTOR CAPABILITIES ===================== -->
+    <div class="section-block" id="mentor-capabilities">
+      <div class="section-header">
+        <div class="section-icon icon-mentor">🧑‍💻</div>
+        <div>
+          <h2>Part 1 — Mentor Capabilities</h2>
+          <p>The complete technical lead workflow: from project initiation to certificate minting.</p>
+        </div>
+        <div class="role-tag tag-mentor">MENTOR ROLE</div>
+      </div>
+
+      <!-- Phase Flow Bar -->
+      <div class="phase-flow">
+        <div class="phase-card">
+          <div class="phase-num">PHASE 01</div>
+          <div class="phase-title" style="color: #818cf8;">Initiation &amp; Planning</div>
+          <ul class="phase-items">
+            <li>Create Project</li>
+            <li>Define Sprints</li>
+            <li>Create &amp; Assign Tasks</li>
+          </ul>
+        </div>
+        <div class="phase-card">
+          <div class="phase-num">PHASE 02</div>
+          <div class="phase-title" style="color: #22d3ee;">Active Execution</div>
+          <ul class="phase-items">
+            <li>Monitor Standups</li>
+            <li>Submit Feedback</li>
+            <li>Resolve Blockers</li>
+            <li>Workspace Chat</li>
+          </ul>
+        </div>
+        <div class="phase-card">
+          <div class="phase-num">PHASE 03</div>
+          <div class="phase-title" style="color: #fbbf24;">Code Audit &amp; Review</div>
+          <ul class="phase-items">
+            <li>Review Task PR</li>
+            <li>Assign Score 0-100</li>
+            <li>Approve / Revision</li>
+            <li>Trigger Badge Eval</li>
+          </ul>
+        </div>
+        <div class="phase-card">
+          <div class="phase-num">PHASE 04</div>
+          <div class="phase-title" style="color: #34d399;">Completion</div>
+          <ul class="phase-items">
+            <li>Review Final Repo</li>
+            <li>Approve Project</li>
+            <li>Mint Certificate</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Capability 1 -->
+      <div class="capability-grid">
+
+        <div class="cap-card">
+          <div class="cap-header">
+            <div class="cap-num mentor-num">01</div>
+            <div class="cap-title">Project Initiation &amp; Member Control</div>
+          </div>
+          <div class="cap-body">
+            <div class="desc-block">Projects reside inside parent Programs (cohorts/semesters) initialized by Admins. Mentors initialize their project workspaces and manage enrollment.</div>
+            <div class="endpoints-block">
+              <div class="endpoints-label">REST API Endpoints</div>
+              <div class="endpoint-pill"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>projects</span>/</span></div>
+              <div class="endpoint-pill"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>projects</span>/{id}/<span>members</span></span></div>
+              <div class="endpoint-pill"><span class="method DELETE">DELETE</span><span class="ep-path">/api/v1/<span>projects</span>/{id}/<span>members</span>/{user_id}</span></div>
+            </div>
+            <div class="frontend-view">src/app/(platform)/mentor/students/page.tsx</div>
+          </div>
+        </div>
+
+        <div class="cap-card">
+          <div class="cap-header">
+            <div class="cap-num mentor-num">02</div>
+            <div class="cap-title">Sprint &amp; Task Planning (Kanban Board)</div>
+          </div>
+          <div class="cap-body">
+            <div class="desc-block">Mentors set up the project's timeline by defining sprints and task requirements. They allocate technical tasks to specific students to organize work across the sprint.</div>
+            <div class="endpoints-block">
+              <div class="endpoints-label">REST API Endpoints</div>
+              <div class="endpoint-pill"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>projects</span>/{id}/<span>sprints</span></span></div>
+              <div class="endpoint-pill"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>projects</span>/sprints/{sprint_id}/<span>tasks</span></span></div>
+              <div class="endpoint-pill"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>tasks</span>/{id}/<span>assign</span></span></div>
+              <div class="endpoint-pill"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>projects</span>/tasks/{task_id}</span></div>
+            </div>
+            <div class="frontend-view">src/app/(platform)/projects/[id]/page.tsx — Kanban Board</div>
+          </div>
+        </div>
+
+        <div class="cap-card">
+          <div class="cap-header">
+            <div class="cap-num mentor-num">03</div>
+            <div class="cap-title">Daily Standup Reviewing &amp; Mood Tracking</div>
+          </div>
+          <div class="cap-body">
+            <div class="desc-block">Every morning, students state their daily checklist. Every evening, they submit a Daily Standup report. Mentors monitor these reports to catch drop-offs and support struggling students.</div>
+            <div class="endpoints-block">
+              <div class="endpoints-label">REST API Endpoints</div>
+              <div class="endpoint-pill"><span class="method GET">GET</span><span class="ep-path">/api/v1/<span>daily</span>/reports</span></div>
+              <div class="endpoint-pill"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>daily</span>/reports/{id}/<span>feedback</span></span></div>
+              <div class="endpoint-pill"><span class="method GET">GET</span><span class="ep-path">/api/v1/<span>daily</span>/reports/<span>missing</span></span></div>
+            </div>
+            <div class="frontend-view">src/app/(platform)/mentor/reports/page.tsx</div>
+          </div>
+        </div>
+
+        <div class="cap-card">
+          <div class="cap-header">
+            <div class="cap-num mentor-num">04</div>
+            <div class="cap-title">Stuck Students &amp; Blocker Resolution</div>
+          </div>
+          <div class="cap-body">
+            <div class="desc-block">When students hit technical road-blocks, they can place an explicit "Stuck Flag" on an assigned task. Mentors can view, triage, and resolve these flags — or hop in a team chat room to debug in real time.</div>
+            <div class="endpoints-block">
+              <div class="endpoints-label">REST API Endpoints</div>
+              <div class="endpoint-pill"><span class="method GET">GET</span><span class="ep-path">/api/v1/<span>projects</span>/{id}/<span>stuck-flags</span></span></div>
+              <div class="endpoint-pill"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>stuck_flags</span>/{id}/<span>resolve</span></span></div>
+              <div class="endpoint-pill"><span class="method WS">WS</span><span class="ep-path">/ws/<span>rooms</span>/{project_id}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cap-card">
+          <div class="cap-header">
+            <div class="cap-num mentor-num">05</div>
+            <div class="cap-title">Task-Level Code Reviews &amp; Grading</div>
+          </div>
+          <div class="cap-body">
+            <div class="desc-block">When a student moves a task to <code style="color: #fbbf24; background: rgba(251,191,36,0.1); padding: 1px 6px; border-radius:4px;">review</code> and submits their work, the mentor performs a line-by-line review of their pull request or code approach.</div>
+            <div class="endpoints-block">
+              <div class="endpoints-label">REST API Endpoints</div>
+              <div class="endpoint-pill"><span class="method GET">GET</span><span class="ep-path">/api/v1/<span>tasks</span>/{id}/<span>submissions</span></span></div>
+              <div class="endpoint-pill"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>submissions</span>/{id}/<span>review</span></span></div>
+            </div>
+            <div class="endpoints-label" style="margin-top: 4px;">System Logic (Auto-Triggered)</div>
+            <ul class="logic-list">
+              <li><div class="idx">1</div>Score submission transitions TaskAssignment status to <code style="color: #34d399; font-size: 11px;">"reviewed"</code></li>
+              <li><div class="idx">2</div>Triggers in-app Notification to the student immediately</li>
+              <li><div class="idx">3</div>Runs background badge evaluation: <code style="color: #818cf8; font-size: 11px;">evaluate_blocker_crusher()</code> &amp; <code style="color: #818cf8; font-size: 11px;">evaluate_system_architect()</code></li>
+            </ul>
+            <div class="frontend-view">src/app/(platform)/projects/[id]/leaderboard — Submission Deck</div>
+          </div>
+        </div>
+
+        <div class="cap-card">
+          <div class="cap-header">
+            <div class="cap-num mentor-num">06</div>
+            <div class="cap-title">Project-Level Audits &amp; Certificate Minting</div>
+          </div>
+          <div class="cap-body">
+            <div class="desc-block">Upon completing all milestones, students submit a final comprehensive project delivery (Live Demo + Production GitHub Repository). Mentors evaluate this final delivery.</div>
+            <div class="endpoints-block">
+              <div class="endpoints-label">REST API Endpoint</div>
+              <div class="endpoint-pill"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>submissions</span>/{id}/<span>review</span></span></div>
+            </div>
+            <div class="endpoints-label" style="margin-top: 4px;">System Logic on Approval</div>
+            <ul class="logic-list">
+              <li><div class="idx">✓</div>Auto-generates a cryptographic <span class="tag tag-auto">Certificate</span> with student name, project title, mentor name, approved timestamp, repo URL, demo URL</li>
+              <li><div class="idx">✓</div>Creates a platform-wide <span class="tag tag-sys">certificate_issued</span> activity feed event</li>
+            </ul>
+            <div class="frontend-view">src/app/(platform)/mentor/reviews/page.tsx — Reviews Board</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ===================== PART 2: ADMIN FLOW ===================== -->
+    <div class="section-block" id="admin-flow">
+      <div class="section-header">
+        <div class="section-icon icon-admin">🛡️</div>
+        <div>
+          <h2>Part 2 — Admin Example Flow</h2>
+          <p>Elena initializes the "Fall 2026 Systems Cohort" and manages platform growth.</p>
+        </div>
+        <div class="role-tag tag-admin">ADMIN ROLE</div>
+      </div>
+
+      <div class="scenario-section">
+        <div class="scenario-title">Scenario: Initializing a New Semester Cohort and Overseeing Platform Growth</div>
+        <div class="flow-steps">
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle admin-c">1</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Elena logs into <code style="color:#fb7185; background:rgba(251,113,133,0.1); padding:2px 8px; border-radius:6px;">/dashboard</code> as Admin</div>
+              <div class="step-detail">
+                <div class="desc-block">Full admin command center loads with global KPI metrics: total projects, students enrolled, mentors, pending reviews, and the real-time activity log.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle admin-c">2</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Creates Program "Fall 2026 Systems Cohort"</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>programs</span>/</span></div>
+                </div>
+                <div class="step-body-block">
+                  {<br>
+                  &nbsp;&nbsp;<span class="key">"name"</span>: <span class="str">"Fall 2026 Systems Cohort"</span>,<br>
+                  &nbsp;&nbsp;<span class="key">"slug"</span>: <span class="str">"fall-2026-systems"</span><br>
+                  }
+                </div>
+                <div class="step-result">Program container created. Ready for Mentor projects.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle admin-c">3</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Promotes "Marcus Vance" from Student → Mentor</div>
+              <div class="step-detail">
+                <div class="desc-block">Elena locates Marcus Vance in the User Management Panel on the dashboard roster and cycles his role using the inline control.</div>
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>dashboard</span>/users/{user_id}/<span>role</span></span></div>
+                </div>
+                <div class="step-body-block">
+                  { <span class="key">"role"</span>: <span class="str">"mentor"</span> }
+                </div>
+                <div class="step-result">Marcus now has access to the /mentor workspace and all mentor-gated routes.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle admin-c">4</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Reviews Global Activity Audit Feed</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method GET">GET</span><span class="ep-path">/api/v1/<span>activity</span>/recent</span></div>
+                </div>
+                <div class="step-result">Renders real-time highlights of merged PRs, certificate issuances, task reviews, and badge unlocks system-wide.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ===================== MENTOR FLOW ===================== -->
+    <div class="section-block" id="mentor-flow">
+      <div class="section-header">
+        <div class="section-icon icon-mentor">🎓</div>
+        <div>
+          <h2>Part 3 — Mentor Example Flow</h2>
+          <p>Marcus Vance leads the "LLM-Powered Code Review Bot" project end-to-end.</p>
+        </div>
+        <div class="role-tag tag-mentor">MENTOR ROLE</div>
+      </div>
+
+      <div class="scenario-section">
+        <div class="scenario-title">Scenario: Leading the "LLM-Powered Code Review Bot" Project</div>
+        <div class="flow-steps">
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle mentor-c">1</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Create Project Workspace</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>projects</span>/</span></div>
+                </div>
+                <div class="step-body-block">
+                  {<br>
+                  &nbsp;&nbsp;<span class="key">"title"</span>: <span class="str">"LLM Review Bot"</span>,<br>
+                  &nbsp;&nbsp;<span class="key">"program_id"</span>: <span class="num">1</span>,<br>
+                  &nbsp;&nbsp;<span class="key">"max_members"</span>: <span class="num">5</span><br>
+                  }
+                </div>
+                <div class="step-result">Project workspace initialized. Marcus added as lead member automatically.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle mentor-c">2</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Plan Sprint &amp; Define Tasks</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>projects</span>/{id}/<span>sprints</span></span></div>
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method POST">POST</span><span class="ep-path">/api/v1/sprints/{sprint_id}/<span>tasks</span></span></div>
+                </div>
+                <div class="step-body-block">
+                  Sprint: <span class="str">"Sprint 1: Abstract Syntax Trees"</span><br>
+                  Task: { <span class="key">"title"</span>: <span class="str">"Write Python AST Parser"</span>, <span class="key">"skill_points"</span>: <span class="num">120</span> }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle mentor-c">3</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Assign Task to Student "Aria Chen"</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>tasks</span>/{task_id}/<span>assign</span></span></div>
+                </div>
+                <div class="step-body-block">
+                  { <span class="key">"user_ids"</span>: [<span class="num">aria_user_id</span>] }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle mentor-c">4</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Daily Mentorship Loop (Morning → Afternoon → Evening)</div>
+              <div class="step-detail">
+                <div style="display: grid; gap: 10px;">
+                  <div>
+                    <div class="endpoints-label">☀ Morning</div>
+                    <div class="endpoint-pill"><span class="method GET">GET</span><span class="ep-path">/api/v1/<span>daily</span>/reports/<span>missing</span></span></div>
+                  </div>
+                  <div>
+                    <div class="endpoints-label">⚡ Afternoon — Aria raises a Stuck Flag</div>
+                    <div class="endpoint-pill"><span class="method WS">WS</span><span class="ep-path">/ws/<span>rooms</span>/{project_id} — Marcus resolves bug in chat</span></div>
+                    <div class="endpoint-pill"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>stuck_flags</span>/{id}/<span>resolve</span></span></div>
+                  </div>
+                  <div>
+                    <div class="endpoints-label">🌙 Evening — Report Review</div>
+                    <div class="endpoint-pill"><span class="method GET">GET</span><span class="ep-path">/api/v1/<span>daily</span>/reports</span></div>
+                    <div class="endpoint-pill"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>daily</span>/reports/{id}/<span>feedback</span></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle mentor-c">5</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Code Review Audit — Grade Aria's Submission</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>submissions</span>/{sub_id}/<span>review</span></span></div>
+                </div>
+                <div class="step-body-block">
+                  {<br>
+                  &nbsp;&nbsp;<span class="key">"mentor_score"</span>: <span class="num">95</span>,<br>
+                  &nbsp;&nbsp;<span class="key">"mentor_feedback"</span>: <span class="str">"Clean implementation of the NodeVisitor class."</span><br>
+                  }
+                </div>
+                <div class="step-result">Aria notified. Skill points incremented. Badge evaluation triggered.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle mentor-c">6</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Graduation &amp; Certification — Final Project Approval</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>submissions</span>/{project_sub_id}/<span>review</span></span></div>
+                </div>
+                <div class="step-body-block">
+                  {<br>
+                  &nbsp;&nbsp;<span class="key">"status"</span>: <span class="str">"approved"</span>,<br>
+                  &nbsp;&nbsp;<span class="key">"feedback"</span>: <span class="str">"Full pipeline functioning."</span><br>
+                  }
+                </div>
+                <div class="step-result">Verifiable Certificate auto-generated for Aria! Activity feed event emitted.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ===================== STUDENT FLOW ===================== -->
+    <div class="section-block" id="student-flow">
+      <div class="section-header">
+        <div class="section-icon icon-student">🚀</div>
+        <div>
+          <h2>Part 4 — Student Example Flow</h2>
+          <p>Aria Chen's complete Developer Accelerator Journey — from enrollment to verified credentials.</p>
+        </div>
+        <div class="role-tag tag-student">STUDENT ROLE</div>
+      </div>
+
+      <div class="scenario-section">
+        <div class="scenario-title">Scenario: Aria Chen's Developer Accelerator Journey</div>
+        <div class="flow-steps">
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle student-c">1</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Join Project "LLM Review Bot"</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>projects</span>/1/<span>join</span></span></div>
+                </div>
+                <div class="step-result">ProjectMember row created. Aria is now a contributor with access to the workspace.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle student-c">2</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Check-In &amp; Daily Checklist (Start of Day)</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>daily</span>/<span>start-day</span></span></div>
+                </div>
+                <div class="step-body-block">
+                  {<br>
+                  &nbsp;&nbsp;<span class="key">"todos"</span>: [<span class="str">"Draft test suite"</span>, <span class="str">"Configure regex patterns"</span>]<br>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle student-c">3</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Execute Task &amp; Code on Local Machine</div>
+              <div class="step-detail">
+                <div class="desc-block">Aria writes the Python AST Parser, opens a Pull Request to the project repo, and updates her task status to <code style="color:#fbbf24;background:rgba(251,191,36,0.1);padding:1px 6px;border-radius:4px;">"review"</code> on the Kanban board.</div>
+                <div class="endpoint-pill"><span class="method PATCH">PATCH</span><span class="ep-path">/api/v1/<span>projects</span>/tasks/{task_id} — status: "review"</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle student-c">4</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Submit Task Deliverables for Audit</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>tasks</span>/{task_id}/<span>submissions</span></span></div>
+                </div>
+                <div class="step-body-block">
+                  {<br>
+                  &nbsp;&nbsp;<span class="key">"demo_url"</span>: <span class="str">"https://github.com/aria/review-bot/pull/3"</span>,<br>
+                  &nbsp;&nbsp;<span class="key">"approach_notes"</span>: <span class="str">"Implemented AST via NodeVisitor pattern"</span><br>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle student-c">5</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Unlock Badges &amp; Track Progress (After Grading)</div>
+              <div class="step-detail">
+                <ul class="logic-list">
+                  <li><div class="idx">1</div>In-app notification: <em style="color: var(--indigo);">"Your submission has been reviewed."</em></li>
+                  <li><div class="idx">2</div>System runs badge evaluation algorithms in background</li>
+                  <li><div class="idx">3</div>Aria unlocks the <span class="tag tag-auto">System Architect</span> badge — <code style="color:#34d399;font-size:11px;">UserBadge</code> record created</li>
+                  <li><div class="idx">4</div>Leaderboard ranking increases with new skill points</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle student-c">6</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Submit Final Project Completion</div>
+              <div class="step-detail">
+                <div class="step-api">
+                  <div class="endpoint-pill" style="flex-grow:0"><span class="method POST">POST</span><span class="ep-path">/api/v1/<span>submissions</span>/</span></div>
+                </div>
+                <div class="step-body-block">
+                  {<br>
+                  &nbsp;&nbsp;<span class="key">"project_id"</span>: <span class="num">1</span>,<br>
+                  &nbsp;&nbsp;<span class="key">"repo_url"</span>: <span class="str">"github.com/aria/review-bot"</span>,<br>
+                  &nbsp;&nbsp;<span class="key">"demo_url"</span>: <span class="str">"reviewbot.dev"</span><br>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-connector">
+              <div class="step-circle student-c">7</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-label">Portfolio &amp; Credentials — Public Developer Identity</div>
+              <div class="step-detail">
+                <div style="display: grid; gap: 12px;">
+                  <div>
+                    <div class="endpoints-label">Public Portfolio Route</div>
+                    <div class="frontend-view">/portfolio/aria-chen — Real-time contribution timeline, 3D Skill Galaxy, Badge Trophy Case</div>
+                  </div>
+                  <div>
+                    <div class="endpoints-label">Verifiable Certificate Route</div>
+                    <div class="frontend-view">/certify/{cert_id} — Cryptographically backed Software Engineering Certificate</div>
+                  </div>
+                  <ul class="logic-list">
+                    <li><div class="idx">✓</div>Contribution timeline rendered from GitHub integration</li>
+                    <li><div class="idx">✓</div>Total accumulated skill points visualized in 3D Skill Galaxy</li>
+                    <li><div class="idx">✓</div>"System Architect" badge displayed in trophy case for all recruiters to see</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <footer>
+    <p>CoderCorps Platform — <span>Flow Architecture Documentation</span> — Generated 2026</p>
+  </footer>
+
+</div>
+</body>
+</html>
