@@ -174,7 +174,16 @@ export default function PlatformLayout({
         {/* Top bar header */}
         <header className="h-16 border-b border-border/40 bg-card/60 backdrop-blur-sm sticky top-0 flex items-center justify-between px-8 z-20">
           <h2 className="text-sm font-semibold text-foreground font-mono uppercase tracking-wider">
-            {pathname === "/dashboard" ? "ENGINEERING DASHBOARD" : pathname.startsWith("/projects") ? "LABS WORKSPACE" : pathname.startsWith("/portfolio") ? "MY PORTFOLIO" : "REVIEWS DASHBOARD"}
+            {pathname === "/dashboard" ? "ENGINEERING DASHBOARD"
+              : pathname === "/today" ? "TODAY'S STANDUP"
+              : pathname.startsWith("/projects") ? "LABS WORKSPACE"
+              : pathname.startsWith("/portfolio") ? "MY PORTFOLIO"
+              : pathname.startsWith("/settings") ? "ACCOUNT SETTINGS"
+              : pathname === "/mentor/reviews" ? "REVIEWS BOARD"
+              : pathname === "/mentor/reports" ? "STANDUP REPORTS"
+              : pathname === "/mentor/students" ? "STUDENTS ROSTER"
+              : pathname.startsWith("/messages") ? "DIRECT MESSAGES"
+              : "CODERCORPS PLATFORM"}
           </h2>
           <div className="flex items-center gap-3">
             <button

@@ -174,7 +174,7 @@ export default function ProjectWorkspacePage() {
     setTaskSubmitting(true);
 
     try {
-      const res = await api.post(`/projects/sprints/${activeSprint.id}/tasks`, {
+      const res = await api.post(`/sprints/${activeSprint.id}/tasks`, {
         title: taskTitle,
         description: taskDesc,
         assigned_to_id: taskAssigneeId || undefined,

@@ -30,6 +30,7 @@ async function silentRefresh(): Promise<string | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -98,6 +99,7 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
     const response = await fetch(url, {
       ...options,
       headers,
+      credentials: "include",
     });
 
     if (response.status === 401 && !options.skipAuth) {
@@ -107,6 +109,7 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
         return fetch(url, {
           ...options,
           headers,
+          credentials: "include",
         });
       }
     }
