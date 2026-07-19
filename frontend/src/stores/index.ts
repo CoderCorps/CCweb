@@ -6,6 +6,7 @@ export { useProjectStore } from "./useProjectStore";
 export { useNotificationStore } from "./useNotificationStore";
 export { useDashboardStore } from "./useDashboardStore";
 export { useProjectWorkspaceStore } from "./useProjectWorkspaceStore";
+export { useApprovalThreadStore } from "./useApprovalThreadStore";
 
 // Re-export types
 export type { Project, ProjectMember } from "./useProjectStore";

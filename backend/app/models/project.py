@@ -9,7 +9,8 @@ class Project(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[str] = mapped_column(String(50), default="planning", nullable=False) # 'planning' | 'active' | 'completed'
+    status: Mapped[str] = mapped_column(String(50), default="planning", nullable=False) # 'planning' | 'active' | 'completed' | 'pending_approval' | 'rejected'
+    rejection_reason: Mapped[str] = mapped_column(Text, nullable=True)
     mentor_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     start_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
     end_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
@@ -24,6 +25,7 @@ class Project(Base):
     room: Mapped["Room"] = relationship("Room", back_populates="project", uselist=False, cascade="all, delete-orphan")
     announcements: Mapped[list["Announcement"]] = relationship("Announcement", back_populates="project", cascade="all, delete-orphan")
     resources: Mapped[list["Resource"]] = relationship("Resource", back_populates="project", cascade="all, delete-orphan")
+    approval_messages: Mapped[list["ProjectApprovalMessage"]] = relationship("ProjectApprovalMessage", back_populates="project", cascade="all, delete-orphan")
 
 class ProjectMember(Base):
     __tablename__ = "project_members"

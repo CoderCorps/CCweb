@@ -20,8 +20,10 @@ interface User {
   name: string;
   email: string;
   role: "student" | "mentor" | "admin";
+  status: "pending" | "active" | "rejected";
   avatar_url: string | null;
   created_at: string;
+  last_reminder_sent_at?: string | null;
   profile: Profile | null;
 }
 

@@ -54,6 +54,17 @@ export default function PlatformLayout({
     }
   }, [user, loading, router]);
 
+  // Route Guard: strict redirect for pending/rejected mentors
+  useEffect(() => {
+    if (!loading && user && user.role === "mentor") {
+      if (user.status === "pending" && pathname !== "/mentor/pending-approval") {
+        router.replace("/mentor/pending-approval");
+      } else if (user.status === "rejected" && pathname !== "/mentor/rejected") {
+        router.replace("/mentor/rejected");
+      }
+    }
+  }, [user, loading, pathname, router]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center flex-col gap-4">
@@ -105,6 +116,20 @@ export default function PlatformLayout({
       name: "Recruiter Portal",
       href: "/recruiters",
       icon: <Users className="h-4 w-4" />
+    });
+  }
+
+  // Admin access
+  if (user.role === "admin") {
+    navLinks.push({
+      name: "Pending Mentors",
+      href: "/admin/mentors/pending",
+      icon: <Users className="h-4 w-4 text-amber-500" />
+    });
+    navLinks.push({
+      name: "Pending Projects",
+      href: "/admin/projects/pending",
+      icon: <FolderGit2 className="h-4 w-4 text-amber-500" />
     });
   }
 

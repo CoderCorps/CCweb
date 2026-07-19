@@ -89,5 +89,17 @@ class MessageReaction(Base):
         UniqueConstraint("target_type", "target_id", "user_id", "emoji", name="uq_message_reaction_target_user_emoji"),
     )
 
-    # Relationships
     user: Mapped["User"] = relationship("User")
+
+class ProjectApprovalMessage(Base):
+    __tablename__ = "project_approval_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
+
+    # Relationships
+    project: Mapped["Project"] = relationship("Project", back_populates="approval_messages")
+    user: Mapped["User"] = relationship("User", back_populates="approval_messages")

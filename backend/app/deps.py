@@ -22,7 +22,7 @@ def get_db() -> Session:
     finally:
         db.close()
 
-async def get_current_user(
+async def get_current_user_unverified(
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme)
 ) -> User:
@@ -55,6 +55,22 @@ async def get_current_user(
         raise credentials_exception
 
     return user
+
+async def get_current_user(
+    current_user: User = Depends(get_current_user_unverified)
+) -> User:
+    if current_user.role == "mentor":
+        if current_user.status == "pending":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="mentor_pending_approval",
+            )
+        elif current_user.status == "rejected":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="mentor_rejected",
+            )
+    return current_user
 
 async def get_current_mentor(
     current_user: User = Depends(get_current_user)

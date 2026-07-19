@@ -114,6 +114,22 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
           credentials: "include",
         });
       }
+    } else if (response.status === 403) {
+      try {
+        const clonedRes = response.clone();
+        const data = await clonedRes.json();
+        if (data?.detail === "mentor_pending_approval" && typeof window !== "undefined") {
+          if (window.location.pathname !== "/mentor/pending-approval") {
+            window.location.href = "/mentor/pending-approval";
+          }
+        } else if (data?.detail === "mentor_rejected" && typeof window !== "undefined") {
+          if (window.location.pathname !== "/mentor/rejected") {
+            window.location.href = "/mentor/rejected";
+          }
+        }
+      } catch (e) {
+        // Ignore json parse error
+      }
     }
 
     return response;

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import datetime
@@ -29,7 +29,10 @@ async def get_projects(db: Session = Depends(get_db), current_user: User = Depen
         elif current_user.role == "mentor":
             return db.query(Project).filter(Project.mentor_id == current_user.id).all()
         else:
-            return db.query(Project).join(ProjectMember).filter(ProjectMember.user_id == current_user.id).all()
+            return db.query(Project).join(ProjectMember).filter(
+                ProjectMember.user_id == current_user.id,
+                Project.status.in_(["active", "completed", "planning"])
+            ).all()
     return await asyncio.to_thread(_query)
 
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
@@ -42,7 +45,7 @@ async def create_project(
         db_project = Project(
             title=project_in.title,
             description=project_in.description,
-            status=project_in.status,
+            status="pending_approval",
             mentor_id=current_mentor.id if not project_in.mentor_id else project_in.mentor_id,
             start_date=project_in.start_date,
             end_date=project_in.end_date
@@ -639,5 +642,137 @@ async def create_project_resource(
     if result == "not_found":
         raise HTTPException(status_code=404, detail="Project not found")
     if result == "forbidden":
-        raise HTTPException(status_code=403, detail="Must be a project member to add resources")
+        raise HTTPException(status_code=403, detail="Not authorized")
     return resource
+
+# --- APPROVAL THREAD ---
+from fastapi import WebSocket, WebSocketDisconnect
+from app.models.communication import ProjectApprovalMessage
+
+class ApprovalThreadManager:
+    def __init__(self):
+        self.active_connections: dict[int, List[WebSocket]] = {}
+
+    async def connect(self, project_id: int, websocket: WebSocket):
+        if project_id not in self.active_connections:
+            self.active_connections[project_id] = []
+        self.active_connections[project_id].append(websocket)
+
+    def disconnect(self, project_id: int, websocket: WebSocket):
+        if project_id in self.active_connections:
+            self.active_connections[project_id].remove(websocket)
+            if not self.active_connections[project_id]:
+                del self.active_connections[project_id]
+
+    async def broadcast(self, project_id: int, message: dict):
+        if project_id in self.active_connections:
+            for connection in self.active_connections[project_id]:
+                try:
+                    await connection.send_json(message)
+                except Exception:
+                    pass
+
+approval_manager = ApprovalThreadManager()
+
+class ApprovalMessageResponse(BaseModel):
+    id: int
+    project_id: int
+    user_id: int
+    content: str
+    created_at: datetime.datetime
+    user_name: str
+    user_role: str
+
+@router.get("/{id}/approval-thread", response_model=List[ApprovalMessageResponse])
+async def get_approval_thread(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    def _query():
+        project = db.query(Project).filter(Project.id == id).first()
+        if not project:
+            return None, "not_found"
+        if current_user.role != "admin" and project.mentor_id != current_user.id:
+            return None, "forbidden"
+        
+        messages = db.query(ProjectApprovalMessage).filter(
+            ProjectApprovalMessage.project_id == id
+        ).order_by(ProjectApprovalMessage.created_at.asc()).all()
+        
+        result = []
+        for msg in messages:
+            result.append(ApprovalMessageResponse(
+                id=msg.id,
+                project_id=msg.project_id,
+                user_id=msg.user_id,
+                content=msg.content,
+                created_at=msg.created_at,
+                user_name=msg.user.name,
+                user_role=msg.user.role
+            ))
+        return result, "ok"
+
+    messages, result = await asyncio.to_thread(_query)
+    if result == "not_found":
+        raise HTTPException(status_code=404, detail="Project not found")
+    if result == "forbidden":
+        raise HTTPException(status_code=403, detail="Not authorized to view this thread")
+    return messages
+
+from app.core.security import decode_token
+
+@router.websocket("/{id}/approval-thread/ws")
+async def websocket_approval_thread(websocket: WebSocket, id: int, token: str = Query(...)):
+    # 1. Authenticate
+    db = next(get_db())
+    payload = decode_token(token)
+    if not payload or payload.get("type") != "access":
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    user_id = int(payload.get("sub"))
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    
+    project = db.query(Project).filter(Project.id == id).first()
+    if not project or (user.role != "admin" and project.mentor_id != user.id):
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    await websocket.accept()
+    await approval_manager.connect(id, websocket)
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            if data.get("type") == "chat_message":
+                content = data.get("content")
+                if content:
+                    msg = ProjectApprovalMessage(
+                        project_id=id,
+                        user_id=user.id,
+                        content=content
+                    )
+                    db.add(msg)
+                    db.commit()
+                    db.refresh(msg)
+                    
+                    broadcast_msg = {
+                        "type": "chat_message",
+                        "message": {
+                            "id": msg.id,
+                            "project_id": msg.project_id,
+                            "user_id": msg.user_id,
+                            "content": msg.content,
+                            "created_at": msg.created_at.isoformat(),
+                            "user_name": user.name,
+                            "user_role": user.role
+                        }
+                    }
+                    await approval_manager.broadcast(id, broadcast_msg)
+    except WebSocketDisconnect:
+        approval_manager.disconnect(id, websocket)
+    finally:
+        db.close()

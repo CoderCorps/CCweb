@@ -38,6 +38,9 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     id: int
     created_at: datetime.datetime
+    status: Literal["pending", "active", "rejected"] = "active"
+    rejection_reason: Optional[str] = None
+    last_reminder_sent_at: Optional[datetime.datetime] = None
     unlocked_skills: List[str] = []
     skill_points: int = 0
     profile: Optional[ProfileResponse] = None

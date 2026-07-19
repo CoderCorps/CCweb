@@ -4,13 +4,66 @@ from sqlalchemy import func
 from typing import List, Dict, Any
 import asyncio
 
-from app.deps import get_db, get_current_user
+from app.deps import get_db, get_current_user, get_current_user_unverified
 from app.models.user import User
 from app.models.project import Project, ProjectMember
 from app.models.sprint import Sprint, Task
 from app.models.submission import Submission
+from app.core.config import settings
 
 router = APIRouter()
+
+from app.models.notification import Notification
+import datetime
+
+@router.post("/me/notify-admin")
+async def notify_admin(db: Session = Depends(get_db), current_user: User = Depends(get_current_user_unverified)):
+    if current_user.role != "mentor" or current_user.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only pending mentors can notify admins."
+        )
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    
+    # created_at might be naive in sqlite but we use postgres, let's ensure UTC comparison
+    created_at = current_user.created_at.replace(tzinfo=datetime.timezone.utc) if current_user.created_at.tzinfo is None else current_user.created_at
+    
+    cooldown = settings.MENTOR_APPROVAL_COOLDOWN_SECONDS
+
+    if (now - created_at).total_seconds() < cooldown:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You must wait {cooldown} seconds since signup to notify an admin."
+        )
+
+    if current_user.last_reminder_sent_at:
+        last_rem = current_user.last_reminder_sent_at.replace(tzinfo=datetime.timezone.utc) if current_user.last_reminder_sent_at.tzinfo is None else current_user.last_reminder_sent_at
+        if (now - last_rem).total_seconds() < cooldown:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"You can only send one reminder every {cooldown} seconds."
+            )
+
+    def _notify():
+        admins = db.query(User).filter(User.role == "admin").all()
+        for admin in admins:
+            db.add(Notification(
+                user_id=admin.id,
+                type="mentor_reminder",
+                message=f"Mentor {current_user.name} is waiting for approval.",
+                link="/admin/mentors/pending"
+            ))
+        current_user.last_reminder_sent_at = now
+        db.commit()
+        return current_user.last_reminder_sent_at
+
+    new_timestamp = await asyncio.to_thread(_notify)
+    return {
+        "status": "success", 
+        "message": "Admin has been notified.",
+        "last_reminder_sent_at": new_timestamp.isoformat()
+    }
 
 @router.get("/{id}/students", response_model=List[Dict[str, Any]])
 async def get_mentor_students(

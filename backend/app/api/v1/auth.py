@@ -1,16 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+import time
+import asyncio
 from datetime import timedelta
 from typing import Optional
 from pydantic import BaseModel, EmailStr
-import time
-import asyncio
 from collections import defaultdict
 
-
-
-from app.deps import get_db, get_current_user
+from app.deps import get_db, get_current_user, get_current_user_unverified
 from app.core.config import settings
 from app.core import security
 from app.models.user import User, Profile
@@ -59,6 +57,7 @@ async def signup(
         email=user_in.email,
         password_hash=hashed_password,
         role=user_in.role,
+        status="pending" if user_in.role == "mentor" else "active",
         avatar_url=user_in.avatar_url
     )
     db.add(db_user)
@@ -188,7 +187,7 @@ async def refresh_token_route(
     }
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(current_user: User = Depends(get_current_user)):
+async def get_me(current_user: User = Depends(get_current_user_unverified)):
     return current_user
 
 @router.post("/logout")

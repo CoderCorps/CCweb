@@ -74,12 +74,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleRoleChange = async (targetUserId: number, currentRole: string) => {
-    let nextRole = "student";
-    if (currentRole === "student") nextRole = "mentor";
-    else if (currentRole === "mentor") nextRole = "admin";
-    else if (currentRole === "admin") nextRole = "student";
-
+  const handleRoleChange = async (targetUserId: number, nextRole: string) => {
     setUpdatingUserId(targetUserId);
     setUpdatingRole(true);
 
@@ -300,17 +295,20 @@ export default function DashboardPage() {
                                 {item.role}
                               </span>
                             </td>
-                            <td className="py-3.5 text-right">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => handleRoleChange(item.id, item.role)}
+                            <td className="py-3.5 text-right flex items-center justify-end gap-2">
+                              {updatingRole && updatingUserId === item.id && (
+                                <span className="text-xs text-muted-foreground animate-pulse">Updating...</span>
+                              )}
+                              <select 
+                                value={item.role} 
+                                onChange={(e) => handleRoleChange(item.id, e.target.value)}
                                 disabled={updatingRole && updatingUserId === item.id}
-                                className="text-xs font-semibold text-primary hover:bg-primary/10 gap-1.5"
+                                className="bg-background border border-border/40 text-xs font-mono text-foreground py-1.5 px-3 rounded-md focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer disabled:opacity-50"
                               >
-                                <ArrowRightLeft className="h-3 w-3" />
-                                {updatingRole && updatingUserId === item.id ? "Updating..." : "Cycle Role"}
-                              </Button>
+                                <option value="student">Student</option>
+                                <option value="mentor">Mentor</option>
+                                <option value="admin">Admin</option>
+                              </select>
                             </td>
                           </tr>
                         ))}

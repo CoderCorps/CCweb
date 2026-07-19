@@ -11,10 +11,13 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), default="student", nullable=False) # 'student' | 'mentor' | 'admin'
+    status: Mapped[str] = mapped_column(String(20), default="active", nullable=False) # 'pending' | 'active' | 'rejected'
+    rejection_reason: Mapped[str] = mapped_column(Text, nullable=True)
     avatar_url: Mapped[str] = mapped_column(Text, nullable=True)
     unlocked_skills: Mapped[dict] = mapped_column(JSON, default=list, nullable=False)
     skill_points: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
+    last_reminder_sent_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     profile: Mapped["Profile"] = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
@@ -33,6 +36,7 @@ class User(Base):
     messages_received: Mapped[list["DirectMessage"]] = relationship("DirectMessage", foreign_keys="[DirectMessage.recipient_id]", back_populates="recipient", cascade="all, delete-orphan")
     badges: Mapped[list["UserBadge"]] = relationship("UserBadge", back_populates="user", cascade="all, delete-orphan")
     skills: Mapped[list["UserSkill"]] = relationship("UserSkill", back_populates="user", cascade="all, delete-orphan")
+    approval_messages: Mapped[list["ProjectApprovalMessage"]] = relationship("ProjectApprovalMessage", back_populates="user", cascade="all, delete-orphan")
 
 class Profile(Base):
     __tablename__ = "profiles"
