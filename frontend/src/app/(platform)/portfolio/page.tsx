@@ -19,6 +19,7 @@ import {
   Camera,
   Upload
 } from "lucide-react";
+import { toast } from "sonner";
 import { Github, Linkedin } from "@/components/ui/icons";
 
 export default function PortfolioEditorPage() {
@@ -45,7 +46,7 @@ export default function PortfolioEditorPage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert("Image file size should be less than 2MB.");
+        toast("Image file size should be less than 2MB.");
         return;
       }
       const reader = new FileReader();
@@ -103,10 +104,10 @@ export default function PortfolioEditorPage() {
         refreshUser(); // Refresh the global auth state
         setTimeout(() => setSuccess(false), 3000);
       } else {
-        alert("Failed to save changes.");
+        toast.error("Failed to save changes.");
       }
     } catch (err) {
-      alert("Error saving portfolio details.");
+      toast.error("Error saving portfolio details.");
     } finally {
       setSubmitting(false);
     }

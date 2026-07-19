@@ -1,7 +1,6 @@
 import requests
 import string
 import random
-import time
 
 BASE_URL = "http://127.0.0.1:8000/api/v1"
 
@@ -72,7 +71,7 @@ def run_tests():
     student_headers = {"Authorization": f"Bearer {student_token}"}
 
     # Fetch User IDs
-    admin_id = requests.get(f"{BASE_URL}/auth/me", headers=admin_headers).json()["id"]
+    # admin_id = requests.get(f"{BASE_URL}/auth/me", headers=admin_headers).json()["id"]
     mentor_id = requests.get(f"{BASE_URL}/auth/me", headers=mentor_headers).json()["id"]
     student_id = requests.get(f"{BASE_URL}/auth/me", headers=student_headers).json()["id"]
 

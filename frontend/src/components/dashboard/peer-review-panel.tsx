@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { ExternalLink, Star, Code, CheckCircle2 } from "lucide-react";
 
 export function PeerReviewPanel() {
@@ -47,13 +48,13 @@ export function PeerReviewPanel() {
         score: Number(score)
       });
       if (res.ok) {
-        alert("Peer review submitted successfully! You've earned karma.");
+        toast.success("Peer review submitted successfully! You've earned karma.");
         setFeedback("");
         setScore("");
         setActiveReviewId(null);
         fetchReviews();
       } else {
-        alert("Failed to submit peer review");
+        toast.error("Failed to submit peer review");
       }
     } catch (err) {
       console.error("Error submitting review", err);

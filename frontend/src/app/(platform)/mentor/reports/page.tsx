@@ -6,17 +6,17 @@ import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  FileText, 
-  Filter, 
-  MessageCircle, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Clock, 
+import {
+  FileText,
+  Filter,
+  MessageCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
   ExternalLink,
-  ChevronDown
 } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 import { ReactionBar } from "@/components/reactions/reaction-bar";
 
 interface Project {
@@ -59,11 +59,11 @@ interface DailyReport {
 
 export default function MentorReportsPage() {
   const { user } = useAuth();
-  
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [missingStudents, setMissingStudents] = useState<MissingStudent[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -111,7 +111,7 @@ export default function MentorReportsPage() {
       const repRes = await api.get(url);
       if (repRes.ok) {
         const repData = await repRes.json();
-        
+
         // Map project title to reports
         const mappedReports = repData.map((rep: any) => {
           const matchedProj = projData.find((p: any) => p.id === rep.project_id);
@@ -154,13 +154,13 @@ export default function MentorReportsPage() {
         feedback: feedback.trim()
       });
       if (res.ok) {
-        alert("Feedback updated successfully!");
+        toast.success("Feedback updated successfully!");
         fetchReportsAndMissing();
       } else {
-        alert("Failed to save feedback");
+        toast.error("Failed to save feedback");
       }
     } catch (err) {
-      alert("Error updating feedback");
+      toast.error("Error updating feedback");
     } finally {
       setSavingFeedbackId(null);
     }
@@ -179,14 +179,14 @@ export default function MentorReportsPage() {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-28 bg-card rounded-xl" />
-        <div className="h-[400px] bg-card rounded-xl" />
+        <div className="h-100 bg-card rounded-xl" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in duration-300">
-      
+
       {/* Page Title */}
       <div className="space-y-1">
         <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
@@ -230,7 +230,7 @@ export default function MentorReportsPage() {
 
       {/* Filters bar */}
       <div className="glass p-4 rounded-xl border-border/40 flex flex-wrap gap-4 items-end bg-card/10">
-        
+
         {/* Project select */}
         <div className="space-y-1 w-full sm:w-56">
           <label htmlFor="filter_proj" className="text-[10px] font-bold text-slate-300 font-mono flex items-center gap-1">
@@ -285,11 +285,10 @@ export default function MentorReportsPage() {
           reports.map((report) => {
             const isUnread = report.mentor_read_at === null;
             return (
-              <Card 
-                key={report.id} 
-                className={`glass border-border/40 overflow-hidden transition-all duration-200 ${
-                  isUnread ? "border-l-4 border-l-indigo-500 shadow-indigo-500/5 shadow-md" : ""
-                }`}
+              <Card
+                key={report.id}
+                className={`glass border-border/40 overflow-hidden transition-all duration-200 ${isUnread ? "border-l-4 border-l-indigo-500 shadow-indigo-500/5 shadow-md" : ""
+                  }`}
               >
                 {/* Card Header */}
                 <div className="p-4 bg-card/20 border-b border-border/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -315,7 +314,7 @@ export default function MentorReportsPage() {
 
                 {/* Card Content */}
                 <CardContent className="p-5 space-y-4 font-sans text-xs">
-                  
+
                   {/* Hours Spent & Blockers Row */}
                   <div className="flex flex-wrap gap-4">
                     {report.hours_spent !== null && (
@@ -351,9 +350,8 @@ export default function MentorReportsPage() {
                           const isInProgress = todo.status === "in_progress";
                           return (
                             <div key={todo.id} className="flex items-center gap-2 p-2 rounded bg-card/40 border border-border/20">
-                              <span className={`h-2 w-2 rounded-full shrink-0 ${
-                                isDone ? "bg-emerald-400" : isInProgress ? "bg-cyan-400" : "bg-slate-500"
-                              }`} />
+                              <span className={`h-2 w-2 rounded-full shrink-0 ${isDone ? "bg-emerald-400" : isInProgress ? "bg-cyan-400" : "bg-slate-500"
+                                }`} />
                               <span className={`text-[11px] truncate ${isDone ? "text-slate-400 line-through" : "text-white"}`}>{todo.description}</span>
                             </div>
                           );
@@ -368,11 +366,11 @@ export default function MentorReportsPage() {
                       <span className="text-[10px] font-bold text-slate-400 font-mono uppercase block">Relevant Links:</span>
                       <div className="flex flex-wrap gap-2 pt-1">
                         {report.links.map((lnk, idx) => (
-                          <a 
-                            key={idx} 
-                            href={lnk} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <a
+                            key={idx}
+                            href={lnk}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500 text-indigo-400 hover:text-white border border-indigo-500/20 text-[10px] transition-colors"
                           >
                             <ExternalLink className="h-3 w-3" />

@@ -5,15 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  ArrowLeft, 
-  Send, 
-  MessageSquare, 
-  Wifi, 
-  WifiOff, 
+import {
+  ArrowLeft,
+  Send,
+  MessageSquare,
+  Wifi,
+  WifiOff,
   AlertCircle
 } from "lucide-react";
 import Image from "next/image";
@@ -128,9 +128,9 @@ export default function ProjectRoomPage() {
       {/* Header card */}
       <div className="glass px-6 py-4 rounded-xl border-border/40 flex justify-between items-center gap-4">
         <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            size="icon" 
+          <Button
+            variant="outline"
+            size="icon"
             className="h-8 w-8 border border-border bg-card/60"
             onClick={() => router.push(`/projects/${projectId}`)}
           >
@@ -142,7 +142,7 @@ export default function ProjectRoomPage() {
               {project.title} Team Chat
             </h1>
             <p className="text-xs text-muted-foreground hidden sm:block">
-              {onlineUsers.size > 0 
+              {onlineUsers.size > 0
                 ? <span className="text-emerald-400 flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> {onlineUsers.size} member{onlineUsers.size !== 1 ? 's' : ''} online</span>
                 : "Collaborate with your project team in real-time."
               }
@@ -151,9 +151,8 @@ export default function ProjectRoomPage() {
         </div>
 
         {/* WebSocket Connection Status Badge */}
-        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold ${
-          connected ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-        }`}>
+        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold ${connected ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+          }`}>
           {connected ? (
             <>
               <Wifi className="h-3.5 w-3.5 animate-pulse" />
@@ -178,20 +177,19 @@ export default function ProjectRoomPage() {
             messages.map((msg) => {
               const isSelf = msg.user_id === user?.id;
               return (
-                <div 
-                  key={msg.id} 
-                  className={`flex items-start gap-2.5 max-w-[85%] sm:max-w-[70%] ${
-                    isSelf ? "ml-auto flex-row-reverse text-right" : "mr-auto text-left"
-                  }`}
+                <div
+                  key={msg.id}
+                  className={`flex items-start gap-2.5 max-w-[85%] sm:max-w-[70%] ${isSelf ? "ml-auto flex-row-reverse text-right" : "mr-auto text-left"
+                    }`}
                 >
                   {/* Sender Avatar */}
                   <div className="h-8 w-8 rounded-full bg-indigo-600/30 border border-indigo-500/20 flex items-center justify-center shrink-0 text-[10px] font-bold text-indigo-300 overflow-hidden">
                     {msg.user_avatar ? (
-                      <Image 
-                        src={msg.user_avatar} 
-                        alt={msg.user_name} 
-                        width={32} 
-                        height={32} 
+                      <Image
+                        src={msg.user_avatar}
+                        alt={msg.user_name}
+                        width={32}
+                        height={32}
                         className="object-cover"
                       />
                     ) : (
@@ -206,13 +204,12 @@ export default function ProjectRoomPage() {
                         {msg.user_name}
                       </span>
                     )}
-                    
+
                     {/* Message Bubble */}
-                    <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                      isSelf 
-                        ? "bg-indigo-600 text-white rounded-tr-none text-left" 
+                    <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isSelf
+                        ? "bg-indigo-600 text-white rounded-tr-none text-left"
                         : "bg-card border border-border rounded-tl-none text-white"
-                    }`}>
+                      }`}>
                       {msg.content}
                     </div>
 
@@ -259,8 +256,8 @@ export default function ProjectRoomPage() {
               disabled={!connected}
               className="flex-1 border border-border bg-black/20 focus-visible:ring-indigo-500/50"
             />
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={!connected || !inputText.trim()}
               className="font-semibold gap-1.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white"
             >

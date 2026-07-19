@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Loader2, Code2, CheckCircle, ExternalLink, ShieldCheck } from "lucide-react";
-import Link from "next/link";
 
 interface PortfolioItem {
   task_id: number;
@@ -60,7 +59,7 @@ export default function CandidatePortfolioPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in duration-300 pb-20">
-      
+
       <div className="flex items-center justify-between glass p-6 rounded-2xl border-border/40">
         <div>
           <h1 className="text-3xl font-extrabold text-white mb-2">{data.candidate_name}'s Proof of Work</h1>
@@ -95,7 +94,7 @@ export default function CandidatePortfolioPage() {
               </div>
             </CardHeader>
             <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               <div className="space-y-4">
                 <div>
                   <h3 className="text-xs uppercase font-bold text-muted-foreground mb-2">Code & Deployment</h3>

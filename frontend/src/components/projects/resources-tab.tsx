@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { Link2, Trash2, Plus, ExternalLink, ShieldCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -72,7 +73,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
         setMentorOnly(false);
         fetchResources();
       } else {
-        alert("Failed to add resource");
+        toast.error("Failed to add resource");
       }
     } catch (err) {
       console.error("Error adding resource", err);
@@ -88,7 +89,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
       if (res.ok) {
         fetchResources();
       } else {
-        alert("Failed to delete resource");
+        toast.error("Failed to delete resource");
       }
     } catch (err) {
       console.error("Error deleting resource", err);

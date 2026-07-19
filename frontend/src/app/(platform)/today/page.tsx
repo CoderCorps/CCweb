@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -11,14 +10,14 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import DailyReportForm from "@/components/dashboard/DailyReportForm";
 import { StuckFlagButton } from "@/components/tasks/stuck-flag-button";
 import { PeerReviewPanel } from "@/components/dashboard/peer-review-panel";
-import { 
-  Sun, 
-  Play, 
-  CheckCircle2, 
-  Circle, 
-  Plus, 
-  Clock, 
-  AlertCircle,
+import { toast } from "sonner";
+import {
+  Sun,
+  Play,
+  CheckCircle2,
+  Circle,
+  Plus,
+  Clock,
   FileText,
   Workflow
 } from "lucide-react";
@@ -46,12 +45,11 @@ interface DailyTodo {
 
 export default function StudentTodayPage() {
   const { user } = useAuth();
-  const router = useRouter();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
   const [todos, setTodos] = useState<DailyTodo[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [started, setStarted] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
@@ -74,16 +72,20 @@ export default function StudentTodayPage() {
   }, []);
 
   useEffect(() => {
-    checkTime();
+    // Defer initial check to avoid synchronous setState during render/effect
+    const initTimer = setTimeout(() => checkTime(), 0);
     const interval = setInterval(checkTime, 60000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(interval);
+    };
   }, [checkTime]);
 
   const loadTodayData = useCallback(async () => {
     if (!user) return;
     try {
       const todayStr = new Date().toISOString().split("T")[0];
-      
+
       // 1. Fetch daily todos
       const todosRes = await api.get(`/daily/todos?date=${todayStr}`);
       if (todosRes.ok) {
@@ -146,7 +148,10 @@ export default function StudentTodayPage() {
   }, [user]);
 
   useEffect(() => {
-    loadTodayData();
+    const initTimer = window.setTimeout(() => {
+      loadTodayData();
+    }, 0);
+    return () => window.clearTimeout(initTimer);
   }, [loadTodayData]);
 
   // Handle checking/unchecking assigned tasks for setup checklist
@@ -205,11 +210,11 @@ export default function StudentTodayPage() {
       if (res.ok) {
         loadTodayData();
       } else {
-        alert("Failed to start day");
+        toast.error("Failed to start day");
         setLoading(false);
       }
     } catch (err) {
-      alert("Error starting day");
+      toast.error("Error starting day");
       setLoading(false);
     }
   };
@@ -240,14 +245,14 @@ export default function StudentTodayPage() {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-20 bg-card rounded-xl" />
-        <div className="h-[400px] bg-card rounded-xl" />
+        <div className="h-100 bg-card rounded-xl" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-300">
-      
+
       {/* Header bar */}
       <div className="glass px-6 py-5 rounded-2xl border-border/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">
@@ -270,24 +275,23 @@ export default function StudentTodayPage() {
             ) : (
               <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button 
-                    className={`font-semibold gap-1.5 shadow-lg transition-all duration-300 ${
-                      isPast4PM 
-                        ? "bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse scale-105 border border-emerald-400/50" 
-                        : "bg-indigo-600 hover:bg-indigo-500 text-white"
-                    }`}
+                  <Button
+                    className={`font-semibold gap-1.5 shadow-lg transition-all duration-300 ${isPast4PM
+                      ? "bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse scale-105 border border-emerald-400/50"
+                      : "bg-indigo-600 hover:bg-indigo-500 text-white"
+                      }`}
                   >
                     <FileText className="h-4 w-4" /> Submit Daily Report
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="glass-premium border-border/60 max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DailyReportForm 
-                    todos={todos} 
-                    projectId={todos[0]?.id ? Number(selectedProjectId || projects[0]?.id) : 0} 
+                  <DailyReportForm
+                    todos={todos}
+                    projectId={todos[0]?.id ? Number(selectedProjectId || projects[0]?.id) : 0}
                     onSuccess={() => {
                       setReportDialogOpen(false);
                       loadTodayData();
-                    }} 
+                    }}
                   />
                 </DialogContent>
               </Dialog>
@@ -298,13 +302,13 @@ export default function StudentTodayPage() {
 
       {/* Main Workspace */}
       {!started ? (
-        
+
         // UNSTARTED SETUP VIEW
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
+
           {/* Select Project & Setup */}
           <div className="md:col-span-2 space-y-6">
-            
+
             {/* Project selection card */}
             <Card className="glass border-border/40">
               <CardHeader>
@@ -334,16 +338,15 @@ export default function StudentTodayPage() {
                   Select tickets assigned to you in active sprints that you plan to progress today.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2.5 max-h-[300px] overflow-y-auto">
+              <CardContent className="space-y-2.5 max-h-75 overflow-y-auto">
                 {assignedTasks.length > 0 ? (
                   assignedTasks.map((t) => (
-                    <label 
-                      key={t.id} 
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200 ${
-                        checkedTaskIds.includes(t.id) 
-                          ? "bg-indigo-600/10 border-indigo-500/50 text-white" 
-                          : "bg-card/40 border-border/40 text-slate-300 hover:border-indigo-500/30"
-                      }`}
+                    <label
+                      key={t.id}
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200 ${checkedTaskIds.includes(t.id)
+                        ? "bg-indigo-600/10 border-indigo-500/50 text-white"
+                        : "bg-card/40 border-border/40 text-slate-300 hover:border-indigo-500/30"
+                        }`}
                     >
                       <input
                         type="checkbox"
@@ -378,7 +381,7 @@ export default function StudentTodayPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 flex-1 flex flex-col">
-                
+
                 {/* Custom list builder */}
                 <form onSubmit={handleAddCustomTodo} className="flex gap-2">
                   <Input
@@ -393,11 +396,11 @@ export default function StudentTodayPage() {
                 </form>
 
                 {/* Custom items display */}
-                <div className="flex-1 overflow-y-auto space-y-2 max-h-[220px]">
+                <div className="flex-1 overflow-y-auto space-y-2 max-h-55">
                   {customTodos.map((text, idx) => (
                     <div key={idx} className="flex justify-between items-center p-2 rounded bg-card/60 border border-border/40 text-xs text-white">
                       <span className="break-all pr-2">{text}</span>
-                      <button 
+                      <button
                         onClick={() => handleRemoveCustomTodo(idx)}
                         className="text-red-400 hover:text-red-300 font-bold px-1"
                       >
@@ -433,7 +436,7 @@ export default function StudentTodayPage() {
               <div>
                 <CardTitle className="text-white text-md">Planned Checklist Progress</CardTitle>
                 <CardDescription className="text-xs">
-                  Cycle through statuses (Planned ➔ In Progress ➔ Done) to track today's execution.
+                  Cycle through statuses (Planned ➔ In Progress ➔ Done) to track today&apos;s execution.
                 </CardDescription>
               </div>
               <div className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground bg-card/60 border border-border/40 px-2 py-0.5 rounded">
@@ -458,14 +461,13 @@ export default function StudentTodayPage() {
               }
 
               return (
-                <div 
+                <div
                   key={todo.id}
                   onClick={() => handleCycleStatus(todo.id, todo.status)}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer hover:bg-card/25 transition-all duration-200 ${
-                    todo.status === "done" 
-                      ? "bg-emerald-500/5 border-emerald-500/20 text-slate-400 line-through" 
-                      : "bg-card/40 border-border/40 text-white"
-                  }`}
+                  className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer hover:bg-card/25 transition-all duration-200 ${todo.status === "done"
+                    ? "bg-emerald-500/5 border-emerald-500/20 text-slate-400 line-through"
+                    : "bg-card/40 border-border/40 text-white"
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <StatusIcon className={`h-5 w-5 ${todo.status === "done" ? "text-emerald-400" : todo.status === "in_progress" ? "text-cyan-400" : "text-slate-400"}`} />

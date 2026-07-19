@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import Editor, { useMonaco } from "@monaco-editor/react";
+import Editor from "@monaco-editor/react";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
-import { Loader2, Users, Code2, AlertTriangle } from "lucide-react";
+import { Loader2, Code2, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export default function PairProgrammingRoom() {
@@ -17,7 +17,7 @@ export default function PairProgrammingRoom() {
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleEditorDidMount = (editor: any, monaco: any) => {
+  const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
 
     const currentToken = getToken();
@@ -56,7 +56,7 @@ export default function PairProgrammingRoom() {
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4 max-w-7xl mx-auto animate-in fade-in duration-300">
-      
+
       <div className="flex items-center justify-between glass p-4 rounded-xl border-border/40 shrink-0">
         <div className="flex items-center gap-3">
           <div className="bg-indigo-500/20 p-2 rounded-lg border border-indigo-500/30">
@@ -67,7 +67,7 @@ export default function PairProgrammingRoom() {
             <p className="text-xs text-muted-foreground">Session ID: {roomId}</p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4">
           {error ? (
             <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20">
@@ -89,7 +89,7 @@ export default function PairProgrammingRoom() {
         </div>
       </div>
 
-      <Card className="flex-grow glass overflow-hidden rounded-xl border-border/40 relative">
+      <Card className="grow glass overflow-hidden rounded-xl border-border/40 relative">
         <Editor
           height="100%"
           defaultLanguage="javascript"
@@ -114,7 +114,7 @@ export default function PairProgrammingRoom() {
           }
         />
       </Card>
-      
+
     </div>
   );
 }

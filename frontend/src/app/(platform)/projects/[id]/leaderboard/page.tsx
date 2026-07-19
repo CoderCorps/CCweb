@@ -21,6 +21,7 @@ import {
   Bookmark,
   Users
 } from "lucide-react";
+import { toast } from "sonner";
 import { TaskComments } from "@/components/tasks/task-comments";
 import { StuckFlagButton } from "@/components/tasks/stuck-flag-button";
 
@@ -175,17 +176,17 @@ export default function LeaderboardPage() {
       });
 
       if (res.ok) {
-        alert("Submission saved successfully!");
+        toast.success("Submission saved successfully!");
         setRepoUrl("");
         setDemoUrl("");
         setApproachNotes("");
         fetchTaskSubmissions(selectedTask.id);
         fetchLeaderboardAndTasks();
       } else {
-        alert("Failed to submit code");
+        toast.error("Failed to submit code");
       }
     } catch (err) {
-      alert("Error saving submission");
+      toast.error("Error saving submission");
     } finally {
       setSubmitting(false);
     }
@@ -204,14 +205,14 @@ export default function LeaderboardPage() {
         needs_improvement: needsImprovement
       });
       if (res.ok) {
-        alert(needsImprovement ? "Requested changes successfully!" : "Grade and feedback updated successfully!");
+        toast.success(needsImprovement ? "Requested changes successfully!" : "Grade and feedback updated successfully!");
         if (selectedTask) fetchTaskSubmissions(selectedTask.id);
         fetchLeaderboardAndTasks();
       } else {
-        alert("Failed to update grading review");
+        toast.error("Failed to update grading review");
       }
     } catch (err) {
-      alert("Error saving review");
+      toast.error("Error saving review");
     } finally {
       setSavingReviewId(null);
     }
@@ -224,14 +225,14 @@ export default function LeaderboardPage() {
     try {
       const res = await api.post(`/task-submissions/${submissionId}/ai-review`, {});
       if (res.ok) {
-        alert("AI Pre-Review completed!");
+        toast.success("AI Pre-Review completed!");
         if (selectedTask) fetchTaskSubmissions(selectedTask.id);
         fetchLeaderboardAndTasks();
       } else {
-        alert("Failed to run AI Pre-Review");
+        toast.error("Failed to run AI Pre-Review");
       }
     } catch (err) {
-      alert("Error triggering AI Pre-Review");
+      toast.error("Error triggering AI Pre-Review");
     } finally {
       setTriggeringAi(null);
     }

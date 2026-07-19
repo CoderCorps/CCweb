@@ -7,14 +7,14 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  User, 
-  Lock, 
-  Bell, 
-  ShieldCheck, 
-  AlertCircle, 
-  Camera, 
-  Upload,
+import { toast } from "sonner";
+import {
+  User,
+  Lock,
+  Bell,
+  ShieldCheck,
+  AlertCircle,
+  Camera,
   UserCircle
 } from "lucide-react";
 
@@ -60,7 +60,9 @@ export default function SettingsPage() {
 
   // Load user data
   useEffect(() => {
-    if (user) {
+    if (!user) return;
+
+    const timeout = setTimeout(() => {
       setName(user.name || "");
       setEmail(user.email || "");
       setAvatarUrl(user.avatar_url || "");
@@ -74,14 +76,16 @@ export default function SettingsPage() {
         setIsPublic(user.profile.is_public);
         setAvailability(user.profile.availability || "");
       }
-    }
+    }, 0);
+
+    return () => clearTimeout(timeout);
   }, [user]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert("Image file size should be less than 2MB.");
+        toast("Image file size should be less than 2MB.");
         return;
       }
       const reader = new FileReader();
@@ -186,23 +190,21 @@ export default function SettingsPage() {
         <aside className="lg:col-span-3 flex flex-col gap-1.5">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 text-left border ${
-              activeTab === "profile"
-                ? "bg-primary/10 border-primary/20 text-white font-bold"
-                : "border-transparent text-muted-foreground hover:bg-border/30 hover:text-white"
-            }`}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 text-left border ${activeTab === "profile"
+              ? "bg-primary/10 border-primary/20 text-white font-bold"
+              : "border-transparent text-muted-foreground hover:bg-border/30 hover:text-white"
+              }`}
           >
             <User className="h-4 w-4" />
             <span>Profile settings</span>
           </button>
-          
+
           <button
             onClick={() => setActiveTab("account")}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 text-left border ${
-              activeTab === "account"
-                ? "bg-primary/10 border-primary/20 text-white font-bold"
-                : "border-transparent text-muted-foreground hover:bg-border/30 hover:text-white"
-            }`}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 text-left border ${activeTab === "account"
+              ? "bg-primary/10 border-primary/20 text-white font-bold"
+              : "border-transparent text-muted-foreground hover:bg-border/30 hover:text-white"
+              }`}
           >
             <Lock className="h-4 w-4" />
             <span>Account & Security</span>
@@ -210,11 +212,10 @@ export default function SettingsPage() {
 
           <button
             onClick={() => setActiveTab("notifications")}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 text-left border ${
-              activeTab === "notifications"
-                ? "bg-primary/10 border-primary/20 text-white font-bold"
-                : "border-transparent text-muted-foreground hover:bg-border/30 hover:text-white"
-            }`}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 text-left border ${activeTab === "notifications"
+              ? "bg-primary/10 border-primary/20 text-white font-bold"
+              : "border-transparent text-muted-foreground hover:bg-border/30 hover:text-white"
+              }`}
           >
             <Bell className="h-4 w-4" />
             <span>Notifications</span>
@@ -223,7 +224,7 @@ export default function SettingsPage() {
 
         {/* Form Content Cards */}
         <main className="lg:col-span-9">
-          
+
           {/* 1. PROFILE TAB */}
           {activeTab === "profile" && (
             <Card className="glass border-border/40">
@@ -237,23 +238,23 @@ export default function SettingsPage() {
                 <form onSubmit={handleProfileSubmit} className="space-y-4 font-sans">
                   {profileError && (
                     <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-md text-xs text-red-400 flex items-start gap-2 animate-in fade-in duration-200">
-                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                       <span>{profileError}</span>
                     </div>
                   )}
 
                   {/* Avatar Upload block */}
                   <div className="flex flex-col sm:flex-row gap-6 items-center p-4 bg-muted/40 border border-border/40 rounded-xl mb-6">
-                    <div className="relative group flex-shrink-0">
+                    <div className="relative group shrink-0">
                       <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-primary/40 bg-card flex items-center justify-center relative">
                         {avatarUrl ? (
-                          <Image 
-                            src={avatarUrl} 
-                            alt="Preview" 
+                          <Image
+                            src={avatarUrl}
+                            alt="Preview"
                             width={80}
                             height={80}
                             unoptimized
-                            className="h-full w-full object-cover" 
+                            className="h-full w-full object-cover"
                           />
                         ) : (
                           <UserCircle className="h-12 w-12 text-muted-foreground" />
@@ -267,15 +268,15 @@ export default function SettingsPage() {
                           <span>CHANGE</span>
                         </button>
                       </div>
-                      <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileUpload} 
-                        accept="image/*" 
-                        className="hidden" 
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept="image/*"
+                        className="hidden"
                       />
                     </div>
-                    <div className="flex-grow w-full space-y-2">
+                    <div className="grow w-full space-y-2">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-muted-foreground font-mono uppercase">Full Name</label>
@@ -353,14 +354,12 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => setIsPublic(!isPublic)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                        isPublic ? "bg-primary" : "bg-muted"
-                      }`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isPublic ? "bg-primary" : "bg-muted"
+                        }`}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          isPublic ? "translate-x-6" : "translate-x-1"
-                        }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPublic ? "translate-x-6" : "translate-x-1"
+                          }`}
                       />
                     </button>
                   </div>
@@ -393,7 +392,7 @@ export default function SettingsPage() {
                 <form onSubmit={handleAccountSubmit} className="space-y-4 font-sans">
                   {accountError && (
                     <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-md text-xs text-red-400 flex items-start gap-2 animate-in fade-in duration-200">
-                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                       <span>{accountError}</span>
                     </div>
                   )}
@@ -452,9 +451,8 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => setNotifReviews(!notifReviews)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                          notifReviews ? "bg-primary" : "bg-muted"
-                        }`}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${notifReviews ? "bg-primary" : "bg-muted"
+                          }`}
                       >
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notifReviews ? "translate-x-6" : "translate-x-1"}`} />
                       </button>
@@ -469,9 +467,8 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => setNotifSprints(!notifSprints)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                          notifSprints ? "bg-primary" : "bg-muted"
-                        }`}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${notifSprints ? "bg-primary" : "bg-muted"
+                          }`}
                       >
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notifSprints ? "translate-x-6" : "translate-x-1"}`} />
                       </button>
@@ -486,9 +483,8 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => setNotifWeekly(!notifWeekly)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                          notifWeekly ? "bg-primary" : "bg-muted"
-                        }`}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${notifWeekly ? "bg-primary" : "bg-muted"
+                          }`}
                       >
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notifWeekly ? "translate-x-6" : "translate-x-1"}`} />
                       </button>

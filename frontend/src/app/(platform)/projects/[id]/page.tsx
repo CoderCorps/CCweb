@@ -24,6 +24,7 @@ import {
   Trophy,
   Terminal
 } from "lucide-react";
+import { toast } from "sonner";
 import { ResourcesTab } from "@/components/projects/resources-tab";
 
 export default function ProjectWorkspacePage() {
@@ -115,10 +116,10 @@ export default function ProjectWorkspacePage() {
         invalidate();
         fetchWorkspace(Number(id));
       } else {
-        alert("Failed to create sprint.");
+        toast.error("Failed to create sprint.");
       }
     } catch (err) {
-      alert("Error creating sprint.");
+      toast.error("Error creating sprint.");
     } finally {
       setSprintSubmitting(false);
     }
@@ -145,10 +146,10 @@ export default function ProjectWorkspacePage() {
         invalidate();
         fetchWorkspace(Number(id));
       } else {
-        alert("Failed to create task.");
+        toast.error("Failed to create task.");
       }
     } catch (err) {
-      alert("Error creating task.");
+      toast.error("Error creating task.");
     } finally {
       setTaskSubmitting(false);
     }
@@ -181,10 +182,10 @@ export default function ProjectWorkspacePage() {
         fetchWorkspace(Number(id));
       } else {
         const errorMsg = await res.json().catch(() => ({}));
-        alert(errorMsg.detail || "Failed to assign student");
+        toast.error(errorMsg.detail || "Failed to assign student");
       }
     } catch (err) {
-      alert("Error assigning student");
+      toast.error("Error assigning student");
     } finally {
       setAssigningStudent(false);
     }
@@ -208,10 +209,10 @@ export default function ProjectWorkspacePage() {
         invalidate();
         fetchWorkspace(Number(id));
       } else {
-        alert("Failed to update task.");
+        toast.error("Failed to update task.");
       }
     } catch (err) {
-      alert("Error updating task.");
+      toast.error("Error updating task.");
     } finally {
       setTaskUpdating(false);
     }
@@ -232,12 +233,12 @@ export default function ProjectWorkspacePage() {
         setSubmitDialogOpen(false);
         setDemoUrl("");
         setRepoUrl("");
-        alert("Deliverable successfully submitted to review queue!");
+        toast.success("Deliverable successfully submitted to review queue!");
       } else {
-        alert("Failed to submit project.");
+        toast.error("Failed to submit project.");
       }
     } catch (err) {
-      alert("Error submitting project.");
+      toast.error("Error submitting project.");
     } finally {
       setSubmittingProject(false);
     }

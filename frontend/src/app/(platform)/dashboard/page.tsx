@@ -23,6 +23,7 @@ import {
   Zap,
   ArrowRightLeft
 } from "lucide-react";
+import { toast } from "sonner";
 import { StuckStudentsWidget } from "@/components/dashboard/stuck-students-widget";
 
 import type { DashboardData } from "@/stores";
@@ -64,10 +65,10 @@ export default function DashboardPage() {
         invalidate(); // Invalidate cache
         fetchDashboard(); // Refetch fresh data
       } else {
-        alert("Failed to submit review");
+        toast.error("Failed to submit review");
       }
     } catch (err) {
-      alert("Failed to connect to server");
+      toast.error("Failed to connect to server");
     } finally {
       setSubmittingReview(false);
     }
@@ -92,10 +93,10 @@ export default function DashboardPage() {
         fetchDashboard();
       } else {
         const errDetail = await res.json().catch(() => ({}));
-        alert(errDetail.detail || "Failed to update role");
+        toast.error(errDetail.detail || "Failed to update role");
       }
     } catch (err) {
-      alert("Error contacting api server");
+      toast.error("Error contacting api server");
     } finally {
       setUpdatingUserId(null);
       setUpdatingRole(false);

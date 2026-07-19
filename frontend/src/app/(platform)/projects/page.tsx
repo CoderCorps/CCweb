@@ -9,33 +9,16 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { 
-  FolderGit2, 
-  User, 
-  ArrowRight, 
-  Plus, 
-  AlertCircle,
+import { toast } from "sonner";
+import {
+  FolderGit2,
+  User,
+  ArrowRight,
+  Plus,
   GitBranch,
   Calendar
 } from "lucide-react";
 
-interface Project {
-  id: number;
-  title: string;
-  description: string;
-  status: string;
-  created_at: string;
-  start_date?: string;
-  end_date?: string;
-  mentor?: {
-    id: number;
-    name: string;
-  };
-  members: Array<{
-    user_id: number;
-    role: string;
-  }>;
-}
 
 export default function ProjectsPage() {
   const { user } = useAuth();
@@ -75,10 +58,10 @@ export default function ProjectsPage() {
         setNewStartDate("");
         setNewEndDate("");
       } else {
-        alert("Failed to create project");
+        toast.error("Failed to create project");
       }
     } catch (err) {
-      alert("Error connecting to server");
+      toast.error("Error connecting to server");
     } finally {
       setSubmittingProject(false);
     }
@@ -92,10 +75,10 @@ export default function ProjectsPage() {
         useProjectStore.setState({ lastFetched: null });
         fetchProjects();
       } else {
-        alert("Failed to join project");
+        toast.error("Failed to join project");
       }
     } catch (err) {
-      alert("Error joining project");
+      toast.error("Error joining project");
     }
   };
 
@@ -139,32 +122,32 @@ export default function ProjectsPage() {
               <form onSubmit={handleCreateProject} className="space-y-4 py-2">
                 <div className="space-y-1.5">
                   <label htmlFor="p_title" className="text-xs font-semibold text-foreground font-mono">PROJECT TITLE</label>
-                  <Input 
-                    id="p_title" 
-                    type="text" 
-                    value={newTitle} 
-                    onChange={(e) => setNewTitle(e.target.value)} 
-                    placeholder="Distributed Database Engine" 
-                    required 
+                  <Input
+                    id="p_title"
+                    type="text"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="Distributed Database Engine"
+                    required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label htmlFor="p_start" className="text-xs font-semibold text-foreground font-mono">START DATE</label>
-                    <Input 
-                      id="p_start" 
-                      type="date" 
-                      value={newStartDate} 
-                      onChange={(e) => setNewStartDate(e.target.value)} 
+                    <Input
+                      id="p_start"
+                      type="date"
+                      value={newStartDate}
+                      onChange={(e) => setNewStartDate(e.target.value)}
                     />
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="p_end" className="text-xs font-semibold text-foreground font-mono">END DATE</label>
-                    <Input 
-                      id="p_end" 
-                      type="date" 
-                      value={newEndDate} 
-                      onChange={(e) => setNewEndDate(e.target.value)} 
+                    <Input
+                      id="p_end"
+                      type="date"
+                      value={newEndDate}
+                      onChange={(e) => setNewEndDate(e.target.value)}
                     />
                   </div>
                 </div>
@@ -209,15 +192,15 @@ export default function ProjectsPage() {
               </CardHeader>
               <CardContent className="py-2">
                 <p className="text-xs text-muted-foreground leading-relaxed h-12 overflow-hidden">{proj.description}</p>
-                
+
                 {/* Timeline Dates */}
                 {(proj.start_date || proj.end_date) && (
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-3 bg-muted/40 border border-border/30 rounded-lg px-2.5 py-1.5 w-fit">
                     <Calendar className="h-3.5 w-3.5 text-indigo-400" />
                     <span>
-                      {proj.start_date ? new Date(proj.start_date).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'}) : "N/A"}
+                      {proj.start_date ? new Date(proj.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"}
                       {" - "}
-                      {proj.end_date ? new Date(proj.end_date).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'}) : "N/A"}
+                      {proj.end_date ? new Date(proj.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"}
                     </span>
                   </div>
                 )}

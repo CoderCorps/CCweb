@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { 
   ArrowLeft, 
   Users, 
@@ -175,10 +176,10 @@ export default function ProjectManagePage() {
         setSelectedStudentId("");
         fetchAllData();
       } else {
-        alert("Failed to add member");
+        toast.error("Failed to add member");
       }
     } catch (err) {
-      alert("Error adding member");
+      toast.error("Error adding member");
     }
   };
 
@@ -190,10 +191,10 @@ export default function ProjectManagePage() {
       if (res.ok) {
         fetchAllData();
       } else {
-        alert("Failed to remove member");
+        toast.error("Failed to remove member");
       }
     } catch (err) {
-      alert("Error removing member");
+      toast.error("Error removing member");
     }
   };
 
@@ -211,10 +212,10 @@ export default function ProjectManagePage() {
         setSprintGoal("");
         fetchAllData();
       } else {
-        alert("Failed to create sprint");
+        toast.error("Failed to create sprint");
       }
     } catch (err) {
-      alert("Error creating sprint");
+      toast.error("Error creating sprint");
     } finally {
       setSprintSubmitting(false);
     }
@@ -241,10 +242,10 @@ export default function ProjectManagePage() {
         setTaskDueDate("");
         fetchAllData();
       } else {
-        alert("Failed to create task");
+        toast.error("Failed to create task");
       }
     } catch (err) {
-      alert("Error creating task");
+      toast.error("Error creating task");
     } finally {
       setTaskSubmitting(false);
     }
@@ -268,13 +269,13 @@ export default function ProjectManagePage() {
         mode: mode
       });
       if (res.ok) {
-        alert("Task assignments updated successfully!");
+        toast.success("Task assignments updated successfully!");
         fetchAllData();
       } else {
-        alert("Failed to save assignments");
+        toast.error("Failed to save assignments");
       }
     } catch (err) {
-      alert("Error saving assignments");
+      toast.error("Error saving assignments");
     }
   };
 
@@ -287,13 +288,13 @@ export default function ProjectManagePage() {
         content: announcement
       });
       if (res.ok) {
-        alert("Announcement posted successfully!");
+        toast.success("Announcement posted successfully!");
         setAnnouncement("");
       } else {
-        alert("Failed to post announcement");
+        toast.error("Failed to post announcement");
       }
     } catch (err) {
-      alert("Error posting announcement");
+      toast.error("Error posting announcement");
     } finally {
       setAnnouncing(false);
     }

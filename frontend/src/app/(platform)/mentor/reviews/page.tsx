@@ -7,12 +7,10 @@ import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  ClipboardList, 
+import { toast } from "sonner";
+import {
+  ClipboardList,
   ExternalLink,
-  ShieldCheck,
-  AlertCircle,
-  Terminal
 } from "lucide-react";
 
 interface Submission {
@@ -55,7 +53,7 @@ export default function ReviewsBoardPage() {
         setError("Failed to fetch pending reviews");
       }
     } catch (err) {
-      setError("Error connecting to server");
+      setError("Error connecting to server: " + err);
     } finally {
       setLoading(false);
     }
@@ -65,7 +63,7 @@ export default function ReviewsBoardPage() {
     fetchSubmissions();
   }, []);
 
-  const handleReviewSubmit = async (e: React.FormEvent) => {
+  const handleReviewSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (reviewId === null) return;
     setSubmittingReview(true);
@@ -81,10 +79,11 @@ export default function ReviewsBoardPage() {
         setFeedback("");
         fetchSubmissions(); // Refresh
       } else {
-        alert("Failed to submit review");
+        toast.error("Failed to submit review");
       }
     } catch (err) {
-      alert("Error connecting to server");
+      toast.error("Error connecting to server");
+      console.log(err);
     } finally {
       setSubmittingReview(false);
     }
@@ -144,7 +143,7 @@ export default function ReviewsBoardPage() {
                   {/* Audit Trigger */}
                   <Dialog open={dialogOpen && reviewId === sub.id} onOpenChange={(open) => {
                     setDialogOpen(open);
-                    if(open) {
+                    if (open) {
                       setReviewId(sub.id);
                       setFeedback("");
                       setReviewStatus("approved");
@@ -167,22 +166,20 @@ export default function ReviewsBoardPage() {
                             <button
                               type="button"
                               onClick={() => setReviewStatus("approved")}
-                              className={`p-2.5 rounded-lg border text-sm font-semibold transition-colors ${
-                                reviewStatus === "approved"
-                                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
-                                  : "border-border/60 text-muted-foreground hover:bg-border/20"
-                              }`}
+                              className={`p-2.5 rounded-lg border text-sm font-semibold transition-colors ${reviewStatus === "approved"
+                                ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                                : "border-border/60 text-muted-foreground hover:bg-border/20"
+                                }`}
                             >
                               Approve Audit
                             </button>
                             <button
                               type="button"
                               onClick={() => setReviewStatus("needs_revision")}
-                              className={`p-2.5 rounded-lg border text-sm font-semibold transition-colors ${
-                                reviewStatus === "needs_revision"
-                                  ? "border-amber-500 bg-amber-500/10 text-amber-400"
-                                  : "border-border/60 text-muted-foreground hover:bg-border/20"
-                              }`}
+                              className={`p-2.5 rounded-lg border text-sm font-semibold transition-colors ${reviewStatus === "needs_revision"
+                                ? "border-amber-500 bg-amber-500/10 text-amber-400"
+                                : "border-border/60 text-muted-foreground hover:bg-border/20"
+                                }`}
                             >
                               Request Revisions
                             </button>

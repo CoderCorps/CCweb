@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, ExternalLink, Code2, Award, Star, Loader2 } from "lucide-react";
+import { Search, ExternalLink, Code2, Star, Loader2 } from "lucide-react";
+import Image from "next/image";
 
 interface Candidate {
   user: {
@@ -28,7 +28,6 @@ interface Candidate {
 }
 
 export default function RecruitersPortal() {
-  const { user } = useAuth();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchSkill, setSearchSkill] = useState("");
@@ -59,7 +58,7 @@ export default function RecruitersPortal() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-300">
-      
+
       <div className="glass p-8 rounded-2xl border-border/40 text-center">
         <h1 className="text-3xl font-extrabold text-white mb-2 font-mono uppercase tracking-tight">Recruiter "Proof-of-Work" Portal</h1>
         <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
@@ -69,10 +68,10 @@ export default function RecruitersPortal() {
 
       <div className="glass p-4 rounded-xl border-border/40">
         <form onSubmit={handleSearch} className="flex gap-3 max-w-xl mx-auto">
-          <div className="relative flex-grow">
+          <div className="relative grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Filter by Skill Galaxy nodes (e.g. React, Python, AWS)..." 
+            <Input
+              placeholder="Filter by Skill Galaxy nodes (e.g. React, Python, AWS)..."
               value={searchSkill}
               onChange={(e) => setSearchSkill(e.target.value)}
               className="pl-9 bg-card/60 border-border"
@@ -94,12 +93,12 @@ export default function RecruitersPortal() {
                 <div className="flex items-start gap-4">
                   <div className="h-12 w-12 rounded-xl bg-card border border-border flex items-center justify-center shrink-0 overflow-hidden">
                     {c.user.avatar_url ? (
-                      <img src={c.user.avatar_url} alt={c.user.name} className="h-full w-full object-cover" />
+                      <Image src={c.user.avatar_url} alt={c.user.name} className="h-full w-full object-cover" width={48} height={48} />
                     ) : (
                       <span className="font-bold text-lg text-indigo-400">{c.user.name.charAt(0)}</span>
                     )}
                   </div>
-                  <div className="flex-grow">
+                  <div className="grow">
                     <CardTitle className="text-lg text-white font-bold">
                       <a href={`/recruiters/candidate/${c.user.id}`} className="hover:underline">{c.user.name}</a>
                     </CardTitle>
@@ -109,9 +108,9 @@ export default function RecruitersPortal() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-4 flex flex-col gap-4 flex-grow">
+              <CardContent className="pt-4 flex flex-col gap-4 grow">
                 {c.bio && <p className="text-xs text-muted-foreground line-clamp-2">{c.bio}</p>}
-                
+
                 {/* Skills */}
                 <div className="flex flex-wrap gap-1.5">
                   {c.skills.slice(0, 5).map(skill => (
@@ -129,7 +128,7 @@ export default function RecruitersPortal() {
                   <span className="text-[10px] font-bold text-slate-400 font-mono uppercase">Top Verified Code</span>
                   {c.top_submissions.length > 0 ? c.top_submissions.map((sub, idx) => (
                     <div key={idx} className="bg-card/40 rounded border border-border/40 p-2 text-xs flex justify-between items-center">
-                      <span className="truncate max-w-[150px] font-bold text-slate-300" title={sub.task_title}>{sub.task_title}</span>
+                      <span className="truncate max-w-37.5 font-bold text-slate-300" title={sub.task_title}>{sub.task_title}</span>
                       <div className="flex items-center gap-2">
                         {sub.ai_score && <span className="text-[9px] text-indigo-400 font-mono" title="AI Score">🤖{sub.ai_score}</span>}
                         <span className="text-[9px] text-emerald-400 font-mono font-bold" title="Mentor Score">{sub.score}/100</span>

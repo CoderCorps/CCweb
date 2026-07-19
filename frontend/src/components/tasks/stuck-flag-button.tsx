@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 import { Flag, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -23,7 +24,7 @@ export function StuckFlagButton({ taskId, initialIsStuck = false }: StuckFlagBut
         // We'll just POST it to flag, and maybe mentor resolves it. If student clicks it again, they might add another note or resolve it.
         // For simplicity, let's just make it a one-way flag for the student, or assume the backend toggles it.
         // Actually, let's call it 'Flag as stuck' and if it's already stuck, maybe say 'Currently Stuck'.
-        alert("You have already flagged this as stuck. A mentor will review it shortly.");
+        toast("You have already flagged this as stuck. A mentor will review it shortly.");
       } else {
         const note = prompt("Optional: Briefly describe what you are stuck on.");
         if (note !== null) {

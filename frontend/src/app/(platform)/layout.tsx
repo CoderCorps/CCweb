@@ -10,12 +10,12 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { CommandPalette } from "@/components/ui/command-palette";
 import { getAssetUrl } from "@/lib/utils";
 
-import { 
-  LayoutDashboard, 
-  FolderGit2, 
-  UserCircle, 
-  ClipboardList, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  FolderGit2,
+  UserCircle,
+  ClipboardList,
+  LogOut,
   Terminal,
   ChevronRight,
   Settings,
@@ -73,7 +73,7 @@ export default function PlatformLayout({
   } else {
     navLinks.push({ name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> });
   }
-  
+
   navLinks.push(
     { name: "Projects", href: "/projects", icon: <FolderGit2 className="h-4 w-4" /> },
     { name: "My Portfolio", href: "/portfolio", icon: <UserCircle className="h-4 w-4" /> },
@@ -129,9 +129,9 @@ export default function PlatformLayout({
 
           {/* User info widget */}
           <div className="p-4 border-b border-border/40 flex items-center gap-3">
-            <Image 
-              src={user.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`} 
-              alt={user.name} 
+            <Image
+              src={user.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`}
+              alt={user.name}
               width={40}
               height={40}
               className="rounded-full object-cover border border-border"
@@ -148,11 +148,10 @@ export default function PlatformLayout({
               const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
               return (
                 <Link key={link.href} href={link.href}>
-                  <div className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                    active 
-                      ? "bg-primary/10 border border-primary/20 text-white" 
-                      : "text-muted-foreground hover:bg-border/30 hover:text-white border border-transparent"
-                  }`}>
+                  <div className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${active
+                    ? "bg-primary/10 border border-primary/20 text-white"
+                    : "text-muted-foreground hover:bg-border/30 hover:text-white border border-transparent"
+                    }`}>
                     <div className="flex items-center gap-3">
                       {link.icon}
                       <span>{link.name}</span>
@@ -167,8 +166,8 @@ export default function PlatformLayout({
 
         {/* Footer controls */}
         <div className="p-4 border-t border-border flex flex-col gap-2">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={handleLogout}
             className="w-full justify-start gap-3 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 font-medium"
           >
@@ -179,20 +178,20 @@ export default function PlatformLayout({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-grow pl-64 min-h-screen flex flex-col">
+      <div className="grow pl-64 min-h-screen flex flex-col">
         {/* Top bar header */}
         <header className="h-16 border-b border-border/40 bg-card/60 backdrop-blur-sm sticky top-0 flex items-center justify-between px-8 z-20">
           <h2 className="text-sm font-semibold text-foreground font-mono uppercase tracking-wider">
             {pathname === "/dashboard" ? "ENGINEERING DASHBOARD"
               : pathname === "/today" ? "TODAY'S STANDUP"
-              : pathname.startsWith("/projects") ? "LABS WORKSPACE"
-              : pathname.startsWith("/portfolio") ? "MY PORTFOLIO"
-              : pathname.startsWith("/settings") ? "ACCOUNT SETTINGS"
-              : pathname === "/mentor/reviews" ? "REVIEWS BOARD"
-              : pathname === "/mentor/reports" ? "STANDUP REPORTS"
-              : pathname === "/mentor/students" ? "STUDENTS ROSTER"
-              : pathname.startsWith("/messages") ? "DIRECT MESSAGES"
-              : "CODERCORPS PLATFORM"}
+                : pathname.startsWith("/projects") ? "LABS WORKSPACE"
+                  : pathname.startsWith("/portfolio") ? "MY PORTFOLIO"
+                    : pathname.startsWith("/settings") ? "ACCOUNT SETTINGS"
+                      : pathname === "/mentor/reviews" ? "REVIEWS BOARD"
+                        : pathname === "/mentor/reports" ? "STANDUP REPORTS"
+                          : pathname === "/mentor/students" ? "STUDENTS ROSTER"
+                            : pathname.startsWith("/messages") ? "DIRECT MESSAGES"
+                              : "CODERCORPS PLATFORM"}
           </h2>
           <div className="flex items-center gap-3">
             <button
@@ -211,7 +210,7 @@ export default function PlatformLayout({
         </header>
 
         {/* Dynamic page contents */}
-        <main className="flex-grow p-8">
+        <main className="grow p-8">
           {children}
         </main>
       </div>
