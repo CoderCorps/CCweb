@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     
-    # Cooldown in seconds for mentor approval pings (24 for testing, can be set to 24 * 3600 in production env)
-    MENTOR_APPROVAL_COOLDOWN_SECONDS: int = int(os.getenv("MENTOR_APPROVAL_COOLDOWN_SECONDS", "24"))
+    # Cooldown in seconds for mentor approval pings (24 * 3600 = 86400 seconds / 24 hours)
+    MENTOR_APPROVAL_COOLDOWN_SECONDS: int = int(os.getenv("MENTOR_APPROVAL_COOLDOWN_SECONDS", "86400"))
     
     # JWT Settings
     JWT_SECRET: str = os.getenv("JWT_SECRET", "super-secret-key-change-in-production")

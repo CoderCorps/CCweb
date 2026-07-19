@@ -55,8 +55,12 @@ export default function PendingApprovalPage() {
 
   const formatTimeLeft = (ms: number) => {
     if (ms <= 0 || isNaN(ms)) return "Ready";
-    const seconds = Math.ceil(ms / 1000);
-    return `${seconds}s`;
+    const h = Math.floor(ms / (1000 * 60 * 60));
+    const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((ms % (1000 * 60)) / 1000);
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
   };
 
   const handleNotify = async () => {
