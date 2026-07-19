@@ -49,7 +49,7 @@ async def get_mentor_students(
         student_ids = list(set([m.user_id for m in memberships]))
         students = db.query(User).filter(
             User.id.in_(student_ids),
-            User.role == "student"
+            User.id != id
         ).all()
         return memberships, students
 
