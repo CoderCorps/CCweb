@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
-from app.db.session import get_db
+from app.deps import get_db
 from app.models.sprint import Task
 import logging
 
@@ -62,4 +62,40 @@ async def github_webhook(request: Request, db: Session = Depends(get_db)):
                 except Exception as e:
                     logger.error(f"Failed to process check_run for branch {head_branch}: {e}")
 
+    elif event == "pull_request":
+        action = payload.get("action")
+        if action in ["opened", "synchronize", "reopened"]:
+            pr = payload.get("pull_request", {})
+            pr_url = pr.get("html_url")
+            head_branch = pr.get("head", {}).get("ref", "")
+            
+            # Simple diff fetch simulation (In reality, we'd fetch diff using GitHub API or pass the patch)
+            diff_content = "diff --git a/test.py b/test.py\n+ print('Hello World')" 
+            
+            if head_branch.startswith("task-"):
+                try:
+                    task_id = int(head_branch.split("-")[1])
+                    task = db.query(Task).filter(Task.id == task_id).first()
+                    if task:
+                        from app.services.ai_service import generate_pr_review
+                        import asyncio
+                        
+                        # In production this would be enqueued via Celery or BackgroundTasks
+                        # Using await synchronously for demo setup
+                        score, feedback_json = await generate_pr_review(pr_url, diff_content)
+                        
+                        # Find the TaskSubmission to attach the score, or attach to task.
+                        # Wait, the plan was to attach to TaskSubmission, but webhook might not have submission yet.
+                        # Let's attach to the first submission or create a dummy one.
+                        # For simplicity, we can just update the first submission for this task, if exists.
+                        from app.models.sprint import TaskSubmission
+                        submission = db.query(TaskSubmission).filter(TaskSubmission.task_id == task.id).first()
+                        if submission:
+                            submission.ai_score = score
+                            submission.ai_feedback_json = feedback_json
+                            db.commit()
+                except Exception as e:
+                    logger.error(f"Failed to process pull_request for branch {head_branch}: {e}")
+
     return {"status": "ok"}
+

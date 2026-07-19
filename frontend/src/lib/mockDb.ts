@@ -23,12 +23,11 @@ export interface MockProfile {
 export interface MockTask {
   id: number;
   sprint_id: number;
-  assigned_to_id: number | null;
   title: string;
   description: string | null;
   status: "todo" | "in_progress" | "review" | "done";
   github_pr_url: string | null;
-  assignee: { id: number; name: string } | null;
+  assignments: { id: number; task_id: number; user_id: number; assigned_at: string; status: string; user: { id: number; name: string } | null }[];
 }
 
 export interface MockSprint {
@@ -58,7 +57,7 @@ let mockUsers: User[] = [
       linkedin_url: "https://linkedin.com/in/atulsharma",
       resume_url: "",
       is_public: true
-    }
+    } as MockProfile
   },
   {
     id: 2,
@@ -75,7 +74,7 @@ let mockUsers: User[] = [
       linkedin_url: "https://linkedin.com/in/priya-patel",
       resume_url: "",
       is_public: true
-    }
+    } as MockProfile
   },
   {
     id: 3,
@@ -92,7 +91,7 @@ let mockUsers: User[] = [
       linkedin_url: "https://linkedin.com/in/siddharth-roy",
       resume_url: "",
       is_public: true
-    }
+    } as MockProfile
   }
 ];
 
@@ -125,32 +124,35 @@ let mockSprints: MockSprint[] = [
       {
         id: 1,
         sprint_id: 1,
-        assigned_to_id: 1,
         title: "Design core DB schema & implement SQLAlchemy models",
         description: "Establish standard user, project, sprint, task, and submission tables using clean foreign key integrity.",
         status: "done" as const,
         github_pr_url: "https://github.com/codercorps/ecommerce-api/pull/1",
-        assignee: { id: 1, name: "Atul Sharma" }
+        assignments: [
+          { id: 1, task_id: 1, user_id: 1, assigned_at: new Date().toISOString(), status: "assigned", user: { id: 1, name: "Atul Sharma" } }
+        ]
       },
       {
         id: 2,
         sprint_id: 1,
-        assigned_to_id: 2,
         title: "Set up JWT Authentication & Route Guards",
         description: "Implement backend login/signup/refresh logic and frontend route protection context.",
         status: "in_progress" as const,
         github_pr_url: null,
-        assignee: { id: 2, name: "Priya Patel" }
+        assignments: [
+          { id: 2, task_id: 2, user_id: 2, assigned_at: new Date().toISOString(), status: "assigned", user: { id: 2, name: "Priya Patel" } }
+        ]
       },
       {
         id: 3,
         sprint_id: 1,
-        assigned_to_id: 1,
         title: "Create Docker Compose configuration for local testing",
         description: "Configure Postgres and backend containers for quick team onboarding.",
         status: "todo" as const,
         github_pr_url: null,
-        assignee: { id: 1, name: "Atul Sharma" }
+        assignments: [
+          { id: 3, task_id: 3, user_id: 1, assigned_at: new Date().toISOString(), status: "assigned", user: { id: 1, name: "Atul Sharma" } }
+        ]
       }
     ]
   }
@@ -307,7 +309,7 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
       // Student Dashboard
       const myTasks = mockSprints
         .flatMap(s => s.tasks)
-        .filter(t => t.assigned_to_id === mockCurrentUser!.id);
+        .filter(t => t.assignments.some(a => a.user_id === mockCurrentUser!.id));
       
       const completedTasks = myTasks.filter(t => t.status === "done").length;
       const myCerts = mockCertificates.filter(c => c.user_id === mockCurrentUser!.id);
@@ -416,25 +418,34 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
   }
 
   // --- Tasks ---
-  if (path.startsWith("/projects/sprints/") && path.endsWith("/tasks") && method === "POST") {
-    const sId = parseInt(path.split("/")[3]);
+  if (path.match(/^\/projects\/\d+\/sprints\/\d+\/tasks$/) && method === "POST") {
+    const sId = parseInt(path.split("/")[4]);
     const sprint = mockSprints.find(s => s.id === sId);
     if (!sprint) return { status: 404, ok: false, json: async () => ({ detail: "Sprint not found" }) };
 
     const title = bodyObj.title as string;
     const description = bodyObj.description as string;
-    const assigned_to_id = bodyObj.assigned_to_id as number | undefined;
-    const assignee = assigned_to_id ? findUser(assigned_to_id) : null;
+    const assignee_ids = bodyObj.assignee_ids as number[] | undefined;
+    const assignments = assignee_ids ? assignee_ids.map((id, index) => ({
+      id: Math.max(0, ...mockSprints.flatMap(s => s.tasks.flatMap(t => t.assignments.map(a => a.id)))) + index + 1,
+      task_id: -1,
+      user_id: id,
+      assigned_by_id: mockCurrentUser?.id || 3,
+      assigned_at: new Date().toISOString(),
+      status: "assigned",
+      user: findUser(id)
+    })) : [];
+
     const newTask = {
       id: Math.max(0, ...mockSprints.flatMap(s => s.tasks.map(t => t.id))) + 1,
       sprint_id: sId,
-      assigned_to_id: assigned_to_id || null,
       title,
       description: description || null,
       status: "todo" as const,
       github_pr_url: null,
-      assignee
+      assignments
     };
+    newTask.assignments.forEach(a => a.task_id = newTask.id);
     sprint.tasks.push(newTask);
     return { status: 201, ok: true, json: async () => newTask };
   }
@@ -450,6 +461,18 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
         const updateData = bodyObj || {};
         if (updateData.status) foundTask.status = updateData.status;
         if (updateData.github_pr_url !== undefined) foundTask.github_pr_url = updateData.github_pr_url;
+        if (updateData.assignee_ids !== undefined) {
+          const newAssignees = updateData.assignee_ids as number[];
+          foundTask.assignments = newAssignees.map((id: number) => ({
+            id: Math.floor(Math.random() * 100000),
+            task_id: foundTask.id,
+            user_id: id,
+            assigned_by_id: mockCurrentUser?.id || 3,
+            assigned_at: new Date().toISOString(),
+            status: "assigned",
+            user: findUser(id)
+          }));
+        }
         break;
       }
     }
@@ -553,8 +576,8 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
 
     mockCurrentUser.profile = {
       ...mockCurrentUser.profile,
-      ...body
-    };
+      ...(body as Partial<MockProfile>)
+    } as MockProfile;
 
     // Update in users catalog
     const uIdx = mockUsers.findIndex(u => u.id === mockCurrentUser!.id);
@@ -575,7 +598,7 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
   if (path === "/auth/account" && method === "PATCH") {
     if (!mockCurrentUser) return { status: 401, ok: false, json: async () => ({ detail: "Not authenticated" }) };
 
-    if (body.email) {
+    if (bodyObj.email) {
       mockCurrentUser.email = bodyObj.email as string;
     }
     // Simulate updating mockCurrentUser in mockUsers catalog
@@ -600,7 +623,7 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
       const studentProject = projects.find(p => p.members.some(m => m.user_id === student.id));
       const activeSprint = studentProject ? mockSprints.find(s => s.project_id === studentProject.id) : null;
       const inProgressTasks = activeSprint
-        ? activeSprint.tasks.filter(t => t.assigned_to_id === student.id && t.status !== "done").length
+        ? activeSprint.tasks.filter(t => t.assignments.some(a => a.user_id === student.id) && t.status !== "done").length
         : 0;
 
       return {

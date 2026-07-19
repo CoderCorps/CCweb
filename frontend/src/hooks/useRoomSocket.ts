@@ -29,33 +29,37 @@ export function useRoomSocket(projectId: number) {
     const token = getAccessToken() || "";
     if (!token) return;
 
-    // Dynamically resolve backend websocket protocol and host to support relative URLs, localhost, and secure hosting
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    let host = "";
-    let proto = "ws";
-
+    // Always base the WS URL off the exact API URL used by the rest of the app
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    let wsUrl = "";
+    
     if (apiBase.startsWith("http://") || apiBase.startsWith("https://")) {
-      proto = (typeof window !== "undefined" && window.location.protocol === "https:") || apiBase.startsWith("https") ? "wss" : "ws";
-      host = apiBase.replace(/^https?:\/\//, "");
+      const isSecure = (typeof window !== "undefined" && window.location.protocol === "https:") || apiBase.startsWith("https");
+      const proto = isSecure ? "wss" : "ws";
+      
+      // Strip http:// or https://
+      let host = apiBase.replace(/^https?:\/\//, "");
+      // Remove trailing slashes
       host = host.replace(/\/+$/, "");
+      // Remove /api/v1 prefix to get the root domain where /ws/rooms is mounted
       host = host.replace(/\/api\/v1$/, "");
+      
+      wsUrl = `${proto}://${host}/ws/rooms/${projectId}?token=${encodeURIComponent(token)}`;
     } else {
-      if (typeof window !== "undefined") {
-        proto = window.location.protocol === "https:" ? "wss" : "ws";
-        host = window.location.host;
-      } else {
-        host = "localhost:8000";
-      }
+      // Relative URL (e.g. "/api/v1") - typical in production deployments with same-origin proxies
+      const proto = (typeof window !== "undefined" && window.location.protocol === "https:") ? "wss" : "ws";
+      const host = typeof window !== "undefined" ? window.location.host : "localhost:8000";
+      
+      // Strip /api/v1 from the relative path if present, otherwise just use root
+      let basePath = apiBase.replace(/\/+$/, "").replace(/\/api\/v1$/, "");
+      
+      wsUrl = `${proto}://${host}${basePath}/ws/rooms/${projectId}?token=${encodeURIComponent(token)}`;
     }
 
-    const wsUrl = `${proto}://${host}/ws/rooms/${projectId}?token=${encodeURIComponent(token)}`;
     console.log("[WebSocket] Attempting connection:", {
       wsUrl,
-      proto,
-      host,
       projectId,
-      hasToken: !!token,
-      tokenLength: token.length
+      hasToken: !!token
     });
     const socket = new WebSocket(wsUrl);
     socketRef.current = socket;

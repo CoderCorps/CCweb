@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Dict, Any, List
+import asyncio
 
 from app.deps import get_db, get_current_user
 from app.models.user import User, Profile
@@ -18,25 +19,27 @@ class RoleUpdate(BaseModel):
     role: str
 
 @router.get("/summary", response_model=Dict[str, Any])
-def get_dashboard_summary(
+async def get_dashboard_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     if current_user.role == "admin":
-        # --- Admin Dashboard Statistics ---
-        # 1. Total projects in the platform
-        total_projects = db.query(func.count(Project.id)).scalar() or 0
-        # 2. Total registered students
-        total_students = db.query(func.count(User.id)).filter(User.role == "student").scalar() or 0
-        # 3. Total registered mentors
-        total_mentors = db.query(func.count(User.id)).filter(User.role == "mentor").scalar() or 0
-        # 4. Total certificates issued system-wide
-        total_certificates = db.query(func.count(Certificate.id)).scalar() or 0
-        # 5. Total pending reviews system-wide
-        total_pending = db.query(func.count(Submission.id)).filter(Submission.status == "submitted").scalar() or 0
-        
-        # Recent submissions across all projects
-        recent_submissions = db.query(Submission).order_by(Submission.created_at.desc()).limit(10).all()
+        # Run all aggregate counts in parallel via asyncio.gather
+        def _fetch_admin_stats():
+            total_projects = db.query(func.count(Project.id)).scalar() or 0
+            total_students = db.query(func.count(User.id)).filter(User.role == "student").scalar() or 0
+            total_mentors = db.query(func.count(User.id)).filter(User.role == "mentor").scalar() or 0
+            total_certificates = db.query(func.count(Certificate.id)).scalar() or 0
+            total_pending = db.query(func.count(Submission.id)).filter(Submission.status == "submitted").scalar() or 0
+            recent_submissions = db.query(Submission).order_by(Submission.created_at.desc()).limit(10).all()
+            users_db = db.query(User).order_by(User.name).all()
+            return total_projects, total_students, total_mentors, total_certificates, total_pending, recent_submissions, users_db
+
+        (
+            total_projects, total_students, total_mentors,
+            total_certificates, total_pending, recent_submissions, users_db
+        ) = await asyncio.to_thread(_fetch_admin_stats)
+
         submission_list = [
             {
                 "id": s.id,
@@ -49,9 +52,7 @@ def get_dashboard_summary(
             }
             for s in recent_submissions
         ]
-        
-        # System users catalog (for role updates)
-        users_db = db.query(User).order_by(User.name).all()
+
         users_list = [
             {
                 "id": u.id,
@@ -77,50 +78,52 @@ def get_dashboard_summary(
         }
 
     elif current_user.role == "mentor":
-        # --- Mentor Dashboard Statistics ---
-        # 1. Projects managed by the mentor
-        managed_projects = db.query(Project).filter(Project.mentor_id == current_user.id).all()
-        project_ids = [p.id for p in managed_projects]
-        
-        # 2. Total students under mentorship (in managed projects)
-        students_count = 0
-        if project_ids:
-            students_count = db.query(func.count(func.distinct(ProjectMember.user_id))).filter(
-                ProjectMember.project_id.in_(project_ids),
-                ProjectMember.user_id != current_user.id # exclude the mentor themselves
-            ).scalar() or 0
+        def _fetch_mentor_stats():
+            managed_projects = db.query(Project).filter(Project.mentor_id == current_user.id).all()
+            project_ids = [p.id for p in managed_projects]
 
-        # 3. Pending submissions awaiting review in mentor's projects
-        pending_submissions_count = 0
-        pending_list = []
-        if project_ids:
-            pending_submissions_count = db.query(func.count(Submission.id)).filter(
-                Submission.project_id.in_(project_ids),
-                Submission.status == "submitted"
-            ).scalar() or 0
-            
-            pending_db = db.query(Submission).filter(
-                Submission.project_id.in_(project_ids),
-                Submission.status == "submitted"
-            ).all()
-            pending_list = [
-                {
-                    "id": s.id,
-                    "project_title": s.project.title,
-                    "student_name": s.user.name,
-                    "submitted_at": s.created_at.isoformat(),
-                    "repo_url": s.repo_url,
-                    "demo_url": s.demo_url
-                }
-                for s in pending_db
-            ]
+            students_count = 0
+            if project_ids:
+                students_count = db.query(func.count(func.distinct(ProjectMember.user_id))).filter(
+                    ProjectMember.project_id.in_(project_ids),
+                    ProjectMember.user_id != current_user.id
+                ).scalar() or 0
 
-        # 4. Total certificate issuances approved by this mentor
-        approved_certificates_count = 0
-        if project_ids:
-            approved_certificates_count = db.query(func.count(Certificate.id)).filter(
-                Certificate.project_id.in_(project_ids)
-            ).scalar() or 0
+            pending_submissions_count = 0
+            pending_list_raw = []
+            if project_ids:
+                pending_submissions_count = db.query(func.count(Submission.id)).filter(
+                    Submission.project_id.in_(project_ids),
+                    Submission.status == "submitted"
+                ).scalar() or 0
+
+                pending_list_raw = db.query(Submission).filter(
+                    Submission.project_id.in_(project_ids),
+                    Submission.status == "submitted"
+                ).all()
+
+            approved_certificates_count = 0
+            if project_ids:
+                approved_certificates_count = db.query(func.count(Certificate.id)).filter(
+                    Certificate.project_id.in_(project_ids)
+                ).scalar() or 0
+
+            return managed_projects, students_count, pending_submissions_count, pending_list_raw, approved_certificates_count
+
+        managed_projects, students_count, pending_submissions_count, pending_list_raw, approved_certificates_count = \
+            await asyncio.to_thread(_fetch_mentor_stats)
+
+        pending_list = [
+            {
+                "id": s.id,
+                "project_title": s.project.title,
+                "student_name": s.user.name,
+                "submitted_at": s.created_at.isoformat(),
+                "repo_url": s.repo_url,
+                "demo_url": s.demo_url
+            }
+            for s in pending_list_raw
+        ]
 
         return {
             "role": "mentor",
@@ -132,21 +135,32 @@ def get_dashboard_summary(
             },
             "pending_submissions": pending_list
         }
-    else:
-        # --- Student Dashboard Statistics ---
-        # 1. Projects joined
-        memberships = db.query(ProjectMember).filter(ProjectMember.user_id == current_user.id).all()
-        project_ids = [m.project_id for m in memberships]
-        
-        # 2. Tasks completed vs total assigned to the student
-        total_tasks = db.query(func.count(Task.id)).join(Task.assignments).filter(TaskAssignment.user_id == current_user.id).scalar() or 0
-        completed_tasks = db.query(func.count(Task.id)).join(Task.assignments).filter(
-            TaskAssignment.user_id == current_user.id,
-            Task.status == "done"
-        ).scalar() or 0
 
-        # 3. Earned certificates
-        certificates = db.query(Certificate).filter(Certificate.user_id == current_user.id).all()
+    else:
+        def _fetch_student_stats():
+            memberships = db.query(ProjectMember).filter(ProjectMember.user_id == current_user.id).all()
+            project_ids = [m.project_id for m in memberships]
+
+            total_tasks = db.query(func.count(Task.id)).join(Task.assignments).filter(
+                TaskAssignment.user_id == current_user.id
+            ).scalar() or 0
+            completed_tasks = db.query(func.count(Task.id)).join(Task.assignments).filter(
+                TaskAssignment.user_id == current_user.id,
+                Task.status == "done"
+            ).scalar() or 0
+
+            certificates = db.query(Certificate).filter(Certificate.user_id == current_user.id).all()
+            active_tasks_db = db.query(Task).join(Task.assignments).filter(
+                TaskAssignment.user_id == current_user.id,
+                Task.status != "done"
+            ).all()
+            badges_db = db.query(UserBadge).filter(UserBadge.user_id == current_user.id).all()
+
+            return project_ids, total_tasks, completed_tasks, certificates, active_tasks_db, badges_db
+
+        project_ids, total_tasks, completed_tasks, certificates, active_tasks_db, badges_db = \
+            await asyncio.to_thread(_fetch_student_stats)
+
         cert_list = [
             {
                 "id": c.id,
@@ -157,11 +171,6 @@ def get_dashboard_summary(
             for c in certificates
         ]
 
-        # 4. Active tasks list
-        active_tasks_db = db.query(Task).join(Task.assignments).filter(
-            TaskAssignment.user_id == current_user.id,
-            Task.status != "done"
-        ).all()
         active_tasks_list = [
             {
                 "id": t.id,
@@ -173,8 +182,6 @@ def get_dashboard_summary(
             for t in active_tasks_db
         ]
 
-        # 5. Earned Badges
-        badges_db = db.query(UserBadge).filter(UserBadge.user_id == current_user.id).all()
         badges_list = [
             {
                 "id": b.id,
@@ -200,7 +207,7 @@ def get_dashboard_summary(
         }
 
 @router.patch("/users/{user_id}/role")
-def update_user_role(
+async def update_user_role(
     user_id: int,
     payload: RoleUpdate,
     db: Session = Depends(get_db),
@@ -211,22 +218,24 @@ def update_user_role(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only administrators can manage user roles."
         )
-    
+
     if payload.role not in ["student", "mentor", "admin"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid role specified."
         )
-        
-    user = db.query(User).filter(User.id == user_id).first()
+
+    def _update():
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return None
+        user.role = payload.role
+        db.commit()
+        db.refresh(user)
+        return user
+
+    user = await asyncio.to_thread(_update)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
-        
-    user.role = payload.role
-    db.commit()
-    db.refresh(user)
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
     return {"status": "success", "message": f"User {user.name} role updated to {payload.role}"}

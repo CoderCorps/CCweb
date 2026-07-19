@@ -10,3 +10,4 @@ from app.models.daily_activity import DailyTodo, DailyReport
 from app.models.communication import Room, RoomMessage, DirectMessage, Announcement, AnnouncementRead, MessageReaction
 from app.models.notification import Notification
 from app.models.badge import Badge, UserBadge
+from app.models.skill import SkillNode, UserSkill

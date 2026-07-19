@@ -87,7 +87,7 @@ export function AnnouncementBanner({ projectId }: AnnouncementBannerProps) {
               <p className="text-sm text-slate-200">{ann.content}</p>
               <div className="mt-2 flex items-center justify-between">
                 <span className="text-[10px] font-mono text-indigo-400/70">
-                  {formatDistanceToNow(new Date(ann.created_at), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(ann.created_at.endsWith('Z') ? ann.created_at : ann.created_at + 'Z'), { addSuffix: true })}
                 </span>
                 {!ann.is_read && (
                   <button 

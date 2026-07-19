@@ -1,6 +1,7 @@
 import datetime
 from sqlalchemy.orm import Session
 from app.db.session import SessionLocal, Base, engine
+import app.db.base  # Important: Registers all models
 from app.core import security
 from app.models.user import User, Profile
 from app.models.program import Program
@@ -13,25 +14,11 @@ from app.models.communication import Room, RoomMessage
 def seed_db():
     db = SessionLocal()
     try:
-        # Clear existing data in reverse order of relationships
-        db.query(RoomMessage).delete()
-        db.query(Room).delete()
-        db.query(DailyTodo).delete()
-        db.query(DailyReport).delete()
-        db.query(TaskSubmission).delete()
-        db.query(TaskAssignment).delete()
-        db.query(Certificate).delete()
-        db.query(Submission).delete()
-        db.query(Task).delete()
-        db.query(Sprint).delete()
-        db.query(ProjectMember).delete()
-        db.query(Project).delete()
-        db.query(Program).delete()
-        db.query(Profile).delete()
-        db.query(User).delete()
-        db.commit()
-
-        print("Cleared existing database records.")
+        # Drop and recreate all tables for a clean slate
+        Base.metadata.drop_all(bind=engine)
+        Base.metadata.create_all(bind=engine)
+        
+        print("Dropped and recreated all database tables.")
 
         # 1. Create Users
         admin_pass = security.get_password_hash("admin123")
@@ -249,6 +236,35 @@ def seed_db():
             content="Thanks Siddharth! Ready to design the SQLAlchemy schemas."
         )
         db.add_all([msg1, msg2])
+        db.commit()
+
+        # 10. Create Skill Galaxy and User Skills
+        from app.models.skill import SkillNode, UserSkill
+        react_skill = SkillNode(name="React", category="Frontend", description="React framework")
+        python_skill = SkillNode(name="Python", category="Backend", description="Python programming")
+        aws_skill = SkillNode(name="AWS", category="DevOps", description="Amazon Web Services")
+        db.add_all([react_skill, python_skill, aws_skill])
+        db.commit()
+        db.refresh(react_skill)
+        db.refresh(python_skill)
+        db.refresh(aws_skill)
+
+        u1_react = UserSkill(user_id=student1.id, skill_id=react_skill.id, proficiency_level=3)
+        u1_python = UserSkill(user_id=student1.id, skill_id=python_skill.id, proficiency_level=5)
+        u2_react = UserSkill(user_id=student2.id, skill_id=react_skill.id, proficiency_level=4)
+        db.add_all([u1_react, u1_python, u2_react])
+        db.commit()
+
+        # Update TaskSubmission for portfolio testing
+        submission1 = TaskSubmission(
+            task_id=task1.id,
+            user_id=student1.id,
+            repo_url="https://github.com/codercorps/ecommerce-api",
+            mentor_score=95,
+            ai_score=90,
+            ai_feedback_json={"feedback": ["Great job on the schema.", "Consider indexing."]}
+        )
+        db.add(submission1)
         db.commit()
 
         print("Database successfully seeded with mock data!")

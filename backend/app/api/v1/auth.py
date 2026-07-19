@@ -5,6 +5,7 @@ from datetime import timedelta
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 import time
+import asyncio
 from collections import defaultdict
 
 
@@ -37,7 +38,7 @@ def check_rate_limit(request: Request):
 router = APIRouter()
 
 @router.post("/signup", response_model=Token, status_code=status.HTTP_201_CREATED)
-def signup(
+async def signup(
     response: Response,
     user_in: UserCreate,
     db: Session = Depends(get_db),
@@ -102,7 +103,7 @@ def signup(
     }
 
 @router.post("/login", response_model=Token)
-def login(
+async def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
@@ -139,7 +140,7 @@ def login(
     }
 
 @router.post("/refresh", response_model=Token)
-def refresh_token_route(
+async def refresh_token_route(
     response: Response,
     refresh_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
@@ -187,11 +188,11 @@ def refresh_token_route(
     }
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)):
+async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 @router.post("/logout")
-def logout(response: Response):
+async def logout(response: Response):
     response.delete_cookie(key="refresh_token")
     return {"detail": "Successfully logged out"}
 
@@ -204,7 +205,7 @@ class AccountUpdate(BaseModel):
     new_password: Optional[str] = None
 
 @router.post("/forgot-password")
-def forgot_password(
+async def forgot_password(
     payload: ForgotPasswordRequest,
     db: Session = Depends(get_db)
 ):
@@ -222,7 +223,7 @@ def forgot_password(
     return {"message": "If this email exists in our system, a password reset link has been sent."}
 
 @router.patch("/account")
-def update_account(
+async def update_account(
     payload: AccountUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)

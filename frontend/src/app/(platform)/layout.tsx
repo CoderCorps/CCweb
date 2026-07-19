@@ -100,7 +100,7 @@ export default function PlatformLayout({
   }
 
   // Recruiter Portal access
-  if (user.role === "recruiter" || user.role === "admin") {
+  if ((user.role as string) === "recruiter" || user.role === "admin") {
     navLinks.push({
       name: "Recruiter Portal",
       href: "/recruiters",

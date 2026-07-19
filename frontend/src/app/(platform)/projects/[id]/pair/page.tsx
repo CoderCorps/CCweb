@@ -35,11 +35,24 @@ export default function PairProgrammingRoom() {
     const doc = new Y.Doc();
     const type = doc.getText("monaco");
 
-    // Connect to Yjs WebSocket Sync Server
-    // For production, we'd use our own `wss://api.codercorps.com/yjs/${id}`
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    let wsHost = "";
+    
+    if (apiBase.startsWith("http://") || apiBase.startsWith("https://")) {
+      const isSecure = (typeof window !== "undefined" && window.location.protocol === "https:") || apiBase.startsWith("https");
+      const proto = isSecure ? "wss" : "ws";
+      let host = apiBase.replace(/^https?:\/\//, "").replace(/\/+$/, "").replace(/\/api\/v1$/, "");
+      wsHost = `${proto}://${host}`;
+    } else {
+      const proto = (typeof window !== "undefined" && window.location.protocol === "https:") ? "wss" : "ws";
+      const host = typeof window !== "undefined" ? window.location.host : "localhost:8000";
+      let basePath = apiBase.replace(/\/+$/, "").replace(/\/api\/v1$/, "");
+      wsHost = `${proto}://${host}${basePath}`;
+    }
+
     const provider = new WebsocketProvider(
-      "wss://demos.yjs.dev/ws",
-      `codercorps-pair-room-${id}`,
+      process.env.NEXT_PUBLIC_WS_URL || wsHost,
+      `ws/yjs/${id}`,
       doc
     );
     providerRef.current = provider;

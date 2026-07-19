@@ -132,7 +132,7 @@ export function ResourcesTab({ projectId }: ResourcesTabProps) {
                       )}
                     </div>
                     <div className="text-[10px] text-muted-foreground font-mono">
-                      <span className="uppercase">{resource.resource_type}</span> • Added {formatDistanceToNow(new Date(resource.created_at), { addSuffix: true })}
+                      <span className="uppercase">{resource.resource_type}</span> • Added {formatDistanceToNow(new Date(resource.created_at.endsWith('Z') ? resource.created_at : resource.created_at + 'Z'), { addSuffix: true })}
                     </div>
                   </div>
                   

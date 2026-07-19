@@ -32,6 +32,7 @@ class User(Base):
     messages_sent: Mapped[list["DirectMessage"]] = relationship("DirectMessage", foreign_keys="[DirectMessage.sender_id]", back_populates="sender", cascade="all, delete-orphan")
     messages_received: Mapped[list["DirectMessage"]] = relationship("DirectMessage", foreign_keys="[DirectMessage.recipient_id]", back_populates="recipient", cascade="all, delete-orphan")
     badges: Mapped[list["UserBadge"]] = relationship("UserBadge", back_populates="user", cascade="all, delete-orphan")
+    skills: Mapped[list["UserSkill"]] = relationship("UserSkill", back_populates="user", cascade="all, delete-orphan")
 
 class Profile(Base):
     __tablename__ = "profiles"

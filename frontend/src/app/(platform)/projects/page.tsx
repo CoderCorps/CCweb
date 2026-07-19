@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { useProjectStore } from "@/stores";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -38,10 +39,11 @@ interface Project {
 
 export default function ProjectsPage() {
   const { user } = useAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [publicProjects, setPublicProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { projects, loading, error, fetchProjects, addProject } = useProjectStore();
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   // Creation State (Mentor)
   const [newTitle, setNewTitle] = useState("");
@@ -50,26 +52,6 @@ export default function ProjectsPage() {
   const [newEndDate, setNewEndDate] = useState("");
   const [submittingProject, setSubmittingProject] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  const fetchProjects = useCallback(async () => {
-    try {
-      const res = await api.get("/projects");
-      if (res.ok) {
-        const json = await res.json();
-        setProjects(json);
-      } else {
-        setError("Failed to load your projects.");
-      }
-    } catch {
-      setError("Server connection failed.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,12 +67,13 @@ export default function ProjectsPage() {
       });
 
       if (res.ok) {
+        const newProject = await res.json();
+        addProject(newProject); // Optimistically add to store
         setDialogOpen(false);
         setNewTitle("");
         setNewDescription("");
         setNewStartDate("");
         setNewEndDate("");
-        fetchProjects(); // Reload list
       } else {
         alert("Failed to create project");
       }
@@ -105,7 +88,9 @@ export default function ProjectsPage() {
     try {
       const res = await api.post(`/projects/${projId}/join`, {});
       if (res.ok) {
-        fetchProjects(); // Reload list
+        // Invalidate cache so next fetchProjects does a fresh request
+        useProjectStore.setState({ lastFetched: null });
+        fetchProjects();
       } else {
         alert("Failed to join project");
       }
@@ -114,7 +99,8 @@ export default function ProjectsPage() {
     }
   };
 
-  if (loading) {
+
+  if (loading && projects.length === 0) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
         <div className="h-48 bg-card rounded-xl" />

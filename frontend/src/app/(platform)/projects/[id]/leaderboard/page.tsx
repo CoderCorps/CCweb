@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -82,11 +83,14 @@ export default function LeaderboardPage() {
   const [demoUrl, setDemoUrl] = useState("");
   const [approachNotes, setApproachNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [mySubmissionsDialogOpen, setMySubmissionsDialogOpen] = useState(false);
 
   // Review Form State (Mentor)
   const [mentorScores, setMentorScores] = useState<Record<number, number>>({});
   const [mentorFeedbacks, setMentorFeedbacks] = useState<Record<number, string>>({});
   const [savingReviewId, setSavingReviewId] = useState<number | null>(null);
+  const [mentorHistoryDialogOpen, setMentorHistoryDialogOpen] = useState(false);
+  const [mentorHistoryUserId, setMentorHistoryUserId] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -188,18 +192,19 @@ export default function LeaderboardPage() {
   };
 
   // Mentor submits grade review
-  const handleSaveReview = async (submissionId: number) => {
+  const handleSaveReview = async (submissionId: number, needsImprovement: boolean = false) => {
     const score = mentorScores[submissionId] || 0;
     const feedback = mentorFeedbacks[submissionId] || "";
     setSavingReviewId(submissionId);
 
     try {
       const res = await api.patch(`/task-submissions/${submissionId}/review`, {
-        mentor_score: Number(score),
-        mentor_feedback: feedback.trim()
+        mentor_score: needsImprovement ? null : Number(score),
+        mentor_feedback: feedback.trim(),
+        needs_improvement: needsImprovement
       });
       if (res.ok) {
-        alert("Grade and feedback updated successfully!");
+        alert(needsImprovement ? "Requested changes successfully!" : "Grade and feedback updated successfully!");
         if (selectedTask) fetchTaskSubmissions(selectedTask.id);
         fetchLeaderboardAndTasks();
       } else {
@@ -255,7 +260,26 @@ export default function LeaderboardPage() {
     );
   }
 
-  const studentOwnSubmission = submissions.find(s => s.user_id === user?.id);
+  const studentSubmissions = submissions.filter(s => s.user_id === user?.id).sort((a,b) => new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime());
+  const latestSubmission = studentSubmissions[studentSubmissions.length - 1];
+  const isRejected = latestSubmission && latestSubmission.mentor_score === null && latestSubmission.mentor_feedback;
+
+  const mentorGroupedSubmissions = (() => {
+    const map = new Map<number, Submission[]>();
+    submissions.forEach(sub => {
+      if (!map.has(sub.user_id)) map.set(sub.user_id, []);
+      map.get(sub.user_id)!.push(sub);
+    });
+    return Array.from(map.values()).map(userSubs => {
+      userSubs.sort((a,b) => new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime());
+      return {
+        latest: userSubs[userSubs.length - 1],
+        all: userSubs
+      };
+    });
+  })();
+
+  const selectedStudentSubmissionsForMentor = mentorGroupedSubmissions.find(g => g.latest.user_id === mentorHistoryUserId)?.all || [];
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto animate-in fade-in duration-300">
@@ -396,7 +420,17 @@ export default function LeaderboardPage() {
                             {selectedTask.task_mode}
                           </span>
                           {!isMentor && (
-                            <StuckFlagButton taskId={selectedTask.id} />
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-6 text-[10px] font-mono border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
+                                onClick={() => setMySubmissionsDialogOpen(true)}
+                              >
+                                My Submissions
+                              </Button>
+                              <StuckFlagButton taskId={selectedTask.id} />
+                            </>
                           )}
                         </div>
                       </div>
@@ -407,8 +441,20 @@ export default function LeaderboardPage() {
                       {!isMentor && (
                         <div className="space-y-4">
                           
-                          {/* Student own submission form */}
-                          {(!studentOwnSubmission || studentOwnSubmission.mentor_score === null) ? (
+                          {/* Rejected Banner */}
+                          {isRejected && (
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-3">
+                                <AlertCircle className="h-5 w-5 text-red-500" />
+                                <div>
+                                  <h4 className="text-red-400 font-bold text-sm">Rejected Submission</h4>
+                                  <p className="text-red-300/80 text-[11px] mt-0.5">Your mentor has requested changes. Please resubmit your work.</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {(!latestSubmission || isRejected) ? (
                             <form onSubmit={handleSubmitCode} className="space-y-3.5 bg-card/20 p-4 rounded-xl border border-border/20">
                               <span className="text-[10px] font-bold text-slate-300 font-mono flex items-center gap-1">
                                 <Code className="h-3.5 w-3.5 text-indigo-400" /> SUBMIT YOUR ATTEMPT
@@ -440,39 +486,51 @@ export default function LeaderboardPage() {
                               </div>
 
                               <div className="space-y-1">
-                                <label htmlFor="notes" className="text-[9px] font-bold text-slate-400 font-mono">APPROACH NOTES & ARCHITECTURAL LOGIC</label>
+                                <label htmlFor="a_notes" className="text-[9px] font-bold text-slate-400 font-mono">APPROACH NOTES & ARCHITECTURAL LOGIC</label>
                                 <textarea
-                                  id="notes"
-                                  required
+                                  id="a_notes"
                                   rows={4}
                                   value={approachNotes}
                                   onChange={(e) => setApproachNotes(e.target.value)}
                                   placeholder="Explain your algorithmic trade-offs or design decisions..."
-                                  className="flex w-full rounded-md border border-input bg-black/20 px-3 py-2 text-xs shadow-sm"
+                                  className="flex w-full rounded-md border border-border/60 bg-black/20 px-3 py-2 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                 />
                               </div>
-
-                              <Button type="submit" disabled={submitting} className="w-full h-8 text-xs font-semibold">
-                                {submitting ? "Submitting attempt..." : "Transmit Submission"}
+                              <Button type="submit" disabled={submitting} className="w-full h-9 font-bold bg-indigo-600 hover:bg-indigo-700">
+                                {submitting ? "Transmitting..." : "Transmit Submission"}
                               </Button>
                             </form>
                           ) : (
-                            // Graded state
-                            <div className="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/20 space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                                  <CheckCircle2 className="h-4 w-4" /> ATTEMPT GRADED
-                                </span>
-                                <span className="text-md font-extrabold font-mono text-emerald-400">{studentOwnSubmission.mentor_score}/100</span>
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl flex items-start gap-4">
+                              <CheckCircle2 className="h-6 w-6 text-emerald-400 shrink-0" />
+                              <div className="space-y-2 w-full">
+                                <h4 className="text-emerald-400 font-bold text-sm">Submission Locked</h4>
+                                {latestSubmission?.mentor_score === null ? (
+                                  <p className="text-emerald-300/80 text-xs">Your attempt has been successfully transmitted and is awaiting review.</p>
+                                ) : (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
+                                      <span className="text-[10px] font-bold text-emerald-400 font-mono flex items-center gap-1">
+                                        <Award className="h-4 w-4" /> ATTEMPT GRADED
+                                      </span>
+                                      <span className="text-md font-extrabold font-mono text-emerald-400">{latestSubmission?.mentor_score}/100</span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-300">
+                                      <strong>Feedback:</strong> {latestSubmission?.mentor_feedback || "Excellent work!"}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
-                              <p className="text-[11px] text-slate-300">
-                                <strong>Feedback:</strong> {studentOwnSubmission.mentor_feedback || "Excellent work!"}
-                              </p>
                             </div>
                           )}
 
                           {/* COMPETE & SEE THE BEST WAY TO SOLVE IT (If Reviewed & Competitive task) */}
-                          {selectedTask.task_mode === "competitive" && studentOwnSubmission?.mentor_score !== null && (
+                          {selectedTask.task_mode === "competitive" && latestSubmission?.mentor_score !== null && !isRejected && (
+                            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300 mt-2">
+                              <strong>Competitive Task:</strong> Other students' attempts will appear below once they are graded.
+                            </div>
+                          )}
+                          {selectedTask.task_mode === "competitive" && latestSubmission?.mentor_score !== null && (
                             <div className="space-y-3.5 border-t border-border/20 pt-4">
                               <span className="text-[10px] font-bold text-amber-400 font-mono flex items-center gap-1">
                                 <Star className="h-4 w-4 shrink-0" /> PEER COMPARATIVE DECK
@@ -515,14 +573,29 @@ export default function LeaderboardPage() {
                       {/* USER ROLE IS MENTOR: Grade attempts */}
                       {isMentor && (
                         <div className="space-y-4">
-                          <span className="text-[10px] font-bold text-slate-400 font-mono uppercase block">STUDENT ATTEMPTS ({submissions.length})</span>
-                          {submissions.length > 0 ? (
-                            submissions.map((sub) => (
+                          <span className="text-[10px] font-bold text-slate-400 font-mono uppercase block">STUDENT ATTEMPTS ({mentorGroupedSubmissions.length})</span>
+                          {mentorGroupedSubmissions.length > 0 ? (
+                            mentorGroupedSubmissions.map(({ latest: sub, all: userSubs }) => (
                               <div key={sub.id} className="p-4 bg-card/25 border border-border/20 rounded-xl space-y-3">
                                 <div className="flex justify-between items-start gap-2">
                                   <div>
-                                    <h6 className="text-xs font-bold text-white">{sub.user_name}</h6>
-                                    <p className="text-[9px] text-muted-foreground font-mono">SUBMITTED: {new Date(sub.submitted_at).toLocaleDateString()}</p>
+                                    <div className="flex items-center gap-2">
+                                      <h6 className="text-xs font-bold text-white">{sub.user_name}</h6>
+                                      {userSubs.length > 1 && (
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="h-5 px-1.5 text-[9px] text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 font-mono border border-indigo-500/20"
+                                          onClick={() => {
+                                            setMentorHistoryUserId(sub.user_id);
+                                            setMentorHistoryDialogOpen(true);
+                                          }}
+                                        >
+                                          History ({userSubs.length})
+                                        </Button>
+                                      )}
+                                    </div>
+                                    <p className="text-[9px] text-muted-foreground font-mono mt-0.5">LATEST SUBMISSION: {new Date(sub.submitted_at).toLocaleDateString()}</p>
                                   </div>
                                   <div className="flex gap-2">
                                     {sub.repo_url && (
@@ -610,13 +683,23 @@ export default function LeaderboardPage() {
                                       className="h-8 text-xs bg-black/10 border-border/60"
                                     />
                                   </div>
-                                  <Button
-                                    onClick={() => handleSaveReview(sub.id)}
-                                    disabled={savingReviewId === sub.id}
-                                    className="h-8 text-xs font-bold w-full"
-                                  >
-                                    {savingReviewId === sub.id ? "Saving..." : "Save Grade"}
-                                  </Button>
+                                  <div className="flex gap-2 w-full">
+                                    <Button
+                                      onClick={() => handleSaveReview(sub.id, true)}
+                                      disabled={savingReviewId === sub.id}
+                                      variant="outline"
+                                      className="h-8 text-xs font-bold w-full border-red-500/50 text-red-400 hover:bg-red-500/10"
+                                    >
+                                      {savingReviewId === sub.id ? "Saving..." : "Request Changes"}
+                                    </Button>
+                                    <Button
+                                      onClick={() => handleSaveReview(sub.id, false)}
+                                      disabled={savingReviewId === sub.id}
+                                      className="h-8 text-xs font-bold w-full"
+                                    >
+                                      {savingReviewId === sub.id ? "Saving..." : "Save Grade"}
+                                    </Button>
+                                  </div>
                                 </div>
 
                               </div>
@@ -642,6 +725,148 @@ export default function LeaderboardPage() {
 
       </div>
 
+      {/* My Submissions Dialog */}
+      <Dialog open={mySubmissionsDialogOpen} onOpenChange={setMySubmissionsDialogOpen}>
+        <DialogContent className="glass-premium border-border/60 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white">My Submissions</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground font-sans">
+              Feedback history for {selectedTask?.title}
+            </DialogDescription>
+          </DialogHeader>
+
+          {studentSubmissions.length > 0 ? (
+            <div className="space-y-4 py-2 max-h-[500px] overflow-y-auto pr-2">
+              {studentSubmissions.map((sub, idx) => (
+                <div key={sub.id} className="bg-black/20 border border-border/30 rounded-xl p-4 space-y-4">
+                  <div className="flex justify-between items-center mb-2 border-b border-border/10 pb-3">
+                    <span className="text-sm font-bold text-white">Submission Attempt {idx + 1}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono bg-card px-2 py-1 rounded-md border border-border/50">
+                      {new Date(sub.submitted_at).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-slate-300 bg-black/30 p-3 rounded-lg border border-border/10">
+                    <strong className="text-slate-400 block mb-1">Approach Notes:</strong>
+                    {sub.approach_notes || "None provided"}
+                  </div>
+
+                  {/* AI Pre-Review */}
+                  {sub.ai_feedback_json ? (
+                    <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-3 text-sm">
+                      <h4 className="text-indigo-400 font-bold mb-2 flex items-center gap-2">🤖 AI Pre-Review (Score: {sub.ai_score})</h4>
+                      <div className="space-y-1.5 text-xs text-indigo-300/80">
+                        <p><span className="text-indigo-300 font-bold">Best Practices:</span> {sub.ai_feedback_json.best_practices}</p>
+                        <p><span className="text-indigo-300 font-bold">Security:</span> {sub.ai_feedback_json.security}</p>
+                        <p><span className="text-indigo-300 font-bold">Summary:</span> {sub.ai_feedback_json.overall_summary}</p>
+                      </div>
+                    </div>
+                  ) : (
+                      <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-3 text-sm">
+                        <h4 className="text-indigo-400 font-bold mb-1 flex items-center gap-2">🤖 AI Pre-Review</h4>
+                        <p className="text-indigo-300 text-xs">Awaiting mentor review. AI analysis not yet triggered.</p>
+                      </div>
+                  )}
+
+                  {/* Mentor Feedback */}
+                  {sub.mentor_feedback && (
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-sm">
+                        <h4 className="text-emerald-400 font-bold mb-1 flex items-center gap-2">👨‍🏫 Mentor Feedback {sub.mentor_score !== null && `(Score: ${sub.mentor_score})`}</h4>
+                        <p className="text-emerald-300 text-xs">{sub.mentor_feedback}</p>
+                    </div>
+                  )}
+                  {sub.mentor_feedback && sub.mentor_score === null && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm">
+                      <p className="text-red-400 font-bold text-xs flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4" /> 
+                        Mentor requested changes on this attempt.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center flex flex-col items-center">
+              <FileText className="h-10 w-10 text-muted-foreground/50 mb-3" />
+              <p className="text-sm text-slate-300 font-bold">No Submissions Yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Submit your work to see feedback here.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      {/* Mentor History Dialog */}
+      <Dialog open={mentorHistoryDialogOpen} onOpenChange={setMentorHistoryDialogOpen}>
+        <DialogContent className="glass-premium border-border/60 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white">Submission History</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground font-sans">
+              Feedback history for {selectedStudentSubmissionsForMentor[0]?.user_name} on {selectedTask?.title}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedStudentSubmissionsForMentor.length > 0 && (
+            <div className="space-y-4 py-2 max-h-[500px] overflow-y-auto pr-2">
+              {selectedStudentSubmissionsForMentor.map((sub, idx) => (
+                <div key={sub.id} className="bg-black/20 border border-border/30 rounded-xl p-4 space-y-4">
+                  <div className="flex justify-between items-center mb-2 border-b border-border/10 pb-3">
+                    <span className="text-sm font-bold text-white">Submission Attempt {idx + 1}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono bg-card px-2 py-1 rounded-md border border-border/50">
+                      {new Date(sub.submitted_at).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {sub.repo_url && (
+                      <a href={sub.repo_url} target="_blank" rel="noopener noreferrer" className="h-6 text-[10px] font-mono px-2 py-0.5 rounded bg-black/30 hover:bg-black/60 border border-border/40 inline-flex items-center gap-0.5 text-slate-300">
+                        <ExternalLink className="h-3 w-3" /> Repository
+                      </a>
+                    )}
+                    {sub.demo_url && (
+                      <a href={sub.demo_url} target="_blank" rel="noopener noreferrer" className="h-6 text-[10px] font-mono px-2 py-0.5 rounded bg-black/30 hover:bg-black/60 border border-border/40 inline-flex items-center gap-0.5 text-slate-300">
+                        <ExternalLink className="h-3 w-3" /> Deployed Demo
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="text-xs text-slate-300 bg-black/30 p-3 rounded-lg border border-border/10">
+                    <strong className="text-slate-400 block mb-1">Approach Notes:</strong>
+                    {sub.approach_notes || "None provided"}
+                  </div>
+
+                  {/* AI Pre-Review */}
+                  {sub.ai_feedback_json && (
+                    <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-3 text-sm">
+                      <h4 className="text-indigo-400 font-bold mb-2 flex items-center gap-2">🤖 AI Pre-Review (Score: {sub.ai_score})</h4>
+                      <div className="space-y-1.5 text-xs text-indigo-300/80">
+                        <p><span className="text-indigo-300 font-bold">Best Practices:</span> {sub.ai_feedback_json.best_practices}</p>
+                        <p><span className="text-indigo-300 font-bold">Security:</span> {sub.ai_feedback_json.security}</p>
+                        <p><span className="text-indigo-300 font-bold">Summary:</span> {sub.ai_feedback_json.overall_summary}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mentor Feedback */}
+                  {sub.mentor_feedback && (
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-sm">
+                        <h4 className="text-emerald-400 font-bold mb-1 flex items-center gap-2">👨‍🏫 Mentor Feedback {sub.mentor_score !== null && `(Score: ${sub.mentor_score})`}</h4>
+                        <p className="text-emerald-300 text-xs">{sub.mentor_feedback}</p>
+                    </div>
+                  )}
+                  {sub.mentor_feedback && sub.mentor_score === null && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm">
+                      <p className="text-red-400 font-bold text-xs flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4" /> 
+                        You requested changes on this attempt.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

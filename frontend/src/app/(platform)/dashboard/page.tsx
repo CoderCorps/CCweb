@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { useDashboardStore } from "@/stores";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -24,69 +25,12 @@ import {
 } from "lucide-react";
 import { StuckStudentsWidget } from "@/components/dashboard/stuck-students-widget";
 
-interface SummaryData {
-  role: string;
-  stats: {
-    active_projects: number;
-    tasks_completed?: number;
-    tasks_total?: number;
-    certificates_earned?: number;
-    total_students?: number;
-    total_mentors?: number;
-    pending_reviews?: number;
-    approved_certificates?: number;
-  };
-  active_tasks?: Array<{
-    id: number;
-    title: string;
-    status: string;
-    project_title: string;
-    sprint_number: number;
-  }>;
-  certificates?: Array<{
-    id: number;
-    project_title: string;
-    issued_at: string;
-    criteria: any;
-  }>;
-  pending_submissions?: Array<{
-    id: number;
-    project_title: string;
-    student_name: string;
-    submitted_at: string;
-    repo_url: string;
-    demo_url: string;
-  }>;
-  recent_submissions?: Array<{
-    id: number;
-    project_title: string;
-    student_name: string;
-    submitted_at: string;
-    repo_url: string;
-    demo_url: string;
-    status: string;
-  }>;
-  users?: Array<{
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-    created_at?: string;
-  }>;
-  badges?: Array<{
-    id: number;
-    name: string;
-    description: string;
-    image_url: string;
-    earned_at: string;
-  }>;
-}
+import type { DashboardData } from "@/stores";
+
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [data, setData] = useState<SummaryData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, error, fetchDashboard, invalidate } = useDashboardStore();
 
   // Review states (for mentors/admins)
   const [reviewId, setReviewId] = useState<number | null>(null);
@@ -99,25 +43,9 @@ export default function DashboardPage() {
   const [updatingUserId, setUpdatingUserId] = useState<number | null>(null);
   const [updatingRole, setUpdatingRole] = useState(false);
 
-  async function fetchSummary() {
-    try {
-      const res = await api.get("/dashboard/summary");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json);
-      } else {
-        setError("Failed to fetch dashboard summary");
-      }
-    } catch (err) {
-      setError("Failed to connect to API server");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    fetchSummary();
-  }, []);
+    fetchDashboard();
+  }, [fetchDashboard]);
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +61,8 @@ export default function DashboardPage() {
       if (res.ok) {
         setDialogOpen(false);
         setFeedback("");
-        fetchSummary(); // Refresh data
+        invalidate(); // Invalidate cache
+        fetchDashboard(); // Refetch fresh data
       } else {
         alert("Failed to submit review");
       }
@@ -145,7 +74,6 @@ export default function DashboardPage() {
   };
 
   const handleRoleChange = async (targetUserId: number, currentRole: string) => {
-    // Cycles role: student -> mentor -> admin -> student
     let nextRole = "student";
     if (currentRole === "student") nextRole = "mentor";
     else if (currentRole === "mentor") nextRole = "admin";
@@ -160,7 +88,8 @@ export default function DashboardPage() {
       });
 
       if (res.ok) {
-        fetchSummary();
+        invalidate();
+        fetchDashboard();
       } else {
         const errDetail = await res.json().catch(() => ({}));
         alert(errDetail.detail || "Failed to update role");
@@ -173,7 +102,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
         <div className="h-32 bg-card rounded-xl" />
@@ -190,7 +119,7 @@ export default function DashboardPage() {
         <AlertCircle className="h-8 w-8 text-red-500" />
         <h3 className="text-lg font-bold text-foreground">Error Loading Dashboard</h3>
         <p className="text-sm text-muted-foreground">{error || "Something went wrong."}</p>
-        <Button onClick={() => { setLoading(true); fetchSummary(); }}>Retry Fetch</Button>
+        <Button onClick={() => { invalidate(); fetchDashboard(); }}>Retry Fetch</Button>
       </div>
     );
   }

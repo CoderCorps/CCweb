@@ -103,7 +103,7 @@ export function StuckStudentsWidget() {
                   </div>
                 )}
                 <div className="text-[10px] text-muted-foreground mt-2 font-mono">
-                  Flagged {formatDistanceToNow(new Date(flag.created_at), { addSuffix: true })}
+                  Flagged {formatDistanceToNow(new Date(flag.created_at.endsWith('Z') ? flag.created_at : flag.created_at + 'Z'), { addSuffix: true })}
                 </div>
               </div>
               <Button 

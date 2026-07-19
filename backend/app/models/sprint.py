@@ -50,7 +50,7 @@ class TaskAssignment(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     assigned_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     assigned_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), default="assigned", nullable=False) # 'assigned' | 'in_progress' | 'submitted' | 'reviewed'
+    status: Mapped[str] = mapped_column(String(50), default="assigned", nullable=False) # 'assigned' | 'in_progress' | 'submitted' | 'reviewed' | 'needs_improvement'
 
     # Relationships
     task: Mapped["Task"] = relationship("Task", back_populates="assignments")

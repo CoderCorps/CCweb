@@ -37,8 +37,16 @@ class ConnectionManager:
                 try:
                     await connection.send_json(message)
                 except Exception:
-                    # Handle stale connections
                     pass
+
+    async def broadcast_bytes(self, room_id: int, message: bytes, exclude: WebSocket = None):
+        if room_id in self.active_connections:
+            for connection in self.active_connections[room_id]:
+                if connection != exclude:
+                    try:
+                        await connection.send_bytes(message)
+                    except Exception:
+                        pass
 
 manager = ConnectionManager()
 
@@ -102,22 +110,26 @@ async def websocket_room(
     # Resolve and verify user from JWT query token
     payload = decode_token(token)
     if not payload or payload.get("type") != "access":
+        print(f"WS auth failed: invalid token payload {payload}")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
         
     user_id_str = payload.get("sub")
     if not user_id_str:
+        print("WS auth failed: no sub claim")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
         
     try:
         user_id = int(user_id_str)
     except ValueError:
+        print("WS auth failed: sub is not int")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
         
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
+        print("WS auth failed: user not found")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
         
@@ -129,6 +141,7 @@ async def websocket_room(
         
     is_member = db.query(ProjectMember).filter(ProjectMember.project_id == project_id, ProjectMember.user_id == user.id).first() is not None
     if user.role != "admin" and project.mentor_id != user.id and not is_member:
+        print(f"WS auth failed: user {user.id} not member/mentor/admin")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
         
@@ -194,3 +207,40 @@ async def websocket_room(
         manager.disconnect(room.id, websocket)
         # Broadcast presence (offline)
         await manager.broadcast(room.id, {"type": "presence", "user_id": user.id, "status": "offline"})
+
+@router.websocket("/ws/yjs/{project_id}")
+async def websocket_yjs(project_id: int, websocket: WebSocket, db: Session = Depends(get_db)):
+    """
+    A simple WebSocket relay for Yjs.
+    y-websocket clients connect here. We receive binary messages (Uint8Array)
+    and broadcast them to all other clients connected to the same project_id.
+    """
+    await websocket.accept()
+    
+    # We use a separate room namespace for Yjs to avoid mixing with chat messages
+    yjs_room_id = f"yjs_{project_id}"
+    
+    # Let's reuse ConnectionManager, but with string keys for Yjs rooms
+    if yjs_room_id not in manager.active_connections:
+        manager.active_connections[yjs_room_id] = []
+    manager.active_connections[yjs_room_id].append(websocket)
+    
+    try:
+        while True:
+            # y-websocket sends binary data
+            data = await websocket.receive_bytes()
+            
+            # Broadcast to everyone else in this yjs room
+            for connection in manager.active_connections.get(yjs_room_id, []):
+                if connection != websocket:
+                    try:
+                        await connection.send_bytes(data)
+                    except Exception:
+                        pass
+    except WebSocketDisconnect:
+        if yjs_room_id in manager.active_connections:
+            if websocket in manager.active_connections[yjs_room_id]:
+                manager.active_connections[yjs_room_id].remove(websocket)
+            if not manager.active_connections[yjs_room_id]:
+                del manager.active_connections[yjs_room_id]
+

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Dict
 import datetime
+from app.schemas.user import UserResponse
 
 class TaskAssignmentResponse(BaseModel):
     id: int
@@ -9,6 +10,7 @@ class TaskAssignmentResponse(BaseModel):
     assigned_by_id: Optional[int] = None
     assigned_at: datetime.datetime
     status: str
+    user: Optional[UserResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -40,7 +42,7 @@ class TaskBase(BaseModel):
     test_coverage: Optional[float] = None
 
 class TaskCreate(TaskBase):
-    pass
+    assignee_ids: Optional[List[int]] = None
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
@@ -50,6 +52,7 @@ class TaskUpdate(BaseModel):
     task_mode: Optional[str] = None
     difficulty: Optional[str] = None
     due_date: Optional[datetime.datetime] = None
+    assignee_ids: Optional[List[int]] = None
 
 class TaskResponse(TaskBase):
     id: int

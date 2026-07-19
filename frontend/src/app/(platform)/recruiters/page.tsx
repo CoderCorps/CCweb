@@ -100,7 +100,9 @@ export default function RecruitersPortal() {
                     )}
                   </div>
                   <div className="flex-grow">
-                    <CardTitle className="text-lg text-white font-bold">{c.user.name}</CardTitle>
+                    <CardTitle className="text-lg text-white font-bold">
+                      <a href={`/recruiters/candidate/${c.user.id}`} className="hover:underline">{c.user.name}</a>
+                    </CardTitle>
                     <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded w-fit">
                       <Star className="h-3 w-3" /> {c.skill_points} SP
                     </div>

@@ -20,6 +20,7 @@
     "framer-motion": "^12.42.2",
     "gsap": "^3.15.0",
     "lucide-react": "^1.24.0",
+    "monaco-editor": "^0.55.1",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -27,7 +28,8 @@
     "three": "^0.185.1",
     "y-monaco": "^0.1.6",
     "y-websocket": "^3.0.0",
-    "yjs": "^13.6.31"
+    "yjs": "^13.6.31",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

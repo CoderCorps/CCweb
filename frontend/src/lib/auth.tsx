@@ -1,7 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { api, setAccessToken } from "./api";
+import { api, setAccessToken, getAccessToken } from "./api";
+import { useProjectStore, useNotificationStore, useDashboardStore, useProjectWorkspaceStore } from "@/stores";
 
 interface Profile {
   bio: string;
@@ -31,6 +32,8 @@ interface AuthContextType {
   signup: (name: string, email: string, pass: string, role: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  /** Returns the current in-memory JWT access token — for WebSocket connections */
+  getToken: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -112,6 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setAccessToken(null);
       setUser(null);
+      // Reset all Zustand stores on logout so data doesn't leak to next session
+      useProjectStore.getState().reset();
+      useNotificationStore.getState().reset();
+      useDashboardStore.getState().reset();
+      useProjectWorkspaceStore.getState().reset();
     }
   };
 
@@ -128,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, refreshUser, getToken: getAccessToken }}>
       {children}
     </AuthContext.Provider>
   );

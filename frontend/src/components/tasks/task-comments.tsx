@@ -103,7 +103,7 @@ export function TaskComments({ taskId, projectMentorId }: TaskCommentsProps) {
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm">{comment.user?.name}</span>
                         <span className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(comment.created_at.endsWith('Z') ? comment.created_at : comment.created_at + 'Z'), { addSuffix: true })}
                         </span>
                       </div>
                       {(comment.user_id === user?.id || isMentor || isAdmin) && (

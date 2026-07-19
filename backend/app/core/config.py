@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "CoderCorps"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     
     # JWT Settings
     JWT_SECRET: str = os.getenv("JWT_SECRET", "super-secret-key-change-in-production")

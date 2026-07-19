@@ -1,8 +1,8 @@
-from typing import Generator
+from typing import AsyncGenerator
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from jose import jwt, JWTError
+import asyncio
 
 from app.db.session import SessionLocal
 from app.core.config import settings
@@ -15,14 +15,14 @@ oauth2_scheme = OAuth2PasswordBearer(
     auto_error=False
 )
 
-def get_db() -> Generator[Session, None, None]:
+def get_db() -> Session:
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-def get_current_user(
+async def get_current_user(
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme)
 ) -> User:
@@ -33,27 +33,30 @@ def get_current_user(
     )
     if not token:
         raise credentials_exception
-    
-    payload = decode_token(token)
+
+    # decode_token is CPU-bound (JWT decode), run in thread pool
+    payload = await asyncio.to_thread(decode_token, token)
     if not payload or payload.get("type") != "access":
         raise credentials_exception
-    
+
     user_id_str = payload.get("sub")
     if not user_id_str:
         raise credentials_exception
-    
+
     try:
         user_id = int(user_id_str)
     except ValueError:
         raise credentials_exception
-    
-    user = db.query(User).filter(User.id == user_id).first()
+
+    user = await asyncio.to_thread(
+        lambda: db.query(User).filter(User.id == user_id).first()
+    )
     if not user:
         raise credentials_exception
-    
+
     return user
 
-def get_current_mentor(
+async def get_current_mentor(
     current_user: User = Depends(get_current_user)
 ) -> User:
     if current_user.role not in ["mentor", "admin"]:
@@ -63,7 +66,7 @@ def get_current_mentor(
         )
     return current_user
 
-def get_current_admin(
+async def get_current_admin(
     current_user: User = Depends(get_current_user)
 ) -> User:
     if current_user.role != "admin":
