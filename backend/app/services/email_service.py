@@ -13,7 +13,11 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+def get_frontend_url() -> str:
+    url = os.getenv("FRONTEND_URL", "").strip("'\" ")
+    if not url:
+        url = "https://c-cweb-u67f.vercel.app"
+    return url.rstrip("/")
 
 def send_email(to_email: str, subject: str, html_body: str, plain_text_body: Optional[str] = None) -> Optional[str]:
     """
@@ -96,7 +100,8 @@ def send_email(to_email: str, subject: str, html_body: str, plain_text_body: Opt
 
 
 def send_invitation_email(to_email: str, candidate_name: str, raw_token: str, expires_at_str: str) -> Optional[str]:
-    assessment_link = f"{FRONTEND_URL}/assessment/candidate/{raw_token}"
+    frontend_base = get_frontend_url()
+    assessment_link = f"{frontend_base}/assessment/candidate/{raw_token}"
     subject = "You're Invited: CoderCorps Python Technical Assessment"
     
     plain_text = f"Hello {candidate_name},\n\nThank you for applying to CoderCorps! Complete your screening assessment here:\n{assessment_link}\n\nValid for 24 hours."
@@ -146,7 +151,8 @@ def send_invitation_email(to_email: str, candidate_name: str, raw_token: str, ex
 
 
 def send_reminder_email(to_email: str, candidate_name: str, raw_token: str, reminder_number: int, expires_at_str: str) -> Optional[str]:
-    assessment_link = f"{FRONTEND_URL}/assessment/candidate/{raw_token}"
+    frontend_base = get_frontend_url()
+    assessment_link = f"{frontend_base}/assessment/candidate/{raw_token}"
     
     if reminder_number == 1:
         subject = "Reminder: Your CoderCorps Technical Assessment is Ready (+6h)"
