@@ -259,13 +259,100 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
     return { status: 200, ok: true, json: async () => ({ detail: "Logged out" }) };
   }
 
-  // --- Public Apply Endpoint ---
-  if (path === "/apply" && method === "POST") {
+  // --- Public Candidate Assessment Endpoints ---
+  if (path.startsWith("/assessment/candidate/") && path.endsWith("/status")) {
     return {
       status: 200,
       ok: true,
       json: async () => ({
-        message: "Check your email for your assessment link."
+        title: "Python Internship Screening",
+        topic: "python",
+        question_count: 10,
+        basic_time_seconds: 45,
+        intermediate_time_seconds: 90,
+        status: "pending",
+        expires_at: new Date(Date.now() + 86400000).toISOString(),
+        is_valid: true
+      })
+    };
+  }
+
+  if (path.startsWith("/assessment/candidate/") && path.endsWith("/start")) {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        attempt_id: 99,
+        first_question: {
+          id: 101,
+          question_text: "What is the output of print(type([]) is list) in Python?",
+          options: ["True", "False", "TypeError", "SyntaxError"],
+          difficulty: "basic",
+          order_index: 1,
+          time_limit_seconds: 45,
+          served_at: new Date().toISOString(),
+          total_questions: 10
+        }
+      })
+    };
+  }
+
+  if (path.startsWith("/assessment/candidate/") && path.endsWith("/current-question")) {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        id: 101,
+        question_text: "What is the output of print(type([]) is list) in Python?",
+        options: ["True", "False", "TypeError", "SyntaxError"],
+        difficulty: "basic",
+        order_index: 1,
+        time_limit_seconds: 45,
+        served_at: new Date().toISOString(),
+        total_questions: 10
+      })
+    };
+  }
+
+  if (path.startsWith("/assessment/candidate/") && path.endsWith("/answer")) {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        question_id: 101,
+        is_completed: false,
+        next_question: {
+          id: 102,
+          question_text: "Which Python data structure is immutable?",
+          options: ["List", "Dictionary", "Tuple", "Set"],
+          difficulty: "basic",
+          order_index: 2,
+          time_limit_seconds: 45,
+          served_at: new Date().toISOString(),
+          total_questions: 10
+        }
+      })
+    };
+  }
+
+  if (path.startsWith("/assessment/candidate/") && path.endsWith("/result")) {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        attempt_id: 99,
+        candidate_name: "Candidate",
+        assessment_title: "Python Internship Screening",
+        total_score: 90.0,
+        total_questions: 10,
+        correct_count: 9,
+        basic_correct_count: 5,
+        basic_total: 5,
+        intermediate_correct_count: 4,
+        intermediate_total: 5,
+        total_time_seconds: 320.5,
+        completed_at: new Date().toISOString(),
+        questions: []
       })
     };
   }
