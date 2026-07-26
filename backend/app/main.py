@@ -12,18 +12,34 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
-# Set CORS origins
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# Enable CORS for Vercel & local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Include Routers
+# Run DB migrations on startup
+try:
+    from app.db.base import Base
+    from app.db.session import engine
+    from sqlalchemy import text
+    Base.metadata.create_all(bind=engine)
+    with engine.connect() as conn:
+        for col_name, col_type in [("linkedin_url", "VARCHAR(500)"), ("github_url", "VARCHAR(500)"), ("resume_url", "VARCHAR(500)"), ("instagram_url", "VARCHAR(500)")]:
+            try:
+                conn.execute(text(f"ALTER TABLE candidate_applications ADD COLUMN {col_name} {col_type}"))
+                conn.commit()
+            except Exception:
+                pass
+except Exception as e:
+    print(f"[STARTUP DB MIGRATION ERROR]: {e}")
+
+# Include Routers (both /api/v1 and root prefixes for Vercel path compatibility)
 app.include_router(public_apply.router, prefix=f"{settings.API_V1_STR}", tags=["public-apply"])
+app.include_router(public_apply.router, prefix="", tags=["public-apply-root"])
 app.include_router(admin_candidates.router, prefix=f"{settings.API_V1_STR}/admin", tags=["admin-candidates"])
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 
