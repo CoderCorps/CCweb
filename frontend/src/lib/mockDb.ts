@@ -259,6 +259,17 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
     return { status: 200, ok: true, json: async () => ({ detail: "Logged out" }) };
   }
 
+  // --- Public Apply Endpoint ---
+  if (path === "/apply" && method === "POST") {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        message: "Check your email for your assessment link."
+      })
+    };
+  }
+
   if (path === "/auth/refresh" && method === "POST") {
     if (!mockCurrentUser) return { status: 401, ok: false, json: async () => ({ detail: "No refresh token" }) };
     return {
