@@ -11,3 +11,5 @@ from app.models.communication import Room, RoomMessage, DirectMessage, Announcem
 from app.models.notification import Notification
 from app.models.badge import Badge, UserBadge
 from app.models.skill import SkillNode, UserSkill
+from app.models.assessment import Assessment, AssessmentAttempt, AssessmentQuestion, AssessmentAnswer
+from app.models.candidate import CandidateApplication, AssessmentInvitation, ReminderLog

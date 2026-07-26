@@ -48,6 +48,7 @@ export default function MarketingLayout({
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
               <Link href="/academy" className="hover:text-foreground transition-colors">Academy</Link>
               <Link href="/labs" className="hover:text-foreground transition-colors">Labs Workspace</Link>
+              <Link href="/apply" className="text-primary font-bold hover:opacity-80 transition-opacity">Apply Now</Link>
               <Link href="/mentors" className="hover:text-foreground transition-colors">Mentors</Link>
               <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
               <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
@@ -62,6 +63,9 @@ export default function MarketingLayout({
               </Link>
             ) : (
               <>
+                <Link href="/apply">
+                  <Button variant="outline" className="font-semibold border-primary/40 text-primary">Apply</Button>
+                </Link>
                 <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                   Sign In
                 </Link>

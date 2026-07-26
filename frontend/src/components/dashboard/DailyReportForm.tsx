@@ -142,10 +142,10 @@ export default function DailyReportForm({ todos, projectId, onSuccess }: DailyRe
       <div className="text-center p-6 space-y-4 flex flex-col items-center animate-in zoom-in duration-200">
         <CheckCircle2 className="h-12 w-12 text-emerald-500" />
         <div className="space-y-1">
-          <h3 className="text-lg font-bold text-white">Daily Report Submitted!</h3>
+          <h3 className="text-lg font-bold text-foreground">Daily Report Submitted!</h3>
           <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
             Your report was successfully transmitted to Mentor{" "}
-            <span className="text-indigo-400 font-semibold">{project?.mentor?.name || "Unassigned"}</span>.
+            <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{project?.mentor?.name || "Unassigned"}</span>.
           </p>
         </div>
         <Button onClick={onSuccess} className="w-32 mt-2">
@@ -158,10 +158,10 @@ export default function DailyReportForm({ todos, projectId, onSuccess }: DailyRe
   return (
     <form onSubmit={handleSubmit} className="space-y-5 p-2 text-sans">
       <div className="space-y-1">
-        <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-          <FileText className="h-5 w-5 text-indigo-400" /> Daily Standup Report
+        <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+          <FileText className="h-5 w-5 text-indigo-500 dark:text-indigo-400" /> Daily Standup Report
         </h2>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           Summarize what you accomplished today and report any roadblock blockers.
         </p>
       </div>
@@ -175,37 +175,37 @@ export default function DailyReportForm({ todos, projectId, onSuccess }: DailyRe
 
       {/* Summary of work */}
       <div className="space-y-1.5">
-        <label htmlFor="summary" className="text-[10px] font-bold text-slate-300 font-mono">1. SUMMARY OF WORK DONE (EDITABLE)</label>
+        <label htmlFor="summary" className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wider font-mono">1. SUMMARY OF WORK DONE (EDITABLE)</label>
         <textarea
           id="summary"
           required
           rows={5}
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
-          className="flex w-full rounded-md border border-input bg-black/20 px-3 py-2 text-xs shadow-sm"
+          className="flex w-full rounded-xl border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/45 px-3 py-2 text-xs shadow-inner text-foreground"
         />
       </div>
 
       {/* Blockers */}
       <div className="space-y-1.5">
-        <label htmlFor="blockers" className="text-[10px] font-bold text-slate-300 font-mono">2. BLOCKERS & IMPEDIMENTS (OPTIONAL)</label>
+        <label htmlFor="blockers" className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wider font-mono">2. BLOCKERS & IMPEDIMENTS (OPTIONAL)</label>
         <textarea
           id="blockers"
           rows={2}
           value={blockers}
           onChange={(e) => setBlockers(e.target.value)}
           placeholder="None"
-          className="flex w-full rounded-md border border-input bg-black/20 px-3 py-2 text-xs shadow-sm"
+          className="flex w-full rounded-xl border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/45 px-3 py-2 text-xs shadow-inner text-foreground"
         />
       </div>
 
       {/* Hours and links grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
-        {/* Hours Spent */}
+        {/* Hours Worked */}
         <div className="space-y-1.5 md:col-span-1">
-          <label htmlFor="hours" className="text-[10px] font-bold text-slate-300 font-mono flex items-center gap-1">
-            <Clock className="h-3 w-3 text-indigo-400" /> HOURS WORKED
+          <label htmlFor="hours" className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wider font-mono flex items-center gap-1">
+            <Clock className="h-3 w-3 text-indigo-500 dark:text-indigo-400" /> HOURS WORKED
           </label>
           <Input
             id="hours"
@@ -216,14 +216,14 @@ export default function DailyReportForm({ todos, projectId, onSuccess }: DailyRe
             value={hoursSpent}
             onChange={(e) => setHoursSpent(e.target.value !== "" ? Number(e.target.value) : "")}
             placeholder="e.g. 4.5"
-            className="h-8 text-xs bg-black/20 border-border/60"
+            className="h-10 text-xs bg-background/50 border-input rounded-xl focus-visible:ring-primary/45 focus-visible:ring-2"
           />
         </div>
 
         {/* Deliverable URLs */}
         <div className="space-y-1.5 md:col-span-2">
-          <label className="text-[10px] font-bold text-slate-300 font-mono flex items-center gap-1">
-            <ExternalLink className="h-3 w-3 text-indigo-400" /> RELEVANT LINKS (PRS, PULL REQUESTS, DEMOS)
+          <label className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wider font-mono flex items-center gap-1">
+            <ExternalLink className="h-3 w-3 text-indigo-500 dark:text-indigo-400" /> RELEVANT LINKS (PRS, DEMOS)
           </label>
           <div className="space-y-2">
             {links.map((link, index) => (
@@ -233,17 +233,17 @@ export default function DailyReportForm({ todos, projectId, onSuccess }: DailyRe
                   value={link}
                   onChange={(e) => handleLinkChange(index, e.target.value)}
                   placeholder="https://github.com/..."
-                  className="h-8 text-xs bg-black/20 border-border/60 flex-1"
+                  className="h-10 text-xs bg-background/50 border-input rounded-xl focus-visible:ring-primary/45 focus-visible:ring-2 flex-1"
                 />
                 {links.length > 1 && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0"
+                    className="h-10 w-10 text-red-500 hover:text-red-400 hover:bg-red-500/10 shrink-0 rounded-xl"
                     onClick={() => handleRemoveLink(index)}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
               </div>
@@ -253,7 +253,7 @@ export default function DailyReportForm({ todos, projectId, onSuccess }: DailyRe
               variant="outline"
               size="sm"
               onClick={handleAddLink}
-              className="h-7 text-[10px] font-bold gap-1 mt-1 border border-border"
+              className="h-8 text-[10px] font-extrabold gap-1 mt-1 border border-border rounded-xl"
             >
               <Plus className="h-3.5 w-3.5" /> Add Link
             </Button>
@@ -263,7 +263,7 @@ export default function DailyReportForm({ todos, projectId, onSuccess }: DailyRe
       </div>
 
       <div className="pt-2 flex gap-3 justify-end">
-        <Button type="submit" disabled={submitting} className="w-full font-bold h-10">
+        <Button type="submit" disabled={submitting} className="w-full font-bold h-11 rounded-xl bg-primary hover:bg-primary/95 text-primary-foreground">
           {submitting ? "Transmitting Report..." : "Send Daily Standup"}
         </Button>
       </div>

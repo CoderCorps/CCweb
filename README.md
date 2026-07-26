@@ -79,15 +79,16 @@ Visit the app at [http://localhost:3000](http://localhost:3000).
 
 ## ⏰ Scheduled Tasks & Cron
 
-The accountability features (carrying over uncompleted todos and triggering missing standup alerts) are executed via a scheduled background script. 
-
-To configure this job in production (e.g., Render Cron or Railway Scheduled Jobs) or locally, schedule the following command to run daily once per evening (e.g., at 11:59 PM server time):
+The platform includes background automation jobs for student accountability, mentor digests, and public candidate assessment reminders:
 
 ```bash
 cd backend
 # Activate virtual environment
 .\venv\Scripts\activate   # Windows
 source venv/bin/activate  # Unix/macOS
+
+# Run candidate assessment reminder & expiry sweep (+6h, +12h, +18h, 24h link expiry)
+python -m app.cron.assessment_reminders
 
 # Run accountability job
 python -m app.cron.accountability
@@ -97,8 +98,24 @@ python -m app.cron.digest --daily
 python -m app.cron.digest --weekly
 ```
 
+### Candidate Assessment Reminder Schedule
+- **Expiry Sweep**: Expirations run first. Invitations older than 24 hours (`expires_at < now`) automatically transition to `expired`.
+- **Reminder Sweeps**: Active pending/in_progress candidate invitations receive automated HTML email reminders at:
+  - `+6 hours`: Friendly nudge
+  - `+12 hours`: Halfway follow-up
+  - `+18 hours`: Urgent 6-hour expiration alert
+
 ---
 
-## 🚧 Not Yet Implemented
+## 📧 Email Provider Integration
 
-1. **Email Notification Dispatch**: Live email delivery (e.g. via Resend or SMTP hooks) is not yet active. Notifications (including the daily/weekly mentor digests and accountability alerts) are dispatched and stored exclusively in-app via the notifications table. Integrating an external email service provider (like Resend) remains a developer roadmap TODO.
+Live email delivery is powered by **Resend** (`https://resend.com`). Configure the following environment variable in `backend/.env`:
+
+```env
+RESEND_API_KEY="re_..."
+FRONTEND_URL="http://localhost:3000"
+ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+If `RESEND_API_KEY` is omitted or unconfigured during local development, the application gracefully logs mock delivery without interrupting assessment or application flows.
+

@@ -1,5 +1,4 @@
-from typing import AsyncGenerator
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import asyncio
@@ -57,14 +56,18 @@ async def get_current_user_unverified(
     return user
 
 async def get_current_user(
+    request: Request,
     current_user: User = Depends(get_current_user_unverified)
 ) -> User:
     if current_user.role == "mentor":
         if current_user.status == "pending":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="mentor_pending_approval",
-            )
+            path = request.url.path
+            is_allowed = "/approval-thread" in path or (path.startswith(f"{settings.API_V1_STR}/projects") and not path.endswith("/join"))
+            if not is_allowed:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="mentor_pending_approval",
+                )
         elif current_user.status == "rejected":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

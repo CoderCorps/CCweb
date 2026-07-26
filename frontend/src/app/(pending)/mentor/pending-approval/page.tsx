@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Clock, Bell, Loader2, LogOut } from "lucide-react";
+import { Clock, Bell, Loader2, LogOut, FolderGit2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAssetUrl } from "@/lib/utils";
 import { MENTOR_APPROVAL_COOLDOWN_SECONDS } from "@/lib/constants";
@@ -14,6 +15,25 @@ export default function PendingApprovalPage() {
   const { user, logout, refreshUser } = useAuth();
   const [now, setNow] = useState(new Date());
   const [notifying, setNotifying] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await api.get("/projects");
+        if (res.ok) {
+          const data = await res.json();
+          // Filter to projects managed by this mentor
+          setProjects(data.filter((p: any) => p.mentor_id === user?.id));
+        }
+      } catch (err) {
+        console.error("Failed to fetch projects", err);
+      }
+    };
+    if (user) {
+      fetchProjects();
+    }
+  }, [user]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
@@ -32,8 +52,14 @@ export default function PendingApprovalPage() {
     return null;
   }
 
-  const createdAt = user.created_at ? new Date(user.created_at) : new Date();
-  const lastReminderAt = user.last_reminder_sent_at ? new Date(user.last_reminder_sent_at) : null;
+  const parseUTCDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr.endsWith("Z") ? dateStr : dateStr + "Z");
+    return isNaN(date.getTime()) ? new Date(dateStr) : date;
+  };
+
+  const createdAt = parseUTCDate(user.created_at) || new Date();
+  const lastReminderAt = parseUTCDate(user.last_reminder_sent_at);
 
   const isCreatedDateValid = !isNaN(createdAt.getTime());
   const msSinceSignup = isCreatedDateValid ? now.getTime() - createdAt.getTime() : 0;
@@ -143,6 +169,37 @@ export default function PendingApprovalPage() {
           </Button>
         </CardFooter>
       </Card>
+
+      {projects.length > 0 && (
+        <Card className="max-w-md w-full mt-6 border-border/40 shadow-xl bg-card">
+          <CardHeader className="pb-3 text-left">
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <FolderGit2 className="h-5 w-5 text-primary" />
+              Projects Under Review
+            </CardTitle>
+            <CardDescription>
+              Discuss project approval details with administrators.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-0">
+            {projects.map((proj) => (
+              <div key={proj.id} className="flex items-center justify-between p-3.5 bg-muted/30 border border-border/40 rounded-xl">
+                <div className="text-left">
+                  <p className="font-semibold text-sm text-foreground">{proj.title}</p>
+                  <p className="text-[10px] font-mono text-amber-500 uppercase tracking-wider mt-0.5">
+                    {proj.status.replace('_', ' ')}
+                  </p>
+                </div>
+                <Link href={`/projects/${proj.id}/approval-thread`}>
+                  <Button size="sm" variant="outline" className="gap-1.5 border-primary/20 text-primary hover:bg-primary/5">
+                    Discuss <MessageSquare className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

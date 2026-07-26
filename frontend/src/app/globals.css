@@ -143,3 +143,20 @@ body {
   filter: drop-shadow(0 0 8px var(--color-primary));
 }
 
+/* ── Sidebar Navigation Contrast Fixes ──────────────────── */
+.sidebar-link-active {
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .sidebar-link-active {
+  color: hsl(var(--primary)) !important;
+}
+
+.sidebar-role-tag {
+  color: #818cf8 !important; /* light purple/indigo */
+}
+
+[data-theme="light"] .sidebar-role-tag {
+  color: #4f46e5 !important; /* deep indigo */
+}
+

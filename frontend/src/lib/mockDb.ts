@@ -384,6 +384,14 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
     return { status: 200, ok: true, json: async () => project };
   }
 
+  if (path.startsWith("/projects/") && path.endsWith("/approval-thread") && method === "GET") {
+    const pId = parseInt(path.split("/")[2]);
+    const project = mockProjects.find(p => p.id === pId);
+    if (!project) return { status: 404, ok: false, json: async () => ({ detail: "Project not found" }) };
+    // Return empty list of messages for mock DB
+    return { status: 200, ok: true, json: async () => [] };
+  }
+
   if (path.startsWith("/projects/") && method === "GET") {
     const pId = parseInt(path.split("/")[2]);
     const project = mockProjects.find(p => p.id === pId);
@@ -688,5 +696,195 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
     return { status: 200, ok: true, json: async () => mockCert };
   }
 
+  // --- Technical Screening Assessments (Offline Fallback) ---
+  if (path === "/assessments" || path === "/assessments/") {
+    if (method === "GET") {
+      return {
+        status: 200,
+        ok: true,
+        json: async () => [
+          {
+            id: 1,
+            title: "Python Internship Screening",
+            topic: "python",
+            basic_question_count: 5,
+            intermediate_question_count: 5,
+            basic_time_seconds: 45,
+            intermediate_time_seconds: 90,
+            created_by: 2,
+            created_at: new Date().toISOString(),
+            is_active: true,
+            attempt_status: null,
+            attempt_id: null
+          }
+        ]
+      };
+    }
+    if (method === "POST") {
+      const newAss = {
+        id: Math.floor(Math.random() * 1000) + 10,
+        title: bodyObj.title || "Python Assessment",
+        topic: bodyObj.topic || "python",
+        basic_question_count: bodyObj.basic_question_count || 5,
+        intermediate_question_count: bodyObj.intermediate_question_count || 5,
+        basic_time_seconds: bodyObj.basic_time_seconds || 45,
+        intermediate_time_seconds: bodyObj.intermediate_time_seconds || 90,
+        created_by: mockCurrentUser?.id || 1,
+        created_at: new Date().toISOString(),
+        is_active: true
+      };
+      return { status: 201, ok: true, json: async () => newAss };
+    }
+  }
+
+  if (path.startsWith("/assessments/") && path.endsWith("/start") && method === "POST") {
+    const mockAttemptId = 1;
+    const mockFirstQuestion = {
+      id: 101,
+      question_text: "What will be the output of `print(type([]))` in Python 3?",
+      options: ["<class 'list'>", "<class 'array'>", "<class 'tuple'>", "<class 'set'>"],
+      difficulty: "basic",
+      order_index: 1,
+      time_limit_seconds: 45,
+      served_at: new Date().toISOString(),
+      total_questions: 10
+    };
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        attempt_id: mockAttemptId,
+        first_question: mockFirstQuestion
+      })
+    };
+  }
+
+  if (path.includes("/assessment-attempts/") && path.endsWith("/current-question") && method === "GET") {
+    const mockQ = {
+      id: 101,
+      question_text: "What will be the output of `print(type([]))` in Python 3?",
+      options: ["<class 'list'>", "<class 'array'>", "<class 'tuple'>", "<class 'set'>"],
+      difficulty: "basic",
+      order_index: 1,
+      time_limit_seconds: 45,
+      served_at: new Date().toISOString(),
+      total_questions: 10
+    };
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        question_id: 101,
+        is_completed: false,
+        next_question: mockQ
+      })
+    };
+  }
+
+  if (path.includes("/assessment-attempts/") && path.endsWith("/answer") && method === "POST") {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        question_id: (bodyObj.question_id as number) || 101,
+        is_completed: false,
+        next_question: {
+          id: 102,
+          question_text: "Which boolean expression evaluates to True in Python?",
+          options: ["bool('')", "bool([0])", "bool(None)", "bool(0)"],
+          difficulty: "basic",
+          order_index: 2,
+          time_limit_seconds: 45,
+          served_at: new Date().toISOString(),
+          total_questions: 10
+        }
+      })
+    };
+  }
+
+  if (path.includes("/assessment-attempts/") && path.endsWith("/result") && method === "GET") {
+    const attId = parseInt(path.split("/")[2]) || 1;
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        attempt_id: attId,
+        total_score: 90.0,
+        total_questions: 10,
+        correct_count: 9,
+        basic_correct_count: 5,
+        basic_total: 5,
+        intermediate_correct_count: 4,
+        intermediate_total: 5,
+        total_time_seconds: 240.5,
+        status: "completed",
+        completed_at: new Date().toISOString()
+      })
+    };
+  }
+
+  if (path.includes("/assessment-attempts/") && path.endsWith("/flag") && method === "POST") {
+    return { status: 200, ok: true, json: async () => ({ status: "ok", tab_switch_count: 1 }) };
+  }
+
+  if (path.startsWith("/assessments/") && path.endsWith("/attempts") && method === "GET") {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => [
+        {
+          id: 1,
+          assessment_id: 1,
+          candidate: { id: 1, name: "Atul Sharma", email: "student1@codercorps.com" },
+          status: "completed",
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+          total_score: 90.0,
+          tab_switch_count: 0
+        }
+      ]
+    };
+  }
+
+  if (path.includes("/assessment-attempts/") && path.endsWith("/review") && method === "GET") {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        attempt_id: 1,
+        assessment_title: "Python Internship Screening",
+        candidate: { id: 1, name: "Atul Sharma", email: "student1@codercorps.com" },
+        status: "completed",
+        started_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+        total_score: 90.0,
+        tab_switch_count: 0,
+        questions: [
+          {
+            question_id: 101,
+            order_index: 1,
+            question_text: "What will be the output of `print(type([]))` in Python 3?",
+            options: ["<class 'list'>", "<class 'array'>", "<class 'tuple'>", "<class 'set'>"],
+            correct_option_index: 0,
+            selected_option_index: 0,
+            is_correct: true,
+            difficulty: "basic",
+            explanation: "Square brackets define a list literal, so type([]) returns <class 'list'>.",
+            time_limit_seconds: 45,
+            time_taken_seconds: 12.4,
+            served_at: new Date().toISOString(),
+            submitted_at: new Date().toISOString(),
+            was_timeout: false
+          }
+        ]
+      })
+    };
+  }
+
+  if (path.includes("/assessment-attempts/") && path.endsWith("/reset") && method === "POST") {
+    return { status: 200, ok: true, json: async () => ({ status: "reset_successful" }) };
+  }
+
   return { status: 404, ok: false, json: async () => ({ detail: "Not found" }) };
 }
+

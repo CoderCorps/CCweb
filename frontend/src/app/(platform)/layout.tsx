@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Settings,
   Users,
-  FileText
+  FileText,
+  Award
 } from "lucide-react";
 
 import NotificationBell from "@/components/dashboard/NotificationBell";
@@ -57,7 +58,8 @@ export default function PlatformLayout({
   // Route Guard: strict redirect for pending/rejected mentors
   useEffect(() => {
     if (!loading && user && user.role === "mentor") {
-      if (user.status === "pending" && pathname !== "/mentor/pending-approval") {
+      const isApprovalThread = /^\/projects\/\d+\/approval-thread$/.test(pathname);
+      if (user.status === "pending" && pathname !== "/mentor/pending-approval" && !isApprovalThread) {
         router.replace("/mentor/pending-approval");
       } else if (user.status === "rejected" && pathname !== "/mentor/rejected") {
         router.replace("/mentor/rejected");
@@ -87,12 +89,18 @@ export default function PlatformLayout({
 
   navLinks.push(
     { name: "Projects", href: "/projects", icon: <FolderGit2 className="h-4 w-4" /> },
+    { name: "Assessments", href: user.role === "student" ? "/assessments" : "/mentor/assessments", icon: <Award className="h-4 w-4" /> },
     { name: "My Portfolio", href: "/portfolio", icon: <UserCircle className="h-4 w-4" /> },
     { name: "Settings", href: "/settings", icon: <Settings className="h-4 w-4" /> }
   );
 
-  // Mentors get reviews and students links
+  // Mentors & Admins get candidate applications, reviews and students links
   if (user.role === "mentor" || user.role === "admin") {
+    navLinks.push({
+      name: "Candidate Apps",
+      href: "/admin/candidates",
+      icon: <Users className="h-4 w-4 text-indigo-400" />
+    });
     navLinks.push({
       name: "Reviews Board",
       href: "/mentor/reviews",
@@ -142,7 +150,7 @@ export default function PlatformLayout({
     <div className="flex min-h-screen bg-background text-foreground">
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
       {/* Sidebar Navigation */}
-      <aside className="w-64 border-r border-border bg-card flex flex-col justify-between fixed top-0 bottom-0 left-0 z-30">
+      <aside className="w-64 border-r border-border bg-muted/30 dark:bg-card/95 backdrop-blur-md flex flex-col justify-between fixed top-0 bottom-0 left-0 z-30">
         <div>
           {/* Brand header */}
           <div className="h-16 flex items-center px-6 border-b border-border">
@@ -163,7 +171,7 @@ export default function PlatformLayout({
             />
             <div className="overflow-hidden">
               <p className="text-sm font-bold text-foreground truncate">{user.name}</p>
-              <p className="text-[10px] text-indigo-400 font-mono uppercase tracking-wider">{user.role}</p>
+              <p className="text-[10px] sidebar-role-tag font-bold font-mono uppercase tracking-wider">{user.role}</p>
             </div>
           </div>
 
@@ -173,9 +181,9 @@ export default function PlatformLayout({
               const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
               return (
                 <Link key={link.href} href={link.href}>
-                  <div className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${active
-                    ? "bg-primary/10 border border-primary/20 text-white"
-                    : "text-muted-foreground hover:bg-border/30 hover:text-white border border-transparent"
+                  <div className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${active
+                    ? "sidebar-link-active bg-primary/10 border border-primary/25 shadow-sm shadow-primary/5"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-transparent"
                     }`}>
                     <div className="flex items-center gap-3">
                       {link.icon}

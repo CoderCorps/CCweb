@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ResourcesTab } from "@/components/projects/resources-tab";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function ProjectWorkspacePage() {
   const { id } = useParams();
@@ -46,6 +47,7 @@ export default function ProjectWorkspacePage() {
 
   useEffect(() => {
     fetchWorkspace(Number(id));
+    fetchAssignableStudents();
   }, [id, fetchWorkspace]);
 
   // Sync active sprint when sprints load/update
@@ -245,17 +247,7 @@ export default function ProjectWorkspacePage() {
   };
 
   if (loading && !project) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-40 bg-card rounded-xl" />
-        <div className="grid grid-cols-4 gap-6">
-          <div className="h-96 bg-card rounded-xl" />
-          <div className="h-96 bg-card rounded-xl" />
-          <div className="h-96 bg-card rounded-xl" />
-          <div className="h-96 bg-card rounded-xl" />
-        </div>
-      </div>
-    );
+    return <LoadingSpinner text="Loading Labs Workspace..." />;
   }
 
   if (error || !project) {
@@ -283,10 +275,10 @@ export default function ProjectWorkspacePage() {
       <div className="glass p-6 rounded-2xl border-border/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-primary/15 text-indigo-400 font-mono">ACTIVE BOARD</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-card text-muted-foreground border font-mono">MENTOR: {project.mentor?.name}</span>
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-primary/15 text-indigo-600 dark:text-indigo-400 font-mono">ACTIVE BOARD</span>
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-card text-muted-foreground border font-mono">MENTOR: {project.mentor?.name}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">{project.title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{project.title}</h1>
           <p className="text-xs text-muted-foreground max-w-3xl leading-relaxed">{project.description}</p>
         </div>
 
@@ -294,7 +286,7 @@ export default function ProjectWorkspacePage() {
           {/* Team Chat Room */}
           <Button 
             variant="outline" 
-            className="font-semibold gap-1.5 border border-border bg-card/40 hover:bg-card/80 text-white"
+            className="font-semibold gap-1.5 border border-border bg-card/40 hover:bg-card/80 text-foreground"
             onClick={() => router.push(`/projects/${id}/room`)}
           >
             <MessageSquare className="h-4 w-4 text-indigo-400" /> Team Room
@@ -303,10 +295,10 @@ export default function ProjectWorkspacePage() {
           {/* Leaderboard */}
           <Button 
             variant="outline" 
-            className="font-semibold gap-1.5 border border-border bg-card/40 hover:bg-card/80 text-white"
+            className="font-semibold gap-1.5 border border-border bg-card/40 hover:bg-card/80 text-foreground"
             onClick={() => router.push(`/projects/${id}/leaderboard`)}
           >
-            <Trophy className="h-4 w-4 text-yellow-400" /> Leaderboard
+            <Trophy className="h-4 w-4 text-yellow-500 dark:text-yellow-400" /> Leaderboard
           </Button>
 
           {/* Pair Programming */}
@@ -321,7 +313,7 @@ export default function ProjectWorkspacePage() {
           {isMentor && (
             <Button 
               variant="outline" 
-              className="font-semibold gap-1.5 border border-border bg-card/40 hover:bg-card/80 text-white"
+              className="font-semibold gap-1.5 border border-border bg-card/40 hover:bg-card/80 text-foreground"
               onClick={() => router.push(`/projects/${id}/manage`)}
             >
               <Settings className="h-4 w-4 text-indigo-400" /> Manage Board
@@ -525,7 +517,14 @@ export default function ProjectWorkspacePage() {
                       className="w-full h-24 rounded-md border border-input bg-card/60 p-2 text-sm shadow-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
                       {project.members.map((m) => (
-                        <option key={m.user_id} value={m.user_id} className="bg-card mb-1">{m.user.name}</option>
+                        <option key={m.user_id} value={m.user_id} className="bg-card mb-1">
+                          {m.user.name} ({m.role === "lead" ? "Lead/Mentor" : "Student"})
+                        </option>
+                      ))}
+                      {assignableStudents.map((student) => (
+                        <option key={student.id} value={student.id} className="bg-card mb-1 text-slate-300">
+                          {student.name} (Student - click to add to project)
+                        </option>
                       ))}
                     </select>
                     <p className="text-[10px] text-muted-foreground">Hold Ctrl/Cmd to select multiple members.</p>
@@ -562,9 +561,9 @@ export default function ProjectWorkspacePage() {
             ))}
           </div>
 
-          <div className="p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
-            <h3 className="text-sm font-bold text-white font-mono uppercase">Sprint {activeSprint.sprint_number} Goal:</h3>
-            <p className="text-xs text-slate-300 mt-1 leading-relaxed">{activeSprint.goal || "No specific goal logged."}</p>
+          <div className="p-4 bg-indigo-500/5 dark:bg-indigo-500/[0.02] rounded-xl border border-indigo-500/15">
+            <h3 className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 font-mono uppercase tracking-wider">Sprint {activeSprint.sprint_number} Goal:</h3>
+            <p className="text-xs text-foreground/90 mt-1.5 leading-relaxed font-medium">{activeSprint.goal || "No specific goal logged."}</p>
           </div>
 
           {/* Kanban Board Columns */}
@@ -574,8 +573,8 @@ export default function ProjectWorkspacePage() {
               return (
                 <div key={col.status} className="flex flex-col gap-4">
                   <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                    <span className="font-bold text-sm text-slate-300">{col.title}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-border/40 text-muted-foreground">{colTasks.length}</span>
+                    <span className="font-extrabold text-sm text-foreground">{col.title}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{colTasks.length}</span>
                   </div>
 
                   <div className="flex-grow flex flex-col gap-3 min-h-[300px]">
@@ -592,7 +591,7 @@ export default function ProjectWorkspacePage() {
                           }}
                           className="glass p-4 rounded-xl border border-border/60 hover:border-primary/40 cursor-pointer shadow-sm hover:shadow-md transition-all duration-200"
                         >
-                          <h4 className="font-bold text-sm text-white leading-tight">{task.title}</h4>
+                          <h4 className="font-bold text-sm text-foreground leading-tight">{task.title}</h4>
                           <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed line-clamp-2">
                             {task.description || "No descriptions."}
                           </p>
@@ -742,7 +741,14 @@ export default function ProjectWorkspacePage() {
                       className="w-full h-24 rounded-md border border-input bg-card/60 p-2 text-sm shadow-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
                       {project?.members.map((m) => (
-                        <option key={m.user_id} value={m.user_id} className="bg-card mb-1">{m.user.name}</option>
+                        <option key={m.user_id} value={m.user_id} className="bg-card mb-1">
+                          {m.user.name} ({m.role === "lead" ? "Lead/Mentor" : "Student"})
+                        </option>
+                      ))}
+                      {assignableStudents.map((student) => (
+                        <option key={student.id} value={student.id} className="bg-card mb-1 text-slate-300">
+                          {student.name} (Student - click to add to project)
+                        </option>
                       ))}
                     </select>
                     <p className="text-[10px] text-muted-foreground">Hold Ctrl/Cmd to select multiple members.</p>

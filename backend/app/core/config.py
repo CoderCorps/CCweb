@@ -46,8 +46,13 @@ class Settings(BaseSettings):
             return [str(item) for item in v]
         return ["http://localhost:3000"]
 
+    # Email Provider & Frontend URL
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+
     class Config:
         case_sensitive = True
         env_file = ".env"
+        extra = "ignore"
 
 settings = Settings()

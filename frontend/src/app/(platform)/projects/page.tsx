@@ -10,13 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   FolderGit2,
   User,
   ArrowRight,
   Plus,
   GitBranch,
-  Calendar
+  Calendar,
+  MessageSquare
 } from "lucide-react";
 
 
@@ -84,12 +86,7 @@ export default function ProjectsPage() {
 
 
   if (loading && projects.length === 0) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
-        <div className="h-48 bg-card rounded-xl" />
-        <div className="h-48 bg-card rounded-xl" />
-      </div>
-    );
+    return <LoadingSpinner text="Loading Projects List..." />;
   }
 
   const isMentor = user?.role === "mentor" || user?.role === "admin";
@@ -207,15 +204,32 @@ export default function ProjectsPage() {
 
                 <div className="flex gap-4 text-[10px] font-mono text-muted-foreground pt-4">
                   <span>CONTRIBUTORS: {proj.members.filter(m => m.role === "contributor").length}</span>
-                  <span>STATUS: <span className="text-emerald-400">{proj.status.toUpperCase()}</span></span>
+                  <span>STATUS: <span className={
+                    proj.status === "active" ? "text-emerald-400" :
+                    proj.status === "pending_approval" ? "text-amber-400 font-semibold" :
+                    proj.status === "rejected" ? "text-red-400 font-semibold" : "text-muted-foreground"
+                  }>{proj.status.replace('_', ' ').toUpperCase()}</span></span>
                 </div>
               </CardContent>
-              <CardFooter className="border-t border-border/30 pt-4 mt-4">
-                <Link href={`/projects/${proj.id}`} className="w-full">
-                  <Button className="w-full font-semibold gap-1.5">
-                    Enter Workspace <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
+              <CardFooter className="border-t border-border/30 pt-4 mt-4 flex flex-col gap-2">
+                {proj.status === "pending_approval" || proj.status === "rejected" ? (
+                  <>
+                    <Button disabled className="w-full font-semibold gap-1.5 opacity-50 cursor-not-allowed">
+                      Enter Workspace <ArrowRight className="h-4 w-4" />
+                    </Button>
+                    <Link href={`/projects/${proj.id}/approval-thread`} className="w-full">
+                      <Button variant="outline" className="w-full font-semibold gap-1.5 border-amber-500/30 text-amber-500 hover:bg-amber-500/10">
+                        Discuss with Admin <MessageSquare className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <Link href={`/projects/${proj.id}`} className="w-full">
+                    <Button className="w-full font-semibold gap-1.5">
+                      Enter Workspace <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                )}
               </CardFooter>
             </Card>
           ))}

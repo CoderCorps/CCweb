@@ -24,12 +24,16 @@ class StudentAssignment(BaseModel):
 @router.get("/", response_model=List[ProjectResponse])
 async def get_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     def _query():
+        from sqlalchemy.orm import selectinload
+        q = db.query(Project).options(
+            selectinload(Project.members).selectinload(ProjectMember.user)
+        )
         if current_user.role == "admin":
-            return db.query(Project).all()
+            return q.all()
         elif current_user.role == "mentor":
-            return db.query(Project).filter(Project.mentor_id == current_user.id).all()
+            return q.filter(Project.mentor_id == current_user.id).all()
         else:
-            return db.query(Project).join(ProjectMember).filter(
+            return q.join(ProjectMember).filter(
                 ProjectMember.user_id == current_user.id,
                 Project.status.in_(["active", "completed", "planning"])
             ).all()
@@ -77,12 +81,15 @@ async def create_project(
 @router.get("/{id}", response_model=ProjectResponse)
 async def get_project(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     def _query():
-        return db.query(Project).filter(Project.id == id).first(), \
+        from sqlalchemy.orm import selectinload
+        return db.query(Project).filter(Project.id == id).options(
+                   selectinload(Project.members).selectinload(ProjectMember.user)
+               ).first(), \
                db.query(ProjectMember).filter(
                    ProjectMember.project_id == id,
                    ProjectMember.user_id == current_user.id
                ).first()
-
+ 
     project, member = await asyncio.to_thread(_query)
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
@@ -380,7 +387,10 @@ async def get_project_leaderboard(
 @router.get("/{id}/sprints", response_model=List[SprintResponse])
 async def get_project_sprints(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     def _query():
-        project = db.query(Project).filter(Project.id == id).first()
+        from sqlalchemy.orm import selectinload
+        project = db.query(Project).filter(Project.id == id).options(
+            selectinload(Project.sprints).selectinload(Sprint.tasks).selectinload(Task.assignments).selectinload(TaskAssignment.user)
+        ).first()
         return project
     project = await asyncio.to_thread(_query)
     if not project:
@@ -456,6 +466,28 @@ async def create_sprint_task(
             task_mode=task_in.task_mode, difficulty=task_in.difficulty, due_date=task_in.due_date
         )
         db.add(db_task)
+        db.flush()
+        
+        if task_in.assignee_ids:
+            for user_id in task_in.assignee_ids:
+                member = db.query(ProjectMember).filter(
+                    ProjectMember.project_id == sprint.project_id,
+                    ProjectMember.user_id == user_id
+                ).first()
+                if not member:
+                    new_member = ProjectMember(
+                        project_id=sprint.project_id,
+                        user_id=user_id,
+                        role="contributor"
+                    )
+                    db.add(new_member)
+                assignment = TaskAssignment(
+                    task_id=db_task.id,
+                    user_id=user_id,
+                    assigned_by_id=current_user.id
+                )
+                db.add(assignment)
+        
         db.commit()
         db.refresh(db_task)
         return db_task, "ok"
@@ -493,6 +525,17 @@ async def update_task(
             if is_admin or is_project_mentor:
                 db.query(TaskAssignment).filter(TaskAssignment.task_id == db_task.id).delete()
                 for user_id in assignee_ids:
+                    member = db.query(ProjectMember).filter(
+                        ProjectMember.project_id == sprint.project_id,
+                        ProjectMember.user_id == user_id
+                    ).first()
+                    if not member:
+                        new_member = ProjectMember(
+                            project_id=sprint.project_id,
+                            user_id=user_id,
+                            role="contributor"
+                        )
+                        db.add(new_member)
                     assignment = TaskAssignment(
                         task_id=db_task.id,
                         user_id=user_id,
@@ -773,6 +816,7 @@ async def websocket_approval_thread(websocket: WebSocket, id: int, token: str = 
                     }
                     await approval_manager.broadcast(id, broadcast_msg)
     except WebSocketDisconnect:
-        approval_manager.disconnect(id, websocket)
+        pass
     finally:
+        approval_manager.disconnect(id, websocket)
         db.close()

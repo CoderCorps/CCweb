@@ -1,5 +1,6 @@
 import sys
 import os
+from sqlalchemy import text
 
 # Append the current directory to sys.path to resolve module imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -11,10 +12,12 @@ from app.seed import seed_db
 def init():
     print("Connecting to database...")
     try:
-        # Drop all tables first to handle schema updates cleanly in this sandbox environment
-        print("Dropping existing tables...")
-        Base.metadata.drop_all(bind=engine)
-        print("Tables dropped successfully!")
+        print("Dropping existing schema & tables...")
+        with engine.connect() as conn:
+            conn.execute(text("DROP SCHEMA public CASCADE;"))
+            conn.execute(text("CREATE SCHEMA public;"))
+            conn.commit()
+        print("Schema dropped cleanly!")
 
         # Create all tables defined in models inside the database engine
         print("Creating new tables...")

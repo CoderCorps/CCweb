@@ -33,7 +33,7 @@ export const useApprovalThreadStore = create<ApprovalThreadState>((set, get) => 
 
   connect: (projectId: number) => {
     const currentSocket = get().socket;
-    if (currentSocket?.readyState === WebSocket.OPEN) {
+    if (currentSocket && (currentSocket.readyState === WebSocket.OPEN || currentSocket.readyState === WebSocket.CONNECTING)) {
       return;
     }
 
@@ -47,16 +47,22 @@ export const useApprovalThreadStore = create<ApprovalThreadState>((set, get) => 
     const socket = new WebSocket(`${wsUrl}/api/v1/projects/${projectId}/approval-thread/ws?token=${token}`);
 
     socket.onopen = () => {
+      if (get().socket !== socket) return;
       set({ isConnected: true, error: null });
     };
 
     socket.onmessage = (event) => {
+      if (get().socket !== socket) return;
       try {
         const data = JSON.parse(event.data);
         if (data.type === "chat_message") {
-          set((state) => ({
-            messages: [...state.messages, data.message],
-          }));
+          set((state) => {
+            const exists = state.messages.some((m) => m.id === data.message.id);
+            if (exists) return state;
+            return {
+              messages: [...state.messages, data.message],
+            };
+          });
         }
       } catch (err) {
         console.error("Failed to parse websocket message", err);
@@ -64,10 +70,12 @@ export const useApprovalThreadStore = create<ApprovalThreadState>((set, get) => 
     };
 
     socket.onclose = () => {
+      if (get().socket !== socket) return;
       set({ isConnected: false, socket: null });
     };
 
     socket.onerror = () => {
+      if (get().socket !== socket) return;
       set({ error: "WebSocket connection error" });
     };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, use } from "react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { useApprovalThreadStore } from "@/stores";
@@ -10,15 +10,18 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
-export default function ApprovalThreadPage({ params }: { params: { id: string } }) {
-  const projectId = parseInt(params.id);
-  const { user } = useAuth();
+export default function ApprovalThreadPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const projectId = parseInt(resolvedParams.id);
+  const { user, loading } = useAuth();
   const { messages, setMessages, connect, disconnect, sendMessage, isConnected } = useApprovalThreadStore();
   const [project, setProject] = useState<any>(null);
   const [inputValue, setInputValue] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (loading || !user) return;
+
     const fetchProjectAndMessages = async () => {
       try {
         const [projRes, msgRes] = await Promise.all([
@@ -45,7 +48,7 @@ export default function ApprovalThreadPage({ params }: { params: { id: string } 
     return () => {
       disconnect();
     };
-  }, [projectId, connect, disconnect, setMessages]);
+  }, [projectId, connect, disconnect, setMessages, user, loading]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -61,6 +64,11 @@ export default function ApprovalThreadPage({ params }: { params: { id: string } 
   };
 
   if (!project) return <div className="p-8">Loading...</div>;
+
+  const parseMessageDate = (dateStr: string) => {
+    const date = new Date(dateStr.endsWith("Z") ? dateStr : dateStr + "Z");
+    return isNaN(date.getTime()) ? new Date(dateStr) : date;
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] p-6 max-w-4xl mx-auto w-full">
@@ -120,7 +128,7 @@ export default function ApprovalThreadPage({ params }: { params: { id: string } 
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                   </div>
                   <span className="text-[10px] text-muted-foreground mt-1">
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {parseMessageDate(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               );

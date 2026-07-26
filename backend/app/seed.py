@@ -264,7 +264,19 @@ def seed_db():
             ai_score=90,
             ai_feedback_json={"feedback": ["Great job on the schema.", "Consider indexing."]}
         )
-        db.add(submission1)
+        # Assessment seeding
+        from app.models.assessment import Assessment
+        default_assessment = Assessment(
+            title="Python Internship Screening",
+            topic="python",
+            basic_question_count=5,
+            intermediate_question_count=5,
+            basic_time_seconds=45,
+            intermediate_time_seconds=90,
+            created_by=mentor.id,
+            is_active=True
+        )
+        db.add(default_assessment)
         db.commit()
 
         print("Database successfully seeded with mock data!")
