@@ -47,15 +47,36 @@ async def signup(
     db: Session = Depends(get_db),
     _ = Depends(check_rate_limit)
 ):
+    clean_email = user_in.email.strip().lower()
+
     # Check if user already exists
-    user = db.query(User).filter(User.email == user_in.email).first()
+    user = db.query(User).filter(User.email == clean_email).first()
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A user with this email already exists."
         )
-    
-    clean_email = user_in.email.strip().lower()
+
+    # Students MUST have a passed assessment (score >= 70) to be able to sign up.
+    # Mentors can sign up directly and go through admin approval.
+    if user_in.role == "student":
+        from app.models.assessment import AssessmentAttempt
+        from app.models.candidate import AssessmentInvitation
+        passed_attempt = (
+            db.query(AssessmentAttempt)
+            .join(AssessmentInvitation, AssessmentAttempt.invitation_id == AssessmentInvitation.id)
+            .join(CandidateApplication, AssessmentInvitation.application_id == CandidateApplication.id)
+            .filter(CandidateApplication.email == clean_email)
+            .filter(AssessmentAttempt.status == "completed")
+            .filter(AssessmentAttempt.total_score >= 70.0)
+            .first()
+        )
+        if not passed_attempt:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Students must apply and pass the screening assessment (score ≥ 70%) before creating an account. Please visit the Apply page to begin."
+            )
+
     app_rec = db.query(CandidateApplication).filter(CandidateApplication.email == clean_email).first()
     is_pre_approved = app_rec is not None and app_rec.source == "pre_approved"
 

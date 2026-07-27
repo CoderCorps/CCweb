@@ -58,6 +58,7 @@ class PublicQuestionResult(BaseModel):
 class PublicCandidateResult(BaseModel):
     attempt_id: int
     candidate_name: str
+    candidate_email: Optional[str] = None
     assessment_title: str
     total_score: float
     overall_weighted_score: Optional[float] = None

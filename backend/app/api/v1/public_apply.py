@@ -548,11 +548,13 @@ def _build_public_result_payload(invitation: AssessmentInvitation, attempt: Asse
         )
 
     cand_name = invitation.application.name if invitation.application else "Candidate"
+    cand_email = invitation.application.email if invitation.application else None
     ass_title = invitation.assessment.title if invitation.assessment else "Assessment"
 
     return PublicCandidateResult(
         attempt_id=attempt.id,
         candidate_name=cand_name,
+        candidate_email=cand_email,
         assessment_title=ass_title,
         total_score=scoring["overall_weighted_score"],
         overall_weighted_score=scoring["overall_weighted_score"],

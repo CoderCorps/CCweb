@@ -63,6 +63,7 @@ interface QuestionResultItem {
 interface CandidateResult {
   attempt_id: number;
   candidate_name: string;
+  candidate_email?: string | null;
   assessment_title: string;
   total_score: number;
   overall_weighted_score?: number | null;
@@ -434,7 +435,7 @@ export default function PublicCandidateAssessmentPage() {
             </div>
 
             <Button
-              onClick={() => router.push(`/signup?name=${encodeURIComponent(result.candidate_name)}`)}
+              onClick={() => router.push(`/signup?name=${encodeURIComponent(result.candidate_name)}&email=${encodeURIComponent(result.candidate_email ?? "")}&from=assessment`)}
               className="font-bold gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-sm sm:text-base shadow-md transition-transform hover:scale-105"
             >
               Create Your Account <ArrowRight className="h-4 w-4" />
