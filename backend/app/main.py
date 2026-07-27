@@ -44,6 +44,30 @@ try:
 except Exception as e:
     print(f"[STARTUP DB MIGRATION ERROR]: {e}")
 
+# Ensure default admin account exists in production database
+try:
+    from app.db.session import SessionLocal
+    from app.models.user import User
+    from app.core import security
+    db_init = SessionLocal()
+    try:
+        admin_user = db_init.query(User).filter(User.role == "admin").first()
+        if not admin_user:
+            print("[STARTUP]: Creating default admin user (admin@codercorps.com)")
+            admin_user = User(
+                name="Admin System",
+                email="admin@codercorps.com",
+                password_hash=security.get_password_hash("admin123"),
+                role="admin",
+                status="active"
+            )
+            db_init.add(admin_user)
+            db_init.commit()
+    finally:
+        db_init.close()
+except Exception as err:
+    print(f"[STARTUP ADMIN INIT ERROR]: {err}")
+
 # Include Routers (both /api/v1 and root prefixes for Vercel path compatibility)
 app.include_router(public_apply.router, prefix=f"{settings.API_V1_STR}", tags=["public-apply"])
 app.include_router(public_apply.router, prefix="", tags=["public-apply-root"])
