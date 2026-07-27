@@ -458,7 +458,12 @@ export default function PublicCandidateAssessmentPage() {
             <div className="p-4 bg-card/80 rounded-2xl border border-border/60 max-w-md mx-auto text-left space-y-2 font-mono text-xs shadow-inner">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground uppercase text-[10px] font-bold">Email Address:</span>
-                <a href={`mailto:codercorps@gmail.com?subject=${encodeURIComponent(`Re-attempt Request for -${result.candidate_name}-`)}`} className="text-primary font-bold hover:underline">
+                <a 
+                  href={`https://mail.google.com/mail/?view=cm&fs=1&to=codercorps@gmail.com&su=${encodeURIComponent(`Re-attempt Request for -${result.candidate_name}-`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary font-bold hover:underline"
+                >
                   codercorps@gmail.com
                 </a>
               </div>
@@ -475,7 +480,11 @@ export default function PublicCandidateAssessmentPage() {
               asChild
               className="font-bold gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 text-sm sm:text-base shadow-md transition-transform hover:scale-105"
             >
-              <a href={`mailto:codercorps@gmail.com?subject=${encodeURIComponent(`Re-attempt Request for -${result.candidate_name}-`)}`}>
+              <a 
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=codercorps@gmail.com&su=${encodeURIComponent(`Re-attempt Request for -${result.candidate_name}-`)}&body=${encodeURIComponent(`Hello CoderCorps Team,\n\nI would like to request a re-attempt for my Python screening assessment.\n\nCandidate Name: ${result.candidate_name}\nAssessment Score: ${result.total_score}%\n\nThank you!`)}`}
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
                 <Mail className="h-4 w-4" /> Send Re-attempt Request Email
               </a>
             </Button>
