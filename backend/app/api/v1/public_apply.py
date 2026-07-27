@@ -305,27 +305,46 @@ async def get_candidate_current_question(
 
         questions = sorted(attempt.questions, key=lambda x: x.order_index)
 
+        last_expire_time = attempt.started_at
         for q in questions:
             if not q.answer:
                 if q.served_at:
                     elapsed = (now - q.served_at).total_seconds()
-                    if elapsed > (q.time_limit_seconds + 3.0):
-                        # Timeout! Auto-record null answer
+                    if elapsed > (q.time_limit_seconds + 2.0):
+                        # Timeout! Auto-record null answer at exact question expiration time
+                        expire_dt = q.served_at + timedelta(seconds=q.time_limit_seconds)
                         timeout_ans = AssessmentAnswer(
                             question_id=q.id,
                             selected_option_index=None,
                             is_correct=False,
                             time_taken_seconds=float(q.time_limit_seconds),
-                            submitted_at=now,
+                            submitted_at=expire_dt,
                             was_timeout=True
                         )
                         db.add(timeout_ans)
                         q.answer = timeout_ans
+                        last_expire_time = expire_dt
                         db.commit()
                         continue
 
                 if not q.served_at:
-                    q.served_at = now
+                    q.served_at = last_expire_time if last_expire_time else now
+                    elapsed = (now - q.served_at).total_seconds()
+                    if elapsed > (q.time_limit_seconds + 2.0):
+                        expire_dt = q.served_at + timedelta(seconds=q.time_limit_seconds)
+                        timeout_ans = AssessmentAnswer(
+                            question_id=q.id,
+                            selected_option_index=None,
+                            is_correct=False,
+                            time_taken_seconds=float(q.time_limit_seconds),
+                            submitted_at=expire_dt,
+                            was_timeout=True
+                        )
+                        db.add(timeout_ans)
+                        q.answer = timeout_ans
+                        last_expire_time = expire_dt
+                        db.commit()
+                        continue
                     db.commit()
 
                 return PublicAnswerSubmitResponse(
