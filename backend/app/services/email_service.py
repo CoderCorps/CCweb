@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def get_frontend_url() -> str:
     url = os.getenv("FRONTEND_URL", "").strip("'\" ")
-    if not url:
+    if not url or "localhost" in url or "127.0.0.1" in url:
         url = "https://c-cweb-u67f.vercel.app"
     return url.rstrip("/")
 

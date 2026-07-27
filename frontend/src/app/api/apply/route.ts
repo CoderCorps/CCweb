@@ -6,7 +6,20 @@ const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || "587", 10);
 const SMTP_USER = process.env.SMTP_USER || "codercorps@gmail.com";
 const SMTP_PASSWORD = process.env.SMTP_PASSWORD || "rnsjhylaigcnatef";
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://c-cweb-u67f.vercel.app";
+function getDeployedFrontendUrl(req: NextRequest): string {
+  const envUrl = (process.env.FRONTEND_URL || "").trim().replace(/\/$/, "");
+  if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+    return envUrl;
+  }
+
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
+  if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
+    const proto = req.headers.get("x-forwarded-proto") || "https";
+    return `${proto}://${host}`;
+  }
+
+  return "https://c-cweb-u67f.vercel.app";
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,9 +33,10 @@ export async function POST(req: NextRequest) {
     const recipientName = String(name).trim() || "Candidate";
     const recipientEmail = String(email).trim().toLowerCase();
 
-    // Generate token url
+    // Generate token url using deployed frontend domain
     const rawToken = crypto.randomBytes(24).toString("hex");
-    const assessmentUrl = `${FRONTEND_URL}/assessment/candidate/${rawToken}`;
+    const baseUrl = getDeployedFrontendUrl(req);
+    const assessmentUrl = `${baseUrl}/assessment/candidate/${rawToken}`;
 
     // Configure SMTP Transporter
     const transporter = nodemailer.createTransport({
