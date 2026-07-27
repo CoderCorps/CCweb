@@ -134,7 +134,8 @@ async def start_assessment(
             basic_count=assessment.basic_question_count,
             intermediate_count=assessment.intermediate_question_count,
             deep_count=assessment.deep_question_count,
-            db=db
+            db=db,
+            candidate_id=current_user.id
         )
 
         # Create attempt

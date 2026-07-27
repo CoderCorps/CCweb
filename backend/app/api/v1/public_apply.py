@@ -216,12 +216,15 @@ async def start_candidate_assessment(
         ass = invitation.assessment
 
         # Generate fresh questions server-side
+        cand_email = invitation.application.email if invitation.application else None
         raw_questions = generate_full_assessment_questions(
             topic=ass.topic,
             basic_count=ass.basic_question_count,
             intermediate_count=ass.intermediate_question_count,
             deep_count=ass.deep_question_count,
-            db=db
+            db=db,
+            candidate_id=invitation.candidate_id,
+            candidate_email=cand_email
         )
 
         attempt = AssessmentAttempt(

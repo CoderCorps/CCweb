@@ -133,8 +133,27 @@ def test_weighted_scoring_arithmetic():
 
     print("  -> PASSED: All hand-calculated scoring test cases matched exact expected values.")
 
+def test_session_question_uniqueness():
+    """Assert that no question text or fingerprint is repeated within an assessment session."""
+    print("[TEST 4/4]: Testing zero question text & fingerprint repetition within a single session...")
+    for run in range(10):
+        questions = generate_full_assessment_questions(
+            topic="python",
+            basic_count=2,
+            intermediate_count=6,
+            deep_count=2
+        )
+        texts = [q["question_text"] for q in questions]
+        fingerprints = [q["content_fingerprint"] for q in questions]
+
+        assert len(texts) == len(set(texts)), f"Run {run}: Duplicate question text found in session: {texts}"
+        assert len(fingerprints) == len(set(fingerprints)), f"Run {run}: Duplicate fingerprint found in session: {fingerprints}"
+    print("  -> PASSED: 100% zero question repetition verified across all assessment sessions.")
+
+
 if __name__ == "__main__":
     test_concept_coverage_uniqueness()
     test_fingerprint_collision_dedup()
     test_weighted_scoring_arithmetic()
-    print("\n=== ALL 3 TEST SUITE MODULES PASSED CLEANLY! ===")
+    test_session_question_uniqueness()
+    print("\n=== ALL 4 TEST SUITE MODULES PASSED CLEANLY! ===")

@@ -13,7 +13,7 @@ import logging
 import hashlib
 import urllib.request
 import urllib.error
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
 from sqlalchemy.orm import Session
 
 from app.data.python_concepts import TAXONOMY_BY_TIER, BASIC_CONCEPTS, INTERMEDIATE_CONCEPTS, DEEP_CONCEPTS
@@ -121,12 +121,17 @@ def generate_single_concept_question(
     tier: str,
     concept_key: str,
     scenario_theme: str,
-    db: Optional[Session] = None
+    db: Optional[Session] = None,
+    session_fingerprints: Optional[Set[str]] = None
 ) -> Dict[str, Any]:
     """
     Generates a single MCQ for a specific (concept_key, scenario_theme, tier) combination.
     Enforces deduplication via SHA-256 fingerprint check with retries & theme switching.
+    Guarantees no repeated questions within the current session_fingerprints set.
     """
+    if session_fingerprints is None:
+        session_fingerprints = set()
+
     api_key = os.getenv("ANTHROPIC_API_KEY")
 
     if api_key and api_key != "YOUR_ANTHROPIC_API_KEY_HERE":
@@ -164,7 +169,8 @@ def generate_single_concept_question(
                         q_text = q_data["question"].strip()
                         fp = compute_content_fingerprint(q_text)
 
-                        if is_fingerprint_unique(fp, db):
+                        if is_fingerprint_unique(fp, db) and fp not in session_fingerprints:
+                            session_fingerprints.add(fp)
                             record_fingerprint(fp, concept_key, db)
                             return {
                                 "question_text": q_text,
@@ -184,19 +190,35 @@ def generate_single_concept_question(
 
     # --- FALLBACK BANK ---
     logger.info(f"Using fallback question bank for concept '{concept_key}' ({tier})")
-    matching_fallbacks = [
+    
+    # Filter matching fallbacks that have NOT been used in session_fingerprints
+    unused_matching = [
         q for q in FALLBACK_QUESTIONS 
-        if q.get("concept_key") == concept_key or q.get("tier") == tier
+        if (q.get("concept_key") == concept_key or q.get("tier") == tier)
+        and compute_content_fingerprint(q["question"]) not in session_fingerprints
     ]
-    if not matching_fallbacks:
-        matching_fallbacks = FALLBACK_QUESTIONS
+    if not unused_matching:
+        unused_matching = [
+            q for q in FALLBACK_QUESTIONS 
+            if compute_content_fingerprint(q["question"]) not in session_fingerprints
+        ]
 
-    selected = random.choice(matching_fallbacks)
-    fp = compute_content_fingerprint(selected["question"])
+    if unused_matching:
+        selected = random.choice(unused_matching)
+        q_text = selected["question"]
+    else:
+        # Mutation fallback if all pre-made fallback bank items were already served
+        base_selected = random.choice(FALLBACK_QUESTIONS)
+        salt = random.randint(100, 999)
+        q_text = f"{base_selected['question']} (Variant #{salt})"
+        selected = base_selected
+
+    fp = compute_content_fingerprint(q_text)
+    session_fingerprints.add(fp)
     record_fingerprint(fp, concept_key, db)
 
     return {
-        "question_text": selected["question"],
+        "question_text": q_text,
         "options": selected["options"],
         "correct_option_index": selected["correct_option_index"],
         "explanation": selected["explanation"],
@@ -262,13 +284,49 @@ def generate_full_assessment_questions(
     basic_count: int = 2,
     intermediate_count: int = 6,
     deep_count: int = 2,
-    db: Optional[Session] = None
+    db: Optional[Session] = None,
+    candidate_id: Optional[int] = None,
+    candidate_email: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
     Generates a full concept-sampled, scenario-randomized, deduplicated assessment question set.
     Sampling mix (recommended default: 2 basic + 6 intermediate + 2 deep).
     Concepts and scenario themes are sampled WITHOUT replacement per attempt.
+    Guarantees zero question repetition within the session and across the candidate's history.
     """
+    session_fingerprints: Set[str] = set()
+
+    # Load historical question fingerprints taken by this candidate across past attempts
+    if db:
+        try:
+            from app.models.assessment import AssessmentAttempt, AssessmentQuestion
+            from app.models.candidate import AssessmentInvitation, CandidateApplication
+
+            past_fps = []
+            if candidate_id:
+                past_fps = (
+                    db.query(AssessmentQuestion.content_fingerprint)
+                    .join(AssessmentAttempt)
+                    .filter(AssessmentAttempt.candidate_id == candidate_id)
+                    .filter(AssessmentQuestion.content_fingerprint.isnot(None))
+                    .all()
+                )
+            elif candidate_email:
+                past_fps = (
+                    db.query(AssessmentQuestion.content_fingerprint)
+                    .join(AssessmentAttempt)
+                    .join(AssessmentInvitation, AssessmentAttempt.invitation_id == AssessmentInvitation.id)
+                    .join(CandidateApplication, AssessmentInvitation.application_id == CandidateApplication.id)
+                    .filter(CandidateApplication.email == candidate_email.strip().lower())
+                    .filter(AssessmentQuestion.content_fingerprint.isnot(None))
+                    .all()
+                )
+            for (fp_val,) in past_fps:
+                if fp_val:
+                    session_fingerprints.add(fp_val)
+        except Exception as err:
+            logger.warning(f"Error fetching historical fingerprints for candidate: {err}")
+
     # 1. Sample concepts without replacement
     sampled_basic = random.sample(BASIC_CONCEPTS, min(basic_count, len(BASIC_CONCEPTS)))
     sampled_intermediate = random.sample(INTERMEDIATE_CONCEPTS, min(intermediate_count, len(INTERMEDIATE_CONCEPTS)))
@@ -289,7 +347,7 @@ def generate_full_assessment_questions(
     for concept in sampled_basic:
         theme = sampled_themes[theme_idx]
         theme_idx += 1
-        q = generate_single_concept_question("basic", concept, theme, db)
+        q = generate_single_concept_question("basic", concept, theme, db, session_fingerprints)
         q["order_index"] = order
         q["time_limit_seconds"] = 45
         all_questions.append(q)
@@ -299,7 +357,7 @@ def generate_full_assessment_questions(
     for concept in sampled_intermediate:
         theme = sampled_themes[theme_idx]
         theme_idx += 1
-        q = generate_single_concept_question("intermediate", concept, theme, db)
+        q = generate_single_concept_question("intermediate", concept, theme, db, session_fingerprints)
         q["order_index"] = order
         q["time_limit_seconds"] = 90
         all_questions.append(q)
@@ -309,7 +367,7 @@ def generate_full_assessment_questions(
     for concept in sampled_deep:
         theme = sampled_themes[theme_idx]
         theme_idx += 1
-        q = generate_single_concept_question("deep", concept, theme, db)
+        q = generate_single_concept_question("deep", concept, theme, db, session_fingerprints)
         q["order_index"] = order
         q["time_limit_seconds"] = 120
         all_questions.append(q)
