@@ -132,6 +132,14 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
       }
     }
 
+    if (response.status === 404) {
+      console.warn(`[API 404] ${url} returned 404. Checking mock database fallback.`);
+      const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
+      if (mockRes && mockRes.ok) {
+        return mockRes as unknown as Response;
+      }
+    }
+
     return response;
   } catch (err) {
     console.warn("Backend API server unreachable. Falling back to frontend mock database.", err);
