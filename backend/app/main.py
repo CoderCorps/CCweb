@@ -40,9 +40,27 @@ async def startup_event():
 
         Base.metadata.create_all(bind=engine)
         with engine.connect() as conn:
-            for col_name, col_type in [("linkedin_url", "VARCHAR(500)"), ("github_url", "VARCHAR(500)"), ("resume_url", "VARCHAR(500)"), ("instagram_url", "VARCHAR(500)")]:
+            alter_statements = [
+                "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(500)",
+                "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS github_url VARCHAR(500)",
+                "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS resume_url VARCHAR(500)",
+                "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS instagram_url VARCHAR(500)",
+                "ALTER TABLE assessments ADD COLUMN IF NOT EXISTS deep_question_count INTEGER DEFAULT 2",
+                "ALTER TABLE assessments ADD COLUMN IF NOT EXISTS deep_time_seconds INTEGER DEFAULT 120",
+                "ALTER TABLE assessments ADD COLUMN IF NOT EXISTS min_intermediate_pass_score FLOAT DEFAULT 60.0",
+                "ALTER TABLE assessments ADD COLUMN IF NOT EXISTS min_deep_pass_score FLOAT DEFAULT 40.0",
+                "ALTER TABLE assessment_attempts ADD COLUMN IF NOT EXISTS tier_classification VARCHAR(100)",
+                "ALTER TABLE assessment_attempts ADD COLUMN IF NOT EXISTS overall_weighted_score FLOAT",
+                "ALTER TABLE assessment_attempts ADD COLUMN IF NOT EXISTS intermediate_tier_accuracy FLOAT",
+                "ALTER TABLE assessment_attempts ADD COLUMN IF NOT EXISTS deep_tier_accuracy FLOAT",
+                "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS tier VARCHAR(50) DEFAULT 'intermediate'",
+                "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS concept_key VARCHAR(100)",
+                "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS scenario_theme VARCHAR(100)",
+                "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS content_fingerprint VARCHAR(64)"
+            ]
+            for stmt in alter_statements:
                 try:
-                    conn.execute(text(f"ALTER TABLE candidate_applications ADD COLUMN {col_name} {col_type}"))
+                    conn.execute(text(stmt))
                     conn.commit()
                 except Exception:
                     pass
