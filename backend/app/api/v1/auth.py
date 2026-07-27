@@ -12,6 +12,7 @@ from app.deps import get_db, get_current_user, get_current_user_unverified
 from app.core.config import settings
 from app.core import security
 from app.models.user import User, Profile
+from app.models.candidate import CandidateApplication
 from app.schemas.user import UserCreate, UserResponse, Token
 
 # Simple in-memory rate limiter: IP -> (list of timestamps)
@@ -50,14 +51,18 @@ async def signup(
             detail="A user with this email already exists."
         )
     
+    clean_email = user_in.email.strip().lower()
+    app_rec = db.query(CandidateApplication).filter(CandidateApplication.email == clean_email).first()
+    is_pre_approved = app_rec is not None and app_rec.source == "pre_approved"
+
     # Hash password & create user
     hashed_password = security.get_password_hash(user_in.password)
     db_user = User(
         name=user_in.name,
-        email=user_in.email,
+        email=clean_email,
         password_hash=hashed_password,
         role=user_in.role,
-        status="pending" if user_in.role in ["mentor", "student"] else "active",
+        status="active" if is_pre_approved else ("pending" if user_in.role in ["mentor", "student"] else "active"),
         avatar_url=user_in.avatar_url
     )
     db.add(db_user)

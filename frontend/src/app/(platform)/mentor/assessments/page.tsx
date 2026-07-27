@@ -227,14 +227,21 @@ export default function MentorAssessmentsDashboard() {
     }
   };
 
-  const handleApproveCandidateUser = async (userId: number) => {
+  const handleApproveCandidateUser = async (userId?: number | null, candidateEmail?: string) => {
     try {
-      const res = await api.post(`/admin/users/${userId}/approve`, {});
-      if (res.ok) {
+      let res;
+      if (userId) {
+        res = await api.post(`/admin/users/${userId}/approve`, {});
+      } else if (candidateEmail) {
+        res = await api.post(`/admin/candidates/approve`, { email: candidateEmail });
+      }
+
+      if (res && res.ok) {
         toast.success("Candidate account approved successfully!");
         if (selectedAssessmentId) fetchAttempts(selectedAssessmentId);
       } else {
-        toast.error("Failed to approve candidate.");
+        const errData = await res?.json().catch(() => ({}));
+        toast.error(errData?.detail || "Failed to approve candidate.");
       }
     } catch (err) {
       console.error(err);
@@ -510,10 +517,10 @@ export default function MentorAssessmentsDashboard() {
                         {/* Approval Status / Action (Left to Review Details) */}
                         {isCompleted && (
                           <>
-                            {att.candidate.user_status === "pending" && att.candidate.user_id && (
+                            {(att.candidate.user_status === "pending" || (att.candidate.user_status === "not_registered" && isGoodScore)) && (
                               <Button
                                 size="sm"
-                                onClick={() => handleApproveCandidateUser(att.candidate.user_id!)}
+                                onClick={() => handleApproveCandidateUser(att.candidate.user_id, att.candidate.email)}
                                 className="h-9 font-bold text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm animate-pulse"
                               >
                                 <UserCheck className="h-3.5 w-3.5" /> Approve Candidate
@@ -522,11 +529,6 @@ export default function MentorAssessmentsDashboard() {
                             {att.candidate.user_status === "active" && (
                               <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold flex items-center gap-1.5">
                                 <CheckCircle2 className="h-3.5 w-3.5" /> Approved Student
-                              </span>
-                            )}
-                            {att.candidate.user_status === "not_registered" && isGoodScore && (
-                              <span className="px-3 py-1 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 text-xs font-mono font-bold flex items-center gap-1.5">
-                                <Sparkles className="h-3.5 w-3.5" /> Passed (≥70%) - Awaiting Signup
                               </span>
                             )}
                             {att.candidate.user_status === "not_registered" && !isGoodScore && (

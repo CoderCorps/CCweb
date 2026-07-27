@@ -21,20 +21,15 @@ export default function PendingLayout({
     }
   }, [user, loading, router]);
 
-  // Route Guard: Redirect active users or incorrect roles away from waiting pages
+  // Route Guard: Redirect active users away from pending pages
   useEffect(() => {
     if (!loading && user) {
-      if (user.role === "mentor") {
-        if (user.status === "active") {
-          router.replace("/dashboard");
-        } else if (user.status === "pending" && pathname !== "/mentor/pending-approval") {
-          router.replace("/mentor/pending-approval");
-        } else if (user.status === "rejected" && pathname !== "/mentor/rejected") {
-          router.replace("/mentor/rejected");
-        }
-      } else {
-        // Students/admins are redirected back to their dashboards
+      if (user.status === "active") {
         router.replace(user.role === "student" ? "/today" : "/dashboard");
+      } else if (user.status === "pending" && pathname !== "/mentor/pending-approval") {
+        router.replace("/mentor/pending-approval");
+      } else if (user.status === "rejected" && pathname !== "/mentor/rejected") {
+        router.replace("/mentor/rejected");
       }
     }
   }, [user, loading, pathname, router]);
@@ -52,8 +47,8 @@ export default function PendingLayout({
     return null;
   }
 
-  // Render children only for unapproved mentors
-  if (user.role === "mentor" && user.status !== "active") {
+  // Render children for any non-active user (pending or rejected student/mentor)
+  if (user.status !== "active") {
     return <>{children}</>;
   }
 

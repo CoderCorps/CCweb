@@ -22,7 +22,9 @@ export default function LoginPage() {
   // If already logged in, redirect to today (students) or dashboard (mentors/admins)
   useEffect(() => {
     if (!loading && user) {
-      if (user.role === "student") {
+      if (user.status === "pending") {
+        router.push("/mentor/pending-approval");
+      } else if (user.role === "student") {
         router.push("/today");
       } else {
         router.push("/dashboard");
