@@ -55,12 +55,15 @@ export default function PlatformLayout({
     }
   }, [user, loading, router]);
 
-  // Route Guard: strict redirect for pending/rejected accounts (student or mentor)
+  // Route Guard: strict redirect for pending/rejected accounts
   useEffect(() => {
     if (!loading && user) {
       const isApprovalThread = /^\/projects\/\d+\/approval-thread$/.test(pathname);
-      if (user.status === "pending" && pathname !== "/mentor/pending-approval" && !isApprovalThread) {
-        router.replace("/mentor/pending-approval");
+      if (user.status === "pending") {
+        const targetPendingPath = user.role === "student" ? "/student/pending-approval" : "/mentor/pending-approval";
+        if (pathname !== targetPendingPath && !isApprovalThread) {
+          router.replace(targetPendingPath);
+        }
       } else if (user.status === "rejected" && pathname !== "/mentor/rejected") {
         router.replace("/mentor/rejected");
       }

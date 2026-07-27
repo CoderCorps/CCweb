@@ -26,8 +26,11 @@ export default function PendingLayout({
     if (!loading && user) {
       if (user.status === "active") {
         router.replace(user.role === "student" ? "/today" : "/dashboard");
-      } else if (user.status === "pending" && pathname !== "/mentor/pending-approval") {
-        router.replace("/mentor/pending-approval");
+      } else if (user.status === "pending") {
+        const targetPendingPath = user.role === "student" ? "/student/pending-approval" : "/mentor/pending-approval";
+        if (pathname !== targetPendingPath) {
+          router.replace(targetPendingPath);
+        }
       } else if (user.status === "rejected" && pathname !== "/mentor/rejected") {
         router.replace("/mentor/rejected");
       }

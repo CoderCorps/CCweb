@@ -23,7 +23,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && user) {
       if (user.status === "pending") {
-        router.push("/mentor/pending-approval");
+        router.push(user.role === "student" ? "/student/pending-approval" : "/mentor/pending-approval");
       } else if (user.role === "student") {
         router.push("/today");
       } else {
