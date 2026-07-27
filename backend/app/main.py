@@ -15,7 +15,14 @@ app = FastAPI(
 # Enable CORS for Vercel & local development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://c-cweb-u67f.vercel.app",
+        "https://c-cweb-three.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000"
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
