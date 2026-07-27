@@ -64,7 +64,7 @@ export default function MarketingLayout({
             ) : (
               <>
                 <Link href="/apply">
-                  <Button variant="outline" className="font-semibold border-primary/40 text-primary">Apply</Button>
+                  <Button className="font-bold bg-orange-500 hover:bg-orange-600 text-white border-0 shadow-md shadow-orange-500/30">Apply</Button>
                 </Link>
                 <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                   Sign In
@@ -106,6 +106,9 @@ export default function MarketingLayout({
                 </Link>
               ) : (
                 <>
+                  <Link href="/apply" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full font-bold bg-orange-500 hover:bg-orange-600 text-white border-0 shadow-md shadow-orange-500/30">🚀 Apply Now</Button>
+                  </Link>
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full">Sign In</Button>
                   </Link>
