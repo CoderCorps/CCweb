@@ -96,6 +96,9 @@ export default function PublicCandidateAssessmentPage() {
   const [result, setResult] = useState<CandidateResult | null>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Stable refs so the timer interval never captures stale closures
+  const handleAnswerSubmitRef = useRef<(optionIndex: number | null) => Promise<void>>(() => Promise.resolve());
+  const submittingRef = useRef(false);
 
   // 1. Fetch Assessment Status on Mount
   useEffect(() => {
@@ -241,9 +244,18 @@ export default function PublicCandidateAssessmentPage() {
   };
 
   // Submit Answer
+  // NOTE: useCallback deps intentionally exclude `submitting` — we read it via submittingRef
+  // to keep the function reference stable and avoid re-triggering the timer useEffect.
   const handleAnswerSubmit = useCallback(async (optionIndex: number | null) => {
-    if (submitting || !question) return;
+    if (submittingRef.current || !question) return;
+    submittingRef.current = true;
     setSubmitting(true);
+
+    // Clear the running timer immediately so it doesn't fire again mid-submit
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
 
     try {
       const res = await api.post(
@@ -263,9 +275,9 @@ export default function PublicCandidateAssessmentPage() {
           setInTest(false);
         } else {
           const nextQ: QuestionData = data.next_question;
-          setQuestion(nextQ);
           setSelectedOption(null);
           setTimeLeft(nextQ.time_limit_seconds);
+          setQuestion(nextQ); // triggers timer restart via question?.id dep
         }
       } else {
         await fetchCurrentQuestion();
@@ -274,24 +286,39 @@ export default function PublicCandidateAssessmentPage() {
       console.error(err);
       await fetchCurrentQuestion();
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
-  }, [question, rawToken, submitting, fetchCurrentQuestion]);
+  }, [question, rawToken, fetchCurrentQuestion]);
+
+  // Keep the ref in sync with the latest handleAnswerSubmit without triggering the timer effect
+  useEffect(() => {
+    handleAnswerSubmitRef.current = handleAnswerSubmit;
+  }, [handleAnswerSubmit]);
 
   // Timer Countdown Loop
+  // Deps: only primitive/stable values — question?.id restarts the timer when a NEW question
+  // arrives; inTest gates it on/off. We deliberately exclude `handleAnswerSubmit` and
+  // `submitting` to prevent the timer from restarting mid-answer-submission.
   useEffect(() => {
-    if (!inTest || loading || !question) return;
+    if (!inTest || !question?.id) return;
 
-    if (timerRef.current) clearInterval(timerRef.current);
+    // Clean up any leftover interval before starting a fresh one
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
 
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           if (timerRef.current) clearInterval(timerRef.current);
+          timerRef.current = null;
           toast.error("Time expired for this question!", {
             icon: <Clock className="h-4 w-4 text-red-500" />
           });
-          handleAnswerSubmit(null);
+          // Call via ref — always gets the latest version without being a dep
+          handleAnswerSubmitRef.current(null);
           return 0;
         }
         return prev - 1;
@@ -299,9 +326,13 @@ export default function PublicCandidateAssessmentPage() {
     }, 1000);
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, [inTest, question, loading, handleAnswerSubmit]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inTest, question?.id]);
 
   if (loading) {
     return <LoadingSpinner text="Validating Assessment Access..." />;
