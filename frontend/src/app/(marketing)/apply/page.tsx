@@ -69,21 +69,27 @@ export default function PublicApplyPage() {
 
     try {
       setSubmitting(true);
-      const res = await api.post(
-        "/apply",
-        {
-          name: name.trim(),
-          email: email.trim(),
-          phone: phone.trim() || null,
-          college: college.trim() || null,
-          why_join: whyJoin.trim() || null,
-          linkedin_url: linkedinUrl.trim() || null,
-          github_url: githubUrl.trim() || null,
-          resume_url: resumeUrl.trim() || null,
-          instagram_url: instagramUrl.trim() || null
-        },
-        { skipAuth: true }
-      );
+      const payload = {
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || null,
+        college: college.trim() || null,
+        why_join: whyJoin.trim() || null,
+        linkedin_url: linkedinUrl.trim() || null,
+        github_url: githubUrl.trim() || null,
+        resume_url: resumeUrl.trim() || null,
+        instagram_url: instagramUrl.trim() || null
+      };
+
+      let res = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        res = await api.post("/apply", payload, { skipAuth: true });
+      }
 
       if (res.ok) {
         setSubmitted(true);
@@ -106,21 +112,27 @@ export default function PublicApplyPage() {
 
     try {
       setResending(true);
-      const res = await api.post(
-        "/apply",
-        {
-          name: name.trim() || "Candidate",
-          email: email.trim(),
-          phone: phone.trim() || null,
-          college: college.trim() || null,
-          why_join: whyJoin.trim() || null,
-          linkedin_url: linkedinUrl.trim() || null,
-          github_url: githubUrl.trim() || null,
-          resume_url: resumeUrl.trim() || null,
-          instagram_url: instagramUrl.trim() || null
-        },
-        { skipAuth: true }
-      );
+      const payload = {
+        name: name.trim() || "Candidate",
+        email: email.trim(),
+        phone: phone.trim() || null,
+        college: college.trim() || null,
+        why_join: whyJoin.trim() || null,
+        linkedin_url: linkedinUrl.trim() || null,
+        github_url: githubUrl.trim() || null,
+        resume_url: resumeUrl.trim() || null,
+        instagram_url: instagramUrl.trim() || null
+      };
+
+      let res = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        res = await api.post("/apply", payload, { skipAuth: true });
+      }
 
       if (res.ok) {
         setCooldown(30);
