@@ -99,6 +99,8 @@ export default function PublicCandidateAssessmentPage() {
   // Stable refs so the timer interval never captures stale closures
   const handleAnswerSubmitRef = useRef<(optionIndex: number | null) => Promise<void>>(() => Promise.resolve());
   const submittingRef = useRef(false);
+  // Separate ref for fetchCurrentQuestion so it never sets global loading mid-test
+  const fetchingRef = useRef(false);
 
   // 1. Fetch Assessment Status on Mount
   useEffect(() => {
@@ -158,10 +160,13 @@ export default function PublicCandidateAssessmentPage() {
     return isNaN(parsed) ? Date.now() : parsed;
   }, []);
 
-  // Fetch Current Question
+  // Fetch Current Question — used as error recovery fallback.
+  // Uses fetchingRef instead of setLoading so it never triggers a full re-render
+  // that would wipe out the active question display.
   const fetchCurrentQuestion = useCallback(async () => {
+    if (fetchingRef.current) return; // prevent double-fetch
+    fetchingRef.current = true;
     try {
-      setLoading(true);
       const res = await api.get(`/assessment/candidate/${rawToken}/current-question`, { skipAuth: true });
       if (res.ok) {
         const data = await res.json();
@@ -172,29 +177,28 @@ export default function PublicCandidateAssessmentPage() {
         }
 
         const q: QuestionData = data.next_question;
-        setQuestion(q);
         setSelectedOption(null);
-        setInTest(true);
-
-        let secs = q.time_limit_seconds;
-        if (q.served_at) {
-          const servedTime = parseUTCDate(q.served_at);
-          const nowTime = Date.now();
-          const elapsedSecs = Math.floor((nowTime - servedTime) / 1000);
-          if (elapsedSecs >= 0 && elapsedSecs < q.time_limit_seconds) {
-            secs = q.time_limit_seconds - elapsedSecs;
-          } else {
-            secs = q.time_limit_seconds;
+        setTimeLeft(() => {
+          let secs = q.time_limit_seconds;
+          if (q.served_at) {
+            const servedTime = parseUTCDate(q.served_at);
+            const nowTime = Date.now();
+            const elapsedSecs = Math.floor((nowTime - servedTime) / 1000);
+            if (elapsedSecs >= 0 && elapsedSecs < q.time_limit_seconds) {
+              secs = q.time_limit_seconds - elapsedSecs;
+            }
           }
-        }
-        setTimeLeft(secs);
+          return secs;
+        });
+        setQuestion(q);
+        setInTest(true);
       } else {
         setStatusError("Failed to fetch current question.");
       }
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      fetchingRef.current = false;
     }
   }, [rawToken, parseUTCDate]);
 

@@ -133,10 +133,19 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
     }
 
     if (response.status === 404) {
-      console.warn(`[API 404] ${url} returned 404. Checking mock database fallback.`);
-      const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
-      if (mockRes && mockRes.ok) {
-        return mockRes as unknown as Response;
+      // Only fall back to mock for GET requests on non-candidate paths.
+      // Assessment candidate endpoints are real backend routes — falling back to
+      // mock DB here would return fake questions and break the stateful flow.
+      const isCandidateEndpoint = path.includes("/assessment/candidate") || path.includes("/apply");
+      const isGetRequest = method === "GET";
+      if (isGetRequest && !isCandidateEndpoint) {
+        console.warn(`[API 404] ${url} returned 404. Checking mock database fallback.`);
+        const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
+        if (mockRes && mockRes.ok) {
+          return mockRes as unknown as Response;
+        }
+      } else {
+        console.warn(`[API 404] ${url} — skipping mock fallback (candidate/POST endpoint).`);
       }
     }
 
