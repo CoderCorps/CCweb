@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 from pydantic import BaseModel
 import asyncio
 
-from app.deps import get_db, get_current_admin, get_current_user
+from app.deps import get_db, get_current_admin, get_current_user, get_current_mentor
 from app.models.user import User
 from app.models.project import Project
 from app.models.communication import ProjectApprovalMessage
