@@ -98,9 +98,8 @@ async def signup(
         value=refresh_token,
         httponly=True,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        samesite="lax",
-        # Secure flag prevents cookie transmission over plain HTTP in production
-        secure=settings.ENVIRONMENT == "production",
+        samesite="none",
+        secure=True,
     )
 
     return {
@@ -136,9 +135,8 @@ async def login(
         value=refresh_token,
         httponly=True,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        samesite="lax",
-        # Secure flag prevents cookie transmission over plain HTTP in production
-        secure=settings.ENVIRONMENT == "production",
+        samesite="none",
+        secure=True,
     )
 
     return {
@@ -184,9 +182,8 @@ async def refresh_token_route(
         value=new_refresh_token,
         httponly=True,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        samesite="lax",
-        # Secure flag prevents cookie transmission over plain HTTP in production
-        secure=settings.ENVIRONMENT == "production",
+        samesite="none",
+        secure=True,
     )
 
     return {
