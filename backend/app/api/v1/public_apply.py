@@ -148,7 +148,7 @@ async def get_candidate_assessment_status(
         if invitation.status != "completed" and invitation.expires_at < now:
             invitation.status = "expired"
             db.commit()
-            raise HTTPException(status_code=status.HTTP_410_GONE, detail="Invalid or expired assessment link.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid or expired assessment link.")
 
         ass = invitation.assessment
         total_qs = ass.basic_question_count + ass.intermediate_question_count
