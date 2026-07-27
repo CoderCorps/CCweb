@@ -15,6 +15,7 @@ class PublicApplyCreate(BaseModel):
 
 class PublicApplyResponse(BaseModel):
     message: str = "Check your email for your assessment link."
+    token: Optional[str] = None  # Raw token returned to Next.js server route for branded email dispatch
 
 class PublicAssessmentStatus(BaseModel):
     title: str

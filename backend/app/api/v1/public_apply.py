@@ -66,7 +66,7 @@ async def public_apply(
 
                 expires_str = active_inv.expires_at.strftime("%Y-%m-%d %H:%M UTC")
                 send_invitation_email(clean_email, existing_app.name, cached_raw, expires_str)
-                return PublicApplyResponse(message="Check your email for your assessment link.")
+                return PublicApplyResponse(message="Check your email for your assessment link.", token=cached_raw)
 
         # Create new Candidate Application
         app_record = CandidateApplication(
@@ -122,7 +122,7 @@ async def public_apply(
         expires_str = expires_at.strftime("%Y-%m-%d %H:%M UTC")
         send_invitation_email(clean_email, app_record.name, raw_token, expires_str)
 
-        return PublicApplyResponse(message="Check your email for your assessment link.")
+        return PublicApplyResponse(message="Check your email for your assessment link.", token=raw_token)
 
     return await asyncio.to_thread(_apply)
 
