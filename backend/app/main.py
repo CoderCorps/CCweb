@@ -28,45 +28,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Run DB migrations on startup
-try:
-    from app.db.base import Base
-    from app.db.session import engine
-    from sqlalchemy import text
-    Base.metadata.create_all(bind=engine)
-    with engine.connect() as conn:
-        for col_name, col_type in [("linkedin_url", "VARCHAR(500)"), ("github_url", "VARCHAR(500)"), ("resume_url", "VARCHAR(500)"), ("instagram_url", "VARCHAR(500)")]:
-            try:
-                conn.execute(text(f"ALTER TABLE candidate_applications ADD COLUMN {col_name} {col_type}"))
-                conn.commit()
-            except Exception:
-                pass
-except Exception as e:
-    print(f"[STARTUP DB MIGRATION ERROR]: {e}")
-
-# Ensure default admin account exists in production database
-try:
-    from app.db.session import SessionLocal
-    from app.models.user import User
-    from app.core import security
-    db_init = SessionLocal()
+# Async startup event for safe DB initialization without blocking Vercel module import
+@app.on_event("startup")
+async def startup_event():
     try:
-        admin_user = db_init.query(User).filter(User.role == "admin").first()
-        if not admin_user:
-            print("[STARTUP]: Creating default admin user (admin@codercorps.com)")
-            admin_user = User(
-                name="Admin System",
-                email="admin@codercorps.com",
-                password_hash=security.get_password_hash("admin123"),
-                role="admin",
-                status="active"
-            )
-            db_init.add(admin_user)
-            db_init.commit()
-    finally:
-        db_init.close()
-except Exception as err:
-    print(f"[STARTUP ADMIN INIT ERROR]: {err}")
+        from app.db.base import Base
+        from app.db.session import engine, SessionLocal
+        from app.models.user import User
+        from app.core import security
+        from sqlalchemy import text
+
+        Base.metadata.create_all(bind=engine)
+        with engine.connect() as conn:
+            for col_name, col_type in [("linkedin_url", "VARCHAR(500)"), ("github_url", "VARCHAR(500)"), ("resume_url", "VARCHAR(500)"), ("instagram_url", "VARCHAR(500)")]:
+                try:
+                    conn.execute(text(f"ALTER TABLE candidate_applications ADD COLUMN {col_name} {col_type}"))
+                    conn.commit()
+                except Exception:
+                    pass
+
+        # Seed admin user if none exists
+        db = SessionLocal()
+        try:
+            admin_user = db.query(User).filter(User.role == "admin").first()
+            if not admin_user:
+                print("[STARTUP]: Creating default admin user (admin@codercorps.com)")
+                admin_user = User(
+                    name="Admin System",
+                    email="admin@codercorps.com",
+                    password_hash=security.get_password_hash("admin123"),
+                    role="admin",
+                    status="active"
+                )
+                db.add(admin_user)
+                db.commit()
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"[STARTUP INIT WARNING]: {e}")
 
 # Include Routers (both /api/v1 and root prefixes for Vercel path compatibility)
 app.include_router(public_apply.router, prefix=f"{settings.API_V1_STR}", tags=["public-apply"])
