@@ -259,6 +259,17 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
     return { status: 200, ok: true, json: async () => ({ detail: "Logged out" }) };
   }
 
+  // --- Public Apply Endpoint ---
+  if ((path === "/apply" || path === "/api/v1/apply") && method === "POST") {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        message: "Check your email for your assessment link."
+      })
+    };
+  }
+
   // --- Public Candidate Assessment Endpoints ---
   if (path.startsWith("/assessment/candidate/") && path.endsWith("/status")) {
     return {
