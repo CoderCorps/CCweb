@@ -18,7 +18,8 @@ import {
   X, 
   Award, 
   FileText,
-  ShieldCheck
+  ShieldCheck,
+  Mail
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -411,10 +412,44 @@ export default function PublicCandidateAssessmentPage() {
             </Button>
           </div>
         ) : (
-          <div className="glass p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 text-center space-y-2">
-            <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold font-mono">
-              Minimum passing threshold is 70%. Your score was {result.total_score}%. Review your questions and logic below.
-            </p>
+          <div className="glass p-6 sm:p-8 rounded-3xl border border-amber-500/30 bg-amber-500/10 text-center space-y-4 shadow-lg animate-in zoom-in-95 duration-300">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 text-xs font-mono font-bold uppercase tracking-wider">
+              <AlertCircle className="h-4 w-4" /> Below Passing Threshold (Score: {result.total_score}%)
+            </div>
+
+            <div className="space-y-2 max-w-lg mx-auto">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
+                Request an Assessment Re-attempt
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                The minimum passing score is <span className="font-bold text-foreground font-mono">70%</span>. Re-attempts are allowed after sending a request email to <span className="font-bold text-foreground">codercorps@gmail.com</span>.
+              </p>
+            </div>
+
+            <div className="p-4 bg-card/80 rounded-2xl border border-border/60 max-w-md mx-auto text-left space-y-2 font-mono text-xs shadow-inner">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground uppercase text-[10px] font-bold">Email Address:</span>
+                <a href={`mailto:codercorps@gmail.com?subject=${encodeURIComponent(`Re-attempt Request for -${result.candidate_name}-`)}`} className="text-primary font-bold hover:underline">
+                  codercorps@gmail.com
+                </a>
+              </div>
+              <div className="pt-2 border-t border-border/40">
+                <span className="text-muted-foreground uppercase text-[10px] font-bold block mb-1">Required Subject Format:</span>
+                <div className="p-2.5 bg-muted/60 rounded-xl text-foreground font-bold select-all flex items-center justify-between border border-border/40">
+                  <span>Re-attempt Request for -{result.candidate_name}-</span>
+                  <Mail className="h-4 w-4 text-primary shrink-0" />
+                </div>
+              </div>
+            </div>
+
+            <Button
+              asChild
+              className="font-bold gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 text-sm sm:text-base shadow-md transition-transform hover:scale-105"
+            >
+              <a href={`mailto:codercorps@gmail.com?subject=${encodeURIComponent(`Re-attempt Request for -${result.candidate_name}-`)}`}>
+                <Mail className="h-4 w-4" /> Send Re-attempt Request Email
+              </a>
+            </Button>
           </div>
         )}
 
