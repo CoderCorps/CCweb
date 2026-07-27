@@ -401,13 +401,26 @@ async def flag_tab_switch(
     current_user: User = Depends(get_current_user)
 ):
     def _flag():
+        from app.models.assessment import TabSwitchLog
         attempt = db.query(AssessmentAttempt).filter(
             AssessmentAttempt.id == id,
             AssessmentAttempt.candidate_id == current_user.id
-        ).first()
+        ).options(selectinload(AssessmentAttempt.questions)).first()
 
         if attempt and attempt.status == "in_progress":
             attempt.tab_switch_count += 1
+            curr_order = None
+            for q in sorted(attempt.questions, key=lambda x: x.order_index):
+                if not q.answer:
+                    curr_order = q.order_index
+                    break
+
+            log_entry = TabSwitchLog(
+                attempt_id=attempt.id,
+                question_order_index=curr_order,
+                switched_at=_utcnow()
+            )
+            db.add(log_entry)
             db.commit()
         return {"status": "ok", "tab_switch_count": attempt.tab_switch_count if attempt else 0}
 
@@ -496,11 +509,15 @@ async def review_assessment_attempt(
             selectinload(AssessmentAttempt.assessment),
             selectinload(AssessmentAttempt.candidate),
             selectinload(AssessmentAttempt.invitation).selectinload(AssessmentInvitation.application),
-            selectinload(AssessmentAttempt.questions).selectinload(AssessmentQuestion.answer)
+            selectinload(AssessmentAttempt.questions).selectinload(AssessmentQuestion.answer),
+            selectinload(AssessmentAttempt.tab_switch_logs)
         ).first()
 
         if not attempt:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attempt not found")
+
+        from app.schemas.assessment import TabSwitchLogSchema
+        t_logs = [TabSwitchLogSchema.model_validate(log) for log in attempt.tab_switch_logs]
 
         q_reviews = []
         for q in sorted(attempt.questions, key=lambda x: x.order_index):
@@ -533,6 +550,7 @@ async def review_assessment_attempt(
             completed_at=attempt.completed_at,
             total_score=attempt.total_score,
             tab_switch_count=attempt.tab_switch_count,
+            tab_switch_logs=t_logs,
             questions=q_reviews
         )
 

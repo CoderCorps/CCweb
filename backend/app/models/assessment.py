@@ -41,6 +41,7 @@ class AssessmentAttempt(Base):
         "AssessmentInvitation", foreign_keys=[invitation_id]
     )
     questions: Mapped[List["AssessmentQuestion"]] = relationship("AssessmentQuestion", back_populates="attempt", cascade="all, delete-orphan", order_by="AssessmentQuestion.order_index")
+    tab_switch_logs: Mapped[List["TabSwitchLog"]] = relationship("TabSwitchLog", back_populates="attempt", cascade="all, delete-orphan", order_by="TabSwitchLog.id.asc()")
 
     def check_owner_constraint(self):
         """Ensure exactly one of candidate_id or invitation_id is set."""
@@ -48,6 +49,17 @@ class AssessmentAttempt(Base):
         has_inv = self.invitation_id is not None
         if (has_cand and has_inv) or (not has_cand and not has_inv):
             raise ValueError("Exactly one of candidate_id or invitation_id must be set per attempt.")
+
+
+class TabSwitchLog(Base):
+    __tablename__ = "assessment_tab_switches"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    attempt_id: Mapped[int] = mapped_column(Integer, ForeignKey("assessment_attempts.id", ondelete="CASCADE"), nullable=False)
+    question_order_index: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    switched_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
+
+    attempt: Mapped["AssessmentAttempt"] = relationship("AssessmentAttempt", back_populates="tab_switch_logs")
 
 
 class AssessmentQuestion(Base):

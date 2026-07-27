@@ -84,6 +84,13 @@ interface QuestionReviewItem {
   was_timeout: boolean;
 }
 
+interface TabSwitchLog {
+  id: number;
+  attempt_id: number;
+  question_order_index: number | null;
+  switched_at: string;
+}
+
 interface DetailedAttemptReview {
   attempt_id: number;
   assessment_title: string;
@@ -93,6 +100,7 @@ interface DetailedAttemptReview {
   completed_at: string | null;
   total_score: number | null;
   tab_switch_count: number;
+  tab_switch_logs?: TabSwitchLog[];
   questions: QuestionReviewItem[];
 }
 
@@ -655,24 +663,60 @@ export default function MentorAssessmentsDashboard() {
                 )}
               </div>
 
-              {/* Anti-cheat summary bar */}
-              <div className="p-3 rounded-xl bg-background/50 border border-border/40 flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert className={`h-4 w-4 ${reviewData.tab_switch_count > 0 ? "text-amber-500" : "text-emerald-500"}`} />
-                  <span>Tab Switch Anti-Cheat Count:</span>
-                  <span className={`font-bold ${reviewData.tab_switch_count > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600"}`}>
-                    {reviewData.tab_switch_count} Flags
-                  </span>
+              {/* Anti-cheat summary bar & detailed switch log timeline */}
+              <div className="p-4 rounded-xl bg-background/50 border border-border/40 space-y-3 font-mono text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className={`h-4 w-4 ${reviewData.tab_switch_count > 0 ? "text-amber-500" : "text-emerald-500"}`} />
+                    <span>Tab Switch Anti-Cheat Audit:</span>
+                    <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${reviewData.tab_switch_count > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" : "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"}`}>
+                      {reviewData.tab_switch_count} Switch Flag{reviewData.tab_switch_count !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleResetAttempt(reviewData.attempt_id)}
+                    className="h-7 text-xs font-bold gap-1 rounded-lg"
+                  >
+                    <RotateCcw className="h-3 w-3" /> Reset Attempt
+                  </Button>
                 </div>
 
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleResetAttempt(reviewData.attempt_id)}
-                  className="h-7 text-xs font-bold gap-1 rounded-lg"
-                >
-                  <RotateCcw className="h-3 w-3" /> Reset Attempt
-                </Button>
+                {/* Detailed Event Log List */}
+                {reviewData.tab_switch_logs && reviewData.tab_switch_logs.length > 0 ? (
+                  <div className="space-y-1.5 pt-2 border-t border-border/30">
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block">
+                      Recorded Window/Tab Switch Events:
+                    </span>
+                    <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
+                      {reviewData.tab_switch_logs.map((log, idx) => (
+                        <div
+                          key={log.id || idx}
+                          className="p-2 rounded bg-amber-500/5 border border-amber-500/20 flex items-center justify-between text-[11px]"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-amber-500">Flag #{idx + 1}</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-foreground font-semibold">
+                              {log.question_order_index ? `During Question #${log.question_order_index}` : "Test Window Active"}
+                            </span>
+                          </div>
+                          <span className="text-muted-foreground text-[10px]">
+                            {new Date(log.switched_at).toLocaleTimeString()} ({new Date(log.switched_at).toLocaleDateString()})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  reviewData.tab_switch_count > 0 && (
+                    <div className="text-[10px] text-muted-foreground italic pt-1 border-t border-border/20">
+                      {reviewData.tab_switch_count} window/tab switch flags recorded during test execution.
+                    </div>
+                  )
+                )}
               </div>
 
               {/* Questions Audit List */}

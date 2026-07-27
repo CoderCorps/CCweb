@@ -115,6 +115,15 @@ class MentorAttemptSummary(BaseModel):
     class Config:
         from_attributes = True
 
+class TabSwitchLogSchema(BaseModel):
+    id: int
+    attempt_id: int
+    question_order_index: Optional[int] = None
+    switched_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class MentorAttemptReview(BaseModel):
     attempt_id: int
     assessment_title: str
@@ -124,4 +133,5 @@ class MentorAttemptReview(BaseModel):
     completed_at: Optional[datetime]
     total_score: Optional[float]
     tab_switch_count: int
+    tab_switch_logs: List[TabSwitchLogSchema] = []
     questions: List[MentorQuestionReview]
