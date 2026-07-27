@@ -1,8 +1,12 @@
 import re
 import httpx
 from pydantic import BaseModel
-from google import genai
-from google.genai import types
+try:
+    from google import genai
+    from google.genai import types
+except Exception:
+    genai = None
+    types = None
 from app.core.config import settings
 
 class AIReviewResponse(BaseModel):

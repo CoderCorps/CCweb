@@ -1,6 +1,9 @@
 import os
 import json
-from google import genai
+try:
+    from google import genai
+except Exception:
+    genai = None
 from pydantic import BaseModel, Field
 
 class AIPRReview(BaseModel):
