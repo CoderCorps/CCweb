@@ -55,7 +55,9 @@ async def startup_event():
             "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS tier VARCHAR(50) DEFAULT 'intermediate'",
             "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS concept_key VARCHAR(100)",
             "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS scenario_theme VARCHAR(100)",
-            "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS content_fingerprint VARCHAR(64)"
+            "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS content_fingerprint VARCHAR(64)",
+            "CREATE TABLE IF NOT EXISTS question_fingerprint_history (id SERIAL PRIMARY KEY, content_fingerprint VARCHAR(64) UNIQUE NOT NULL, concept_key VARCHAR(100) NOT NULL, first_seen_at TIMESTAMP DEFAULT NOW(), times_reused INTEGER DEFAULT 0)",
+            "CREATE INDEX IF NOT EXISTS ix_question_fingerprint_history_content_fingerprint ON question_fingerprint_history (content_fingerprint)"
         ]
         for stmt in alter_statements:
             try:

@@ -178,6 +178,7 @@ async def start_candidate_assessment(
         tok_hash = _hash_token(token)
         invitation = db.query(AssessmentInvitation).filter(AssessmentInvitation.token == tok_hash).options(
             selectinload(AssessmentInvitation.assessment),
+            selectinload(AssessmentInvitation.application),
             selectinload(AssessmentInvitation.attempt).selectinload(AssessmentAttempt.questions)
         ).first()
 
@@ -223,7 +224,6 @@ async def start_candidate_assessment(
             intermediate_count=ass.intermediate_question_count,
             deep_count=ass.deep_question_count,
             db=db,
-            candidate_id=invitation.candidate_id,
             candidate_email=cand_email
         )
 
