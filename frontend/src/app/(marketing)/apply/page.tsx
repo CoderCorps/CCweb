@@ -69,17 +69,21 @@ export default function PublicApplyPage() {
 
     try {
       setSubmitting(true);
-      const res = await api.post("/apply", {
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim() || null,
-        college: college.trim() || null,
-        why_join: whyJoin.trim() || null,
-        linkedin_url: linkedinUrl.trim() || null,
-        github_url: githubUrl.trim() || null,
-        resume_url: resumeUrl.trim() || null,
-        instagram_url: instagramUrl.trim() || null
-      });
+      const res = await api.post(
+        "/apply",
+        {
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim() || null,
+          college: college.trim() || null,
+          why_join: whyJoin.trim() || null,
+          linkedin_url: linkedinUrl.trim() || null,
+          github_url: githubUrl.trim() || null,
+          resume_url: resumeUrl.trim() || null,
+          instagram_url: instagramUrl.trim() || null
+        },
+        { skipAuth: true }
+      );
 
       if (res.ok) {
         setSubmitted(true);
@@ -102,17 +106,21 @@ export default function PublicApplyPage() {
 
     try {
       setResending(true);
-      const res = await api.post("/apply", {
-        name: name.trim() || "Candidate",
-        email: email.trim(),
-        phone: phone.trim() || null,
-        college: college.trim() || null,
-        why_join: whyJoin.trim() || null,
-        linkedin_url: linkedinUrl.trim() || null,
-        github_url: githubUrl.trim() || null,
-        resume_url: resumeUrl.trim() || null,
-        instagram_url: instagramUrl.trim() || null
-      });
+      const res = await api.post(
+        "/apply",
+        {
+          name: name.trim() || "Candidate",
+          email: email.trim(),
+          phone: phone.trim() || null,
+          college: college.trim() || null,
+          why_join: whyJoin.trim() || null,
+          linkedin_url: linkedinUrl.trim() || null,
+          github_url: githubUrl.trim() || null,
+          resume_url: resumeUrl.trim() || null,
+          instagram_url: instagramUrl.trim() || null
+        },
+        { skipAuth: true }
+      );
 
       if (res.ok) {
         setCooldown(30);

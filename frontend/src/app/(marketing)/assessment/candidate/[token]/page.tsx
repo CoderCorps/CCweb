@@ -103,7 +103,7 @@ export default function PublicCandidateAssessmentPage() {
       if (!rawToken) return;
       try {
         setLoading(true);
-        const res = await api.get(`/assessment/candidate/${rawToken}/status`);
+        const res = await api.get(`/assessment/candidate/${rawToken}/status`, { skipAuth: true });
         if (res.ok) {
           const data: AssessmentStatus = await res.json();
           setAssessmentStatus(data);
@@ -132,7 +132,7 @@ export default function PublicCandidateAssessmentPage() {
   const loadResult = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/assessment/candidate/${rawToken}/result`);
+      const res = await api.get(`/assessment/candidate/${rawToken}/result`, { skipAuth: true });
       if (res.ok) {
         const data: CandidateResult = await res.json();
         setResult(data);
@@ -159,7 +159,7 @@ export default function PublicCandidateAssessmentPage() {
   const fetchCurrentQuestion = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/assessment/candidate/${rawToken}/current-question`);
+      const res = await api.get(`/assessment/candidate/${rawToken}/current-question`, { skipAuth: true });
       if (res.ok) {
         const data = await res.json();
         if (data.is_completed && data.result) {
@@ -202,7 +202,7 @@ export default function PublicCandidateAssessmentPage() {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         setTabSwitches((prev) => prev + 1);
-        api.post(`/assessment/candidate/${rawToken}/flag`, {}).catch(() => {});
+        api.post(`/assessment/candidate/${rawToken}/flag`, {}, { skipAuth: true }).catch(() => {});
         toast.warning("Warning: Window/Tab switch detected and logged.", {
           icon: <ShieldAlert className="h-4 w-4 text-amber-500" />
         });
@@ -219,7 +219,7 @@ export default function PublicCandidateAssessmentPage() {
   const handleStartTest = async () => {
     try {
       setLoading(true);
-      const res = await api.post(`/assessment/candidate/${rawToken}/start`, {});
+      const res = await api.post(`/assessment/candidate/${rawToken}/start`, {}, { skipAuth: true });
       if (res.ok) {
         const data = await res.json();
         const q: QuestionData = data.first_question;
@@ -246,10 +246,14 @@ export default function PublicCandidateAssessmentPage() {
     setSubmitting(true);
 
     try {
-      const res = await api.post(`/assessment/candidate/${rawToken}/answer`, {
-        question_id: question.id,
-        selected_option_index: optionIndex
-      });
+      const res = await api.post(
+        `/assessment/candidate/${rawToken}/answer`,
+        {
+          question_id: question.id,
+          selected_option_index: optionIndex
+        },
+        { skipAuth: true }
+      );
 
       if (res.ok) {
         const data = await res.json();
