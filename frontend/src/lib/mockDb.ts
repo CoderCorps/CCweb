@@ -288,57 +288,100 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
     };
   }
 
+  // Stateful mock candidate assessment tracker
   if (path.startsWith("/assessment/candidate/") && path.endsWith("/start")) {
+    (globalThis as any)._mockCandidateIdx = 0;
+    const q1 = {
+      id: 101,
+      question_text: "What is the output of print(type([]) is list) in Python?",
+      options: ["True", "False", "TypeError", "SyntaxError"],
+      difficulty: "basic",
+      order_index: 1,
+      time_limit_seconds: 45,
+      served_at: new Date().toISOString(),
+      total_questions: 10
+    };
     return {
       status: 200,
       ok: true,
-      json: async () => ({
-        attempt_id: 99,
-        first_question: {
-          id: 101,
-          question_text: "What is the output of print(type([]) is list) in Python?",
-          options: ["True", "False", "TypeError", "SyntaxError"],
-          difficulty: "basic",
-          order_index: 1,
-          time_limit_seconds: 45,
-          served_at: new Date().toISOString(),
-          total_questions: 10
-        }
-      })
+      json: async () => ({ attempt_id: 99, first_question: q1 })
     };
   }
 
   if (path.startsWith("/assessment/candidate/") && path.endsWith("/current-question")) {
+    const mockQs = [
+      { id: 101, question_text: "What is the output of print(type([]) is list) in Python?", options: ["True", "False", "TypeError", "SyntaxError"], difficulty: "basic", order_index: 1, time_limit_seconds: 45 },
+      { id: 102, question_text: "Which Python data structure is immutable?", options: ["List", "Dictionary", "Tuple", "Set"], difficulty: "basic", order_index: 2, time_limit_seconds: 45 },
+      { id: 103, question_text: "What is the result of 3 * 'ab' in Python?", options: ["'ababab'", "'3ab'", "TypeError", "'abab'"], difficulty: "basic", order_index: 3, time_limit_seconds: 45 },
+      { id: 104, question_text: "Which keyword is used to handle exceptions in Python?", options: ["try / except", "catch / throw", "try / catch", "handle / error"], difficulty: "basic", order_index: 4, time_limit_seconds: 45 },
+      { id: 105, question_text: "What does len({'a': 1, 'b': 2}) return?", options: ["2", "4", "1", "TypeError"], difficulty: "basic", order_index: 5, time_limit_seconds: 45 },
+      { id: 106, question_text: "What does [x**2 for x in range(3)] produce?", options: ["[0, 1, 4]", "[1, 4, 9]", "[0, 1, 2]", "[1, 2, 3]"], difficulty: "intermediate", order_index: 6, time_limit_seconds: 90 },
+      { id: 107, question_text: "What is the default return value of a Python function with no return statement?", options: ["None", "0", "False", "Undefined"], difficulty: "intermediate", order_index: 7, time_limit_seconds: 90 },
+      { id: 108, question_text: "Which method is used to add an element to the end of a list?", options: ["append()", "push()", "insert()", "add()"], difficulty: "intermediate", order_index: 8, time_limit_seconds: 90 },
+      { id: 109, question_text: "What does bool('') evaluate to in Python?", options: ["False", "True", "None", "ValueError"], difficulty: "intermediate", order_index: 9, time_limit_seconds: 90 },
+      { id: 110, question_text: "Which module in Python standard library provides random number generation?", options: ["random", "math", "sys", "crypto"], difficulty: "intermediate", order_index: 10, time_limit_seconds: 90 }
+    ];
+    const idx = (globalThis as any)._mockCandidateIdx || 0;
+    const currQ = mockQs[Math.min(idx, mockQs.length - 1)];
     return {
       status: 200,
       ok: true,
-      json: async () => ({
-        id: 101,
-        question_text: "What is the output of print(type([]) is list) in Python?",
-        options: ["True", "False", "TypeError", "SyntaxError"],
-        difficulty: "basic",
-        order_index: 1,
-        time_limit_seconds: 45,
-        served_at: new Date().toISOString(),
-        total_questions: 10
-      })
+      json: async () => ({ ...currQ, served_at: new Date().toISOString(), total_questions: 10 })
     };
   }
 
   if (path.startsWith("/assessment/candidate/") && path.endsWith("/answer")) {
+    const currentIdx = ((globalThis as any)._mockCandidateIdx || 0) + 1;
+    (globalThis as any)._mockCandidateIdx = currentIdx;
+
+    const mockQs = [
+      { id: 101, question_text: "What is the output of print(type([]) is list) in Python?", options: ["True", "False", "TypeError", "SyntaxError"], difficulty: "basic", order_index: 1, time_limit_seconds: 45 },
+      { id: 102, question_text: "Which Python data structure is immutable?", options: ["List", "Dictionary", "Tuple", "Set"], difficulty: "basic", order_index: 2, time_limit_seconds: 45 },
+      { id: 103, question_text: "What is the result of 3 * 'ab' in Python?", options: ["'ababab'", "'3ab'", "TypeError", "'abab'"], difficulty: "basic", order_index: 3, time_limit_seconds: 45 },
+      { id: 104, question_text: "Which keyword is used to handle exceptions in Python?", options: ["try / except", "catch / throw", "try / catch", "handle / error"], difficulty: "basic", order_index: 4, time_limit_seconds: 45 },
+      { id: 105, question_text: "What does len({'a': 1, 'b': 2}) return?", options: ["2", "4", "1", "TypeError"], difficulty: "basic", order_index: 5, time_limit_seconds: 45 },
+      { id: 106, question_text: "What does [x**2 for x in range(3)] produce?", options: ["[0, 1, 4]", "[1, 4, 9]", "[0, 1, 2]", "[1, 2, 3]"], difficulty: "intermediate", order_index: 6, time_limit_seconds: 90 },
+      { id: 107, question_text: "What is the default return value of a Python function with no return statement?", options: ["None", "0", "False", "Undefined"], difficulty: "intermediate", order_index: 7, time_limit_seconds: 90 },
+      { id: 108, question_text: "Which method is used to add an element to the end of a list?", options: ["append()", "push()", "insert()", "add()"], difficulty: "intermediate", order_index: 8, time_limit_seconds: 90 },
+      { id: 109, question_text: "What does bool('') evaluate to in Python?", options: ["False", "True", "None", "ValueError"], difficulty: "intermediate", order_index: 9, time_limit_seconds: 90 },
+      { id: 110, question_text: "Which module in Python standard library provides random number generation?", options: ["random", "math", "sys", "crypto"], difficulty: "intermediate", order_index: 10, time_limit_seconds: 90 }
+    ];
+
+    if (currentIdx >= mockQs.length) {
+      return {
+        status: 200,
+        ok: true,
+        json: async () => ({
+          question_id: 110,
+          is_completed: true,
+          result: {
+            attempt_id: 99,
+            candidate_name: "Candidate",
+            assessment_title: "Python Internship Screening",
+            total_score: 90.0,
+            total_questions: 10,
+            correct_count: 9,
+            basic_correct_count: 5,
+            basic_total: 5,
+            intermediate_correct_count: 4,
+            intermediate_total: 5,
+            total_time_seconds: 320.5,
+            completed_at: new Date().toISOString(),
+            questions: []
+          }
+        })
+      };
+    }
+
+    const nextQ = mockQs[currentIdx];
     return {
       status: 200,
       ok: true,
       json: async () => ({
-        question_id: 101,
+        question_id: mockQs[currentIdx - 1].id,
         is_completed: false,
         next_question: {
-          id: 102,
-          question_text: "Which Python data structure is immutable?",
-          options: ["List", "Dictionary", "Tuple", "Set"],
-          difficulty: "basic",
-          order_index: 2,
-          time_limit_seconds: 45,
+          ...nextQ,
           served_at: new Date().toISOString(),
           total_questions: 10
         }

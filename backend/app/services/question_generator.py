@@ -66,7 +66,7 @@ def _call_anthropic_api(prompt: str, api_key: str) -> Optional[str]:
             headers=headers,
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=15) as response:
+        with urllib.request.urlopen(req, timeout=4) as response:
             if response.status == 200:
                 res_body = json.loads(response.read().decode("utf-8"))
                 content_blocks = res_body.get("content", [])
@@ -118,7 +118,7 @@ def generate_questions_for_difficulty(
             f"5. Do NOT repeat any of these concepts/questions: {json.dumps(exclusion_list)}."
         )
 
-        for attempt in range(3):  # 1 initial + 2 retries
+        for attempt in range(1):  # 1 quick attempt; fallback to static bank if >4s
             raw_response = _call_anthropic_api(prompt, api_key)
             if raw_response:
                 cleaned = _clean_json_response(raw_response)

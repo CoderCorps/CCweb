@@ -151,6 +151,15 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
 
     return response;
   } catch (err) {
+    const isCandidateEndpoint = path.includes("/assessment/candidate") || path.includes("/apply");
+    if (isCandidateEndpoint || method !== "GET") {
+      console.error(`[API ERROR] ${method} ${path} failed:`, err);
+      return new Response(
+        JSON.stringify({ detail: "Backend API request failed. Please check your connection and try again." }),
+        { status: 503, headers: { "Content-Type": "application/json" } }
+      ) as unknown as Response;
+    }
+
     console.warn("Backend API server unreachable. Falling back to frontend mock database.", err);
     const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
     return mockRes as unknown as Response;
