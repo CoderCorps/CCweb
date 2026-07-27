@@ -10,10 +10,14 @@ class Assessment(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     topic: Mapped[str] = mapped_column(String(100), default="python", nullable=False)
-    basic_question_count: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
-    intermediate_question_count: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    basic_question_count: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
+    intermediate_question_count: Mapped[int] = mapped_column(Integer, default=6, nullable=False)
+    deep_question_count: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
     basic_time_seconds: Mapped[int] = mapped_column(Integer, default=45, nullable=False)
     intermediate_time_seconds: Mapped[int] = mapped_column(Integer, default=90, nullable=False)
+    deep_time_seconds: Mapped[int] = mapped_column(Integer, default=120, nullable=False)
+    min_intermediate_pass_score: Mapped[float] = mapped_column(Float, default=60.0, nullable=False)
+    min_deep_pass_score: Mapped[Optional[float]] = mapped_column(Float, default=40.0, nullable=True)
     created_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -34,6 +38,10 @@ class AssessmentAttempt(Base):
     completed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
     total_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     tab_switch_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    tier_classification: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Needs Foundational Review | Intermediate — Ready | Advanced — Strong Candidate
+    overall_weighted_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    intermediate_tier_accuracy: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    deep_tier_accuracy: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     assessment: Mapped["Assessment"] = relationship("Assessment", back_populates="attempts")
     candidate: Mapped[Optional["User"]] = relationship("User")
@@ -70,7 +78,11 @@ class AssessmentQuestion(Base):
     question_text: Mapped[str] = mapped_column(Text, nullable=False)
     options: Mapped[list] = mapped_column(JSON, nullable=False)  # List of 4 strings
     correct_option_index: Mapped[int] = mapped_column(Integer, nullable=False)  # 0-3
-    difficulty: Mapped[str] = mapped_column(String(50), nullable=False)  # basic | intermediate
+    difficulty: Mapped[str] = mapped_column(String(50), nullable=False)  # basic | intermediate | deep
+    tier: Mapped[str] = mapped_column(String(50), default="intermediate", nullable=False)  # basic | intermediate | deep
+    concept_key: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    scenario_theme: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    content_fingerprint: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
     explanation: Mapped[str] = mapped_column(Text, nullable=False)
     order_index: Mapped[int] = mapped_column(Integer, nullable=False)
     time_limit_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -92,3 +104,14 @@ class AssessmentAnswer(Base):
     was_timeout: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     question: Mapped["AssessmentQuestion"] = relationship("AssessmentQuestion", back_populates="answer")
+
+
+class QuestionFingerprintHistory(Base):
+    __tablename__ = "question_fingerprint_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    content_fingerprint: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    concept_key: Mapped[str] = mapped_column(String(100), nullable=False)
+    first_seen_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
+    times_reused: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+

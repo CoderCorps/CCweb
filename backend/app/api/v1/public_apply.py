@@ -219,7 +219,9 @@ async def start_candidate_assessment(
         raw_questions = generate_full_assessment_questions(
             topic=ass.topic,
             basic_count=ass.basic_question_count,
-            intermediate_count=ass.intermediate_question_count
+            intermediate_count=ass.intermediate_question_count,
+            deep_count=ass.deep_question_count,
+            db=db
         )
 
         attempt = AssessmentAttempt(
@@ -239,9 +241,10 @@ async def start_candidate_assessment(
 
         question_objs = []
         for q_data in raw_questions:
+            q_tier = q_data.get("tier", "intermediate")
             t_limit = (
-                ass.basic_time_seconds 
-                if q_data["difficulty"] == "basic" 
+                ass.basic_time_seconds if q_tier == "basic"
+                else ass.deep_time_seconds if q_tier == "deep"
                 else ass.intermediate_time_seconds
             )
             q_obj = AssessmentQuestion(
@@ -249,7 +252,11 @@ async def start_candidate_assessment(
                 question_text=q_data["question_text"],
                 options=q_data["options"],
                 correct_option_index=q_data["correct_option_index"],
-                difficulty=q_data["difficulty"],
+                difficulty=q_tier,
+                tier=q_tier,
+                concept_key=q_data.get("concept_key"),
+                scenario_theme=q_data.get("scenario_theme"),
+                content_fingerprint=q_data.get("content_fingerprint"),
                 explanation=q_data["explanation"],
                 order_index=q_data["order_index"],
                 time_limit_seconds=t_limit,
@@ -504,34 +511,22 @@ async def get_candidate_result(
 # --- Helper Methods ---
 
 def _build_public_result_payload(invitation: AssessmentInvitation, attempt: AssessmentAttempt) -> PublicCandidateResult:
+    from app.services.scoring import calculate_attempt_scoring
+    scoring = calculate_attempt_scoring(attempt)
+
+    attempt.total_score = scoring["overall_weighted_score"]
+    attempt.overall_weighted_score = scoring["overall_weighted_score"]
+    attempt.intermediate_tier_accuracy = scoring["intermediate_tier_accuracy"]
+    attempt.deep_tier_accuracy = scoring["deep_tier_accuracy"]
+    attempt.tier_classification = scoring["tier_classification"]
+
     total_qs = len(attempt.questions)
-    correct_count = 0
-    basic_correct = 0
-    basic_total = 0
-    inter_correct = 0
-    inter_total = 0
-    total_time = 0.0
+    total_time = sum(q.answer.time_taken_seconds for q in attempt.questions if q.answer and q.answer.time_taken_seconds) or 0.0
+    total_correct = scoring["basic_correct"] + scoring["intermediate_correct"] + scoring["deep_correct"]
 
     q_results = []
-
     for q in sorted(attempt.questions, key=lambda x: x.order_index):
-        if q.difficulty == "basic":
-            basic_total += 1
-        else:
-            inter_total += 1
-
         ans = q.answer
-        if ans:
-            if ans.time_taken_seconds:
-                total_time += ans.time_taken_seconds
-            if ans.is_correct:
-                correct_count += 1
-                if q.difficulty == "basic":
-                    basic_correct += 1
-                else:
-                    inter_correct += 1
-
-        # REVEAL correct_option_index AND explanation in public candidate results!
         q_results.append(
             PublicQuestionResult(
                 question_id=q.id,
@@ -549,9 +544,6 @@ def _build_public_result_payload(invitation: AssessmentInvitation, attempt: Asse
             )
         )
 
-    score_pct = round((correct_count / total_qs * 100.0), 1) if total_qs > 0 else 0.0
-    attempt.total_score = score_pct
-
     cand_name = invitation.application.name if invitation.application else "Candidate"
     ass_title = invitation.assessment.title if invitation.assessment else "Assessment"
 
@@ -559,13 +551,19 @@ def _build_public_result_payload(invitation: AssessmentInvitation, attempt: Asse
         attempt_id=attempt.id,
         candidate_name=cand_name,
         assessment_title=ass_title,
-        total_score=score_pct,
+        total_score=scoring["overall_weighted_score"],
+        overall_weighted_score=scoring["overall_weighted_score"],
+        intermediate_tier_accuracy=scoring["intermediate_tier_accuracy"],
+        deep_tier_accuracy=scoring["deep_tier_accuracy"],
+        tier_classification=scoring["tier_classification"],
         total_questions=total_qs,
-        correct_count=correct_count,
-        basic_correct_count=basic_correct,
-        basic_total=basic_total,
-        intermediate_correct_count=inter_correct,
-        intermediate_total=inter_total,
+        correct_count=total_correct,
+        basic_correct_count=scoring["basic_correct"],
+        basic_total=scoring["basic_total"],
+        intermediate_correct_count=scoring["intermediate_correct"],
+        intermediate_total=scoring["intermediate_total"],
+        deep_correct_count=scoring["deep_correct"],
+        deep_total=scoring["deep_total"],
         total_time_seconds=round(total_time, 1),
         completed_at=attempt.completed_at,
         questions=q_results

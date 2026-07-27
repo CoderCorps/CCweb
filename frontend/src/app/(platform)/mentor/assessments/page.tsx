@@ -69,6 +69,10 @@ interface AttemptSummary {
   started_at: string;
   completed_at: string | null;
   total_score: number | null;
+  overall_weighted_score?: number | null;
+  intermediate_tier_accuracy?: number | null;
+  deep_tier_accuracy?: number | null;
+  tier_classification?: string | null;
   tab_switch_count: number;
 }
 
@@ -121,11 +125,16 @@ export default function MentorAssessmentsDashboard() {
   const [createOpen, setCreateOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("python");
-  const [basicCount, setBasicCount] = useState(5);
-  const [interCount, setInterCount] = useState(5);
+  const [basicCount, setBasicCount] = useState(2);
+  const [interCount, setInterCount] = useState(6);
+  const [deepCount, setDeepCount] = useState(2);
   const [basicTime, setBasicTime] = useState(45);
   const [interTime, setInterTime] = useState(90);
+  const [deepTime, setDeepTime] = useState(120);
+  const [minInterScore, setMinInterScore] = useState(60);
+  const [minDeepScore, setMinDeepScore] = useState(40);
   const [creating, setCreating] = useState(false);
+  const [tierFilter, setTierFilter] = useState("all");
 
   // Detailed Review Modal State
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -186,8 +195,12 @@ export default function MentorAssessmentsDashboard() {
         topic,
         basic_question_count: Number(basicCount),
         intermediate_question_count: Number(interCount),
+        deep_question_count: Number(deepCount),
         basic_time_seconds: Number(basicTime),
         intermediate_time_seconds: Number(interTime),
+        deep_time_seconds: Number(deepTime),
+        min_intermediate_pass_score: Number(minInterScore),
+        min_deep_pass_score: Number(minDeepScore),
         is_active: true
       });
 
@@ -384,6 +397,56 @@ export default function MentorAssessmentsDashboard() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase font-mono">Deep Q Count</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={10}
+                    value={deepCount}
+                    onChange={(e) => setDeepCount(Number(e.target.value))}
+                    className="bg-background/50 border-input rounded-xl"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase font-mono">Deep Time (sec)</label>
+                  <Input
+                    type="number"
+                    min={15}
+                    max={300}
+                    value={deepTime}
+                    onChange={(e) => setDeepTime(Number(e.target.value))}
+                    className="bg-background/50 border-input rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase font-mono">Min Inter Pass (%)</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={minInterScore}
+                    onChange={(e) => setMinInterScore(Number(e.target.value))}
+                    className="bg-background/50 border-input rounded-xl"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase font-mono">Min Deep Pass (%)</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={minDeepScore}
+                    onChange={(e) => setMinDeepScore(Number(e.target.value))}
+                    className="bg-background/50 border-input rounded-xl"
+                  />
+                </div>
+              </div>
+
               <DialogFooter className="pt-3">
                 <Button type="submit" disabled={creating} className="w-full font-bold rounded-xl">
                   {creating ? "Creating..." : "Save Assessment Config"}
@@ -477,6 +540,18 @@ export default function MentorAssessmentsDashboard() {
                         <span className="font-bold text-sm text-foreground">{att.candidate.name}</span>
                         <span className="text-xs text-muted-foreground font-mono">({att.candidate.email})</span>
 
+                        {att.tier_classification && (
+                          <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full font-mono uppercase tracking-wider border ${
+                            att.tier_classification === "Advanced — Strong Candidate"
+                              ? "bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-300"
+                              : att.tier_classification === "Intermediate — Ready"
+                              ? "bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-400"
+                              : "bg-slate-500/15 border-slate-500/40 text-slate-600 dark:text-slate-400"
+                          }`}>
+                            {att.tier_classification}
+                          </span>
+                        )}
+
                         {isPublic ? (
                           <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-mono uppercase">
                             Public Applicant
@@ -490,6 +565,9 @@ export default function MentorAssessmentsDashboard() {
 
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono flex-wrap">
                         {att.candidate.college && <span>College: {att.candidate.college}</span>}
+                        {att.intermediate_tier_accuracy !== undefined && att.intermediate_tier_accuracy !== null && (
+                          <span>Inter Acc: {att.intermediate_tier_accuracy}%</span>
+                        )}
                         <span>Started: {new Date(att.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         {att.tab_switch_count > 0 && (
                           <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">

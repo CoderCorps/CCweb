@@ -65,12 +65,18 @@ interface CandidateResult {
   candidate_name: string;
   assessment_title: string;
   total_score: number;
+  overall_weighted_score?: number | null;
+  intermediate_tier_accuracy?: number | null;
+  deep_tier_accuracy?: number | null;
+  tier_classification?: string | null;
   total_questions: number;
   correct_count: number;
   basic_correct_count: number;
   basic_total: number;
   intermediate_correct_count: number;
   intermediate_total: number;
+  deep_correct_count?: number;
+  deep_total?: number;
   total_time_seconds: number;
   completed_at: string | null;
   questions: QuestionResultItem[];
@@ -378,13 +384,36 @@ export default function PublicCandidateAssessmentPage() {
             {result.assessment_title}
           </h1>
 
-          <div className="flex flex-col items-center justify-center pt-2">
+          <div className="flex flex-col items-center justify-center pt-2 gap-2">
             <div className="text-5xl sm:text-6xl font-black text-primary font-mono tracking-tight">
               {result.total_score}%
             </div>
-            <span className="text-xs text-muted-foreground font-mono font-semibold uppercase mt-1">
-              Score: {result.correct_count} of {result.total_questions} Correct ({mins}m {secs}s)
-            </span>
+            
+            {result.tier_classification && (
+              <div className={`px-4 py-1.5 rounded-full font-bold text-xs uppercase font-mono tracking-wide border shadow-sm ${
+                result.tier_classification === "Advanced — Strong Candidate"
+                  ? "bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-300"
+                  : result.tier_classification === "Intermediate — Ready"
+                  ? "bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-400"
+                  : "bg-slate-500/15 border-slate-500/40 text-slate-600 dark:text-slate-400"
+              }`}>
+                Tier Result: {result.tier_classification}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground font-mono font-semibold pt-1">
+              <span>Basic: {result.basic_correct_count}/{result.basic_total}</span>
+              <span>•</span>
+              <span>Intermediate Accuracy: {result.intermediate_tier_accuracy ?? Math.round((result.intermediate_correct_count / (result.intermediate_total || 1)) * 100)}%</span>
+              {(result.deep_total ?? 0) > 0 && (
+                <>
+                  <span>•</span>
+                  <span>Deep Accuracy: {result.deep_tier_accuracy ?? 0}%</span>
+                </>
+              )}
+              <span>•</span>
+              <span>Time: {mins}m {secs}s</span>
+            </div>
           </div>
         </div>
 

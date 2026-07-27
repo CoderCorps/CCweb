@@ -60,12 +60,18 @@ class PublicCandidateResult(BaseModel):
     candidate_name: str
     assessment_title: str
     total_score: float
+    overall_weighted_score: Optional[float] = None
+    intermediate_tier_accuracy: Optional[float] = None
+    deep_tier_accuracy: Optional[float] = None
+    tier_classification: Optional[str] = None
     total_questions: int
     correct_count: int
     basic_correct_count: int
     basic_total: int
     intermediate_correct_count: int
     intermediate_total: int
+    deep_correct_count: int = 0
+    deep_total: int = 0
     total_time_seconds: float
     completed_at: Optional[datetime]
     questions: List[PublicQuestionResult]
@@ -95,6 +101,10 @@ class AdminCandidateSummary(BaseModel):
     invitation_status: str
     expires_at: datetime
     total_score: Optional[float]
+    overall_weighted_score: Optional[float] = None
+    intermediate_tier_accuracy: Optional[float] = None
+    deep_tier_accuracy: Optional[float] = None
+    tier_classification: Optional[str] = None
     reminders_count: int
 
 class AdminCandidateDetail(BaseModel):

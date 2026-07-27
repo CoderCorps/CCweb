@@ -31,6 +31,7 @@ def _utcnow() -> datetime:
 @router.get("/candidate-applications", response_model=List[AdminCandidateSummary])
 async def list_candidate_applications(
     status_filter: Optional[str] = Query(None, alias="status"),
+    tier_classification_filter: Optional[str] = Query(None, alias="tier_classification"),
     search: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_mentor: User = Depends(get_current_mentor)
@@ -56,10 +57,18 @@ async def list_candidate_applications(
             inv = app_rec.invitations[0] if app_rec.invitations else None
             inv_status = inv.status if inv else "pending"
             exp_at = inv.expires_at if inv else app_rec.applied_at + timedelta(hours=24)
-            score = inv.attempt.total_score if (inv and inv.attempt) else None
+            att = inv.attempt if inv else None
+            score = att.total_score if att else None
+            weighted = att.overall_weighted_score if att else None
+            inter_acc = att.intermediate_tier_accuracy if att else None
+            deep_acc = att.deep_tier_accuracy if att else None
+            tier_class = att.tier_classification if att else None
             rem_count = len(inv.reminder_logs) if inv else 0
 
             if status_filter and status_filter.strip().lower() != inv_status.lower():
+                continue
+
+            if tier_classification_filter and tier_class and tier_classification_filter.strip().lower() not in tier_class.lower():
                 continue
 
             summaries.append(
@@ -73,6 +82,10 @@ async def list_candidate_applications(
                     invitation_status=inv_status,
                     expires_at=exp_at,
                     total_score=score,
+                    overall_weighted_score=weighted,
+                    intermediate_tier_accuracy=inter_acc,
+                    deep_tier_accuracy=deep_acc,
+                    tier_classification=tier_class,
                     reminders_count=rem_count
                 )
             )

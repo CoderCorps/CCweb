@@ -1,227 +1,180 @@
-# Fallback Python Question Bank in case Anthropic API fails or is unconfigured.
+"""
+Fallback Python Question Bank tagged with taxonomy concept_key, tier, and scenario_theme.
+Provides offline/fallback question generation matching the taxonomy requirements.
+"""
 
-FALLBACK_BASIC_QUESTIONS = [
+FALLBACK_QUESTIONS = [
+    # --- BASIC TIERS ---
     {
-        "question": "What will be the output of `print(type([]))` in Python 3?",
+        "question": "In an e-commerce inventory app, what will type(item_count) return if item_count = 42?",
+        "options": ["<class 'int'>", "<class 'float'>", "<class 'str'>", "<class 'list'>"],
+        "correct_option_index": 0,
+        "explanation": "An unquoted integer literal evaluates to <class 'int'> in Python.",
+        "tier": "basic",
+        "concept_key": "variables_types",
+        "scenario_theme": "ecommerce_inventory"
+    },
+    {
+        "question": "In a banking system, which expression evaluates to True to confirm a non-empty transaction history?",
+        "options": ["bool('')", "bool([100.5])", "bool(None)", "bool(0)"],
+        "correct_option_index": 1,
+        "explanation": "In Python, non-empty collections like [100.5] evaluate to True in a boolean context.",
+        "tier": "basic",
+        "concept_key": "boolean_logic",
+        "scenario_theme": "banking_transactions"
+    },
+    {
+        "question": "In a restaurant order tracker, what is the value of total_bill // 3 when total_bill = 10?",
+        "options": ["3.33", "3", "3.0", "1"],
+        "correct_option_index": 1,
+        "explanation": "The // floor division operator returns integer 3 without decimals.",
+        "tier": "basic",
+        "concept_key": "basic_math",
+        "scenario_theme": "restaurant_orders"
+    },
+    {
+        "question": "In a library catalog program, how do you add a new book title to book_list?",
+        "options": ["book_list.add(title)", "book_list.push(title)", "book_list.append(title)", "book_list.insert(title)"],
+        "correct_option_index": 2,
+        "explanation": "append() adds a single element to the end of a Python list.",
+        "tier": "basic",
+        "concept_key": "lists",
+        "scenario_theme": "library_catalog"
+    },
+    {
+        "question": "In a school grading system, what will len({'alice': 90, 'bob': 85, 'alice': 95}) return?",
+        "options": ["3", "2", "1", "TypeError"],
+        "correct_option_index": 1,
+        "explanation": "Dictionary keys are unique. Re-assigning key 'alice' updates its value, keeping length as 2.",
+        "tier": "basic",
+        "concept_key": "dictionaries",
+        "scenario_theme": "school_grading"
+    },
+
+    # --- INTERMEDIATE TIERS ---
+    {
+        "question": "In a weather monitoring app, what is the output of [t for t in temperatures if t > 30] when temperatures = [28, 32, 25, 35]?",
+        "options": ["[28, 32]", "[32, 35]", "[25, 35]", "[30, 35]"],
+        "correct_option_index": 1,
+        "explanation": "The list comprehension filters items greater than 30, returning [32, 35].",
+        "tier": "intermediate",
+        "concept_key": "comprehensions",
+        "scenario_theme": "weather_data"
+    },
+    {
+        "question": "In a ride-sharing trip manager, consider def log_trip(trip_id, history=[]): history.append(trip_id); return history. What is returned by consecutive calls log_trip(101) then log_trip(102)?",
+        "options": ["[101] then [102]", "[101] then [101, 102]", "[101, 102] then [101, 102]", "TypeError"],
+        "correct_option_index": 1,
+        "explanation": "Default argument values are created once at function definition time. The mutable list persists across calls.",
+        "tier": "intermediate",
+        "concept_key": "default_args",
+        "scenario_theme": "ridesharing_trips"
+    },
+    {
+        "question": "In a hospital record system, what does *records in def archive_patient(*records): capture?",
+        "options": ["A dictionary of keyword arguments", "A tuple of positional arguments", "A list of strings", "A set of record IDs"],
+        "correct_option_index": 1,
+        "explanation": "*args (or *records) packs arbitrary positional parameters into a single tuple inside the function.",
+        "tier": "intermediate",
+        "concept_key": "args_kwargs",
+        "scenario_theme": "hospital_records"
+    },
+    {
+        "question": "In a game leaderboard system, how can player scores [('PlayerA', 50), ('PlayerB', 90)] be sorted by score descending?",
         "options": [
-            "<class 'list'>",
-            "<class 'array'>",
-            "<class 'tuple'>",
-            "<class 'set'>"
+            "sorted(players, key=lambda p: p[1], reverse=True)",
+            "players.sort(key=lambda p: p[0])",
+            "sorted(players, reverse=False)",
+            "players.order_by(score)"
         ],
         "correct_option_index": 0,
-        "explanation": "In Python, square brackets `[]` define a list literal, so `type([])` returns `<class 'list'>`."
+        "explanation": "sorted() with key=lambda p: p[1] and reverse=True sorts tuples by score in descending order.",
+        "tier": "intermediate",
+        "concept_key": "sorting_custom_keys",
+        "scenario_theme": "game_leaderboard"
     },
     {
-        "question": "Which of the following boolean expressions evaluates to `True` in Python?",
+        "question": "In an IoT sensor application, what does a generator function use to stream sensor readings one by one?",
+        "options": ["return", "yield", "emit", "send"],
+        "correct_option_index": 1,
+        "explanation": "yield pauses the generator execution state and yields an item to the caller.",
+        "tier": "intermediate",
+        "concept_key": "generators_yield",
+        "scenario_theme": "iot_sensors"
+    },
+    {
+        "question": "In an employee payroll script, what is the best way to ensure payroll file handles close automatically?",
         "options": [
-            "bool('')",
-            "bool([0])",
-            "bool(None)",
-            "bool(0)"
+            "f = open('payroll.csv'); defer f.close()",
+            "with open('payroll.csv') as f:",
+            "try open('payroll.csv') as f:",
+            "using open('payroll.csv') as f:"
         ],
         "correct_option_index": 1,
-        "explanation": "A non-empty list like `[0]` evaluates to `True` in boolean context, whereas empty strings, `None`, and `0` evaluate to `False`."
+        "explanation": "The with context manager safely closes open files upon block exit.",
+        "tier": "intermediate",
+        "concept_key": "context_managers",
+        "scenario_theme": "employee_payroll"
     },
+
+    # --- DEEP TIERS ---
     {
-        "question": "What is the result of `10 // 3` in Python?",
+        "question": "In a fitness tracking app, what is the primary memory advantage of a generator expression (step for step in daily_steps) over a list comprehension [step for step in daily_steps]?",
         "options": [
-            "3.333",
-            "3",
-            "3.0",
-            "1"
+            "Generators process items faster in CPU single-threads",
+            "Generators yield elements lazily one by one without storing the whole sequence in memory",
+            "List comprehensions cannot be iterated over twice",
+            "Generators automatically bypass the CPython GIL"
         ],
         "correct_option_index": 1,
-        "explanation": "The `//` operator performs integer (floor) division in Python, truncating the decimal part to return integer `3`."
+        "explanation": "Generator expressions compute values lazily, requiring O(1) memory overhead compared to list comprehensions.",
+        "tier": "deep",
+        "concept_key": "genexpr_vs_listcomp",
+        "scenario_theme": "fitness_tracking"
     },
     {
-        "question": "How do you append an element `x` to an existing list `my_list`?",
+        "question": "In a chat application, what does @functools.lru_cache(maxsize=128) do when placed on a get_user_profile(user_id) function?",
         "options": [
-            "my_list.add(x)",
-            "my_list.push(x)",
-            "my_list.append(x)",
-            "my_list.insert(x)"
-        ],
-        "correct_option_index": 2,
-        "explanation": "`append(x)` adds element `x` to the end of a list in Python."
-    },
-    {
-        "question": "What will `len({'a': 1, 'b': 2, 'a': 3})` return?",
-        "options": [
-            "3",
-            "2",
-            "1",
-            "Error"
+            "Limits the number of concurrent chat connections to 128",
+            "Memoizes function calls by caching up to 128 distinct return values",
+            "Enforces thread safety using a mutex lock",
+            "Compiles function code to C extensions"
         ],
         "correct_option_index": 1,
-        "explanation": "Dictionary keys must be unique. Overwriting key `'a'` with `3` leaves 2 key-value pairs: `'a'` and `'b'`."
+        "explanation": "lru_cache caches function returns based on argument values up to maxsize using a Least Recently Used eviction strategy.",
+        "tier": "deep",
+        "concept_key": "functools_module",
+        "scenario_theme": "chat_application"
     },
     {
-        "question": "Which keyword is used to start a loop that executes as long as a condition is true?",
+        "question": "In a parking reservation engine, what occurs when executing raise ReservationError('Spot taken') from err inside a try/except block?",
         "options": [
-            "for",
-            "while",
-            "loop",
-            "repeat"
+            "The original exception err is suppressed and discarded",
+            "The new exception sets __cause__ to err for explicit exception chaining",
+            "The Python interpreter crashes instantly",
+            "The reservation engine falls back to an async event loop"
         ],
         "correct_option_index": 1,
-        "explanation": "`while` is the condition-controlled loop keyword in Python."
+        "explanation": "raise ... from ... explicitly chains exceptions, setting __cause__ to preserve tracebacks.",
+        "tier": "deep",
+        "concept_key": "exception_chaining",
+        "scenario_theme": "parking_system"
     },
     {
-        "question": "What is the output of `'hello'[1:4]`?",
+        "question": "In a ticket booking platform, what is the difference between copy.copy(ticket_data) (shallow copy) and copy.deepcopy(ticket_data) (deep copy)?",
         "options": [
-            "'hel'",
-            "'ell'",
-            "'ello'",
-            "'he'"
+            "Shallow copy duplicates nested mutable structures; deep copy copies outer attributes only",
+            "Shallow copy constructs a new collection with references to nested objects; deep copy recursively duplicates all nested objects",
+            "Shallow copy works only on primitive strings; deep copy works only on lists",
+            "There is no functional difference"
         ],
         "correct_option_index": 1,
-        "explanation": "Slicing `[1:4]` extracts characters starting at index 1 up to (excluding) index 4, which yields `'ell'`."
-    },
-    {
-        "question": "Which standard function converts a string to an integer?",
-        "options": [
-            "str()",
-            "int()",
-            "float()",
-            "to_int()"
-        ],
-        "correct_option_index": 1,
-        "explanation": "`int()` converts valid string representations of numbers to Python integer objects."
-    },
-    {
-        "question": "What does `my_tuple[0] = 5` do if `my_tuple = (1, 2, 3)`?",
-        "options": [
-            "Changes the first element to 5",
-            "Appends 5 to the tuple",
-            "Raises a TypeError",
-            "Creates a new tuple"
-        ],
-        "correct_option_index": 2,
-        "explanation": "Tuples are immutable data structures in Python; modifying an element in place raises a `TypeError`."
-    },
-    {
-        "question": "What is the value of `5 % 2`?",
-        "options": [
-            "2",
-            "2.5",
-            "1",
-            "0"
-        ],
-        "correct_option_index": 2,
-        "explanation": "The `%` modulo operator calculates the remainder after integer division. 5 divided by 2 is 2 with a remainder of 1."
+        "explanation": "copy.copy creates a shallow clone referencing child objects, while copy.deepcopy recursively copies all nested data.",
+        "tier": "deep",
+        "concept_key": "deep_shallow_copy",
+        "scenario_theme": "ticket_booking"
     }
 ]
 
-FALLBACK_INTERMEDIATE_QUESTIONS = [
-    {
-        "question": "What is the output of `[x**2 for x in range(5) if x % 2 == 0]`?",
-        "options": [
-            "[0, 1, 4, 9, 16]",
-            "[0, 4, 16]",
-            "[1, 9]",
-            "[0, 2, 4]"
-        ],
-        "correct_option_index": 1,
-        "explanation": "The list comprehension filters for even numbers (0, 2, 4) in range(5) and squares them to produce `[0, 4, 16]`."
-    },
-    {
-        "question": "Consider `def add_item(item, lst=[]): lst.append(item); return lst`. What does `add_item(1)` followed by `add_item(2)` return?",
-        "options": [
-            "[1] then [2]",
-            "[1] then [1, 2]",
-            "[1, 2] then [1, 2]",
-            "TypeError"
-        ],
-        "correct_option_index": 1,
-        "explanation": "Default argument values in Python are evaluated once when the function is defined. The mutable list `lst` persists across calls."
-    },
-    {
-        "question": "Which of the following correctly catches both `ValueError` and `ZeroDivisionError` in a single block?",
-        "options": [
-            "except ValueError, ZeroDivisionError:",
-            "except (ValueError, ZeroDivisionError):",
-            "except [ValueError | ZeroDivisionError]:",
-            "except ValueError or ZeroDivisionError:"
-        ],
-        "correct_option_index": 1,
-        "explanation": "Catching multiple exception types requires wrapping them in a tuple, e.g. `except (ValueError, ZeroDivisionError):`."
-    },
-    {
-        "question": "What is the result of `list(map(lambda x: x * 2, [1, 2, 3]))`?",
-        "options": [
-            "[1, 2, 3, 1, 2, 3]",
-            "[2, 4, 6]",
-            "[1, 4, 9]",
-            "[2, 2, 2]"
-        ],
-        "correct_option_index": 1,
-        "explanation": "`map` applies the anonymous `lambda x: x * 2` function to each element of `[1, 2, 3]`, resulting in `[2, 4, 6]`."
-    },
-    {
-        "question": "What is the purpose of the `__init__` method in Python classes?",
-        "options": [
-            "To destroy an object when garbage collected",
-            "To initialize the attributes of a newly created instance",
-            "To declare public static class variables",
-            "To compile the Python bytecode"
-        ],
-        "correct_option_index": 1,
-        "explanation": "`__init__` is the constructor method called automatically after a new instance of a class has been created."
-    },
-    {
-        "question": "What does the `*args` syntax in a function signature allow?",
-        "options": [
-            "Passing keyword arguments as a dictionary",
-            "Passing a variable number of non-keyword positional arguments",
-            "Unpacking a list inside a loop",
-            "Defining mandatory positional arguments"
-        ],
-        "correct_option_index": 1,
-        "explanation": "`*args` collects extra positional arguments into a tuple passed into the function."
-    },
-    {
-        "question": "What is the output of `print(isinstance(True, int))`?",
-        "options": [
-            "True",
-            "False",
-            "TypeError",
-            "None"
-        ],
-        "correct_option_index": 0,
-        "explanation": "In Python, `bool` is a subclass of `int` (`isinstance(True, int)` is `True`, and `True == 1`)."
-    },
-    {
-        "question": "What does a generator function in Python use to return items one at a time?",
-        "options": [
-            "return",
-            "yield",
-            "emit",
-            "send"
-        ],
-        "correct_option_index": 1,
-        "explanation": "The `yield` statement suspends function execution and returns a value to the caller, turning the function into a generator."
-    },
-    {
-        "question": "What is the difference between `is` and `==` in Python?",
-        "options": [
-            "`is` checks value equality; `==` checks object identity",
-            "`is` checks object identity (same memory address); `==` checks value equality",
-            "`is` is for strings only; `==` is for numbers only",
-            "There is no difference"
-        ],
-        "correct_option_index": 1,
-        "explanation": "`is` tests whether two variables point to the exact same object in memory, while `==` tests whether their evaluated values are equal."
-    },
-    {
-        "question": "How do you open a file `data.txt` safely so it closes automatically even if an exception occurs?",
-        "options": [
-            "file = open('data.txt'); defer file.close()",
-            "with open('data.txt') as file:",
-            "try open('data.txt') as file:",
-            "using open('data.txt') as file:"
-        ],
-        "correct_option_index": 1,
-        "explanation": "The `with` statement utilizes context managers to ensure cleanup (closing the file handle) upon exiting the block."
-    }
-]
+FALLBACK_BASIC_QUESTIONS = [q for q in FALLBACK_QUESTIONS if q.get('tier') == 'basic']
+FALLBACK_INTERMEDIATE_QUESTIONS = [q for q in FALLBACK_QUESTIONS if q.get('tier') in ('intermediate', 'deep')]

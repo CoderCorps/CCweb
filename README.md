@@ -119,3 +119,30 @@ ANTHROPIC_API_KEY="sk-ant-..."
 
 If `RESEND_API_KEY` is omitted or unconfigured during local development, the application gracefully logs mock delivery without interrupting assessment or application flows.
 
+---
+
+## 🧠 Python Concept Taxonomy & Tier-Weighted Scoring Engine
+
+The screening assessment engine uses a fixed, version-controlled taxonomy, SHA-256 fingerprint deduplication, and a tier-weighted scoring classification model.
+
+### 1. Taxonomy Location & Scenario Themes
+- **Taxonomy File**: [`backend/app/data/python_concepts.py`](file:///d:/MycoderCorps/backend/app/data/python_concepts.py)
+  - `BASIC` (~15 concepts): variables/types, string operations, lists, dicts, loops, conditionals, basic functions, tuples, sets, file I/O, exceptions, string formatting, I/O, basic math, boolean logic.
+  - `INTERMEDIATE` (~21 concepts): comprehensions, `*args/**kwargs`, default args, lambdas, basic decorators, generators/yield, iterators, context managers, OOP classes/polymorphism, custom exceptions, closures, LEGB scope, modules, itertools, collections, slicing, extended unpacking, f-strings.
+  - `DEEP` (~15 concepts): decorators with args, generator expressions vs listcomp memory tradeoffs, GIL, mutable identity/aliasing bugs, metaclasses, descriptors, `functools` (`lru_cache`), MRO, exception chaining (`raise...from`), `async/await`, memory refcounting, `__dunder__` methods, deep/shallow copy, thread safety, complexity of built-ins.
+- **Scenario Themes File**: [`backend/app/data/scenario_themes.py`](file:///d:/MycoderCorps/backend/app/data/scenario_themes.py) (20 neutral domains for code context randomization).
+
+### 2. Recommended Question Mix per Attempt
+- **Default Mix**: `2 Basic` (warm-up, weight 1x) + `6 Intermediate` (core filter, weight 2x) + `2 Deep` (advanced filter, weight 3x) = 10 questions total.
+- **Sampling**: Concepts and scenario themes are sampled **without replacement** per attempt.
+
+### 3. Tier Weighting Constants & Classification Rules
+Located in [`backend/app/services/scoring.py`](file:///d:/MycoderCorps/backend/app/services/scoring.py):
+- **Scoring Weights**: `basic = 1.0`, `intermediate = 2.0`, `deep = 3.0`
+- **Overall Weighted Score**: \(\frac{\sum (\text{correct} \times \text{weight})}{\sum (\text{total} \times \text{weight})} \times 100\%\)
+- **Candidate Classifications**:
+  - `Needs Foundational Review`: `intermediate_tier_accuracy < min_intermediate_pass_score` (default 60%)
+  - `Intermediate — Ready`: `intermediate_tier_accuracy >= 60%` AND `deep_tier_accuracy < min_deep_pass_score` (default 40%)
+  - `Advanced — Strong Candidate`: Both intermediate (≥ 60%) AND deep (≥ 40%) accuracy thresholds met.
+
+

@@ -132,7 +132,9 @@ async def start_assessment(
         raw_questions = generate_full_assessment_questions(
             topic=assessment.topic,
             basic_count=assessment.basic_question_count,
-            intermediate_count=assessment.intermediate_question_count
+            intermediate_count=assessment.intermediate_question_count,
+            deep_count=assessment.deep_question_count,
+            db=db
         )
 
         # Create attempt
@@ -147,9 +149,10 @@ async def start_assessment(
 
         question_objs = []
         for q_data in raw_questions:
+            q_tier = q_data.get("tier", "intermediate")
             t_limit = (
-                assessment.basic_time_seconds 
-                if q_data["difficulty"] == "basic" 
+                assessment.basic_time_seconds if q_tier == "basic"
+                else assessment.deep_time_seconds if q_tier == "deep"
                 else assessment.intermediate_time_seconds
             )
             q_obj = AssessmentQuestion(
@@ -157,8 +160,12 @@ async def start_assessment(
                 question_text=q_data["question_text"],
                 options=q_data["options"],
                 correct_option_index=q_data["correct_option_index"],
-                difficulty=q_data["difficulty"],
-                explanation=q_data["explanation"],
+                difficulty=q_tier,
+                tier=q_tier,
+                concept_key=q_data.get("concept_key"),
+                scenario_theme=q_data.get("scenario_theme"),
+                content_fingerprint=q_data.get("content_fingerprint"),
+                explanation=q_data.get("explanation", ""),
                 order_index=q_data["order_index"],
                 time_limit_seconds=t_limit,
                 served_at=now if q_data["order_index"] == 1 else None
@@ -479,6 +486,7 @@ def _build_candidate_schema(attempt: AssessmentAttempt, db: Session) -> Candidat
 @router.get("/{id}/attempts", response_model=List[MentorAttemptSummary])
 async def list_assessment_attempts(
     id: int,
+    tier_classification_filter: Optional[str] = Query(None, alias="tier_classification"),
     db: Session = Depends(get_db),
     current_mentor: User = Depends(get_current_mentor)
 ):
@@ -491,18 +499,28 @@ async def list_assessment_attempts(
             selectinload(AssessmentAttempt.invitation).selectinload(AssessmentInvitation.application)
         ).order_by(AssessmentAttempt.id.desc()).all()
 
-        return [
-            MentorAttemptSummary(
-                id=att.id,
-                assessment_id=att.assessment_id,
-                candidate=_build_candidate_schema(att, db),
-                status=att.status,
-                started_at=att.started_at,
-                completed_at=att.completed_at,
-                total_score=att.total_score,
-                tab_switch_count=att.tab_switch_count
-            ) for att in attempts
-        ]
+        results = []
+        for att in attempts:
+            if tier_classification_filter and att.tier_classification:
+                if tier_classification_filter.strip().lower() not in att.tier_classification.lower():
+                    continue
+            results.append(
+                MentorAttemptSummary(
+                    id=att.id,
+                    assessment_id=att.assessment_id,
+                    candidate=_build_candidate_schema(att, db),
+                    status=att.status,
+                    started_at=att.started_at,
+                    completed_at=att.completed_at,
+                    total_score=att.total_score,
+                    overall_weighted_score=att.overall_weighted_score,
+                    intermediate_tier_accuracy=att.intermediate_tier_accuracy,
+                    deep_tier_accuracy=att.deep_tier_accuracy,
+                    tier_classification=att.tier_classification,
+                    tab_switch_count=att.tab_switch_count
+                )
+            )
+        return results
 
     return await asyncio.to_thread(_query)
 
@@ -558,11 +576,15 @@ async def review_assessment_attempt(
         return MentorAttemptReview(
             attempt_id=attempt.id,
             assessment_title=attempt.assessment.title,
-            candidate=_build_candidate_schema(attempt),
+            candidate=_build_candidate_schema(attempt, db),
             status=attempt.status,
             started_at=attempt.started_at,
             completed_at=attempt.completed_at,
             total_score=attempt.total_score,
+            overall_weighted_score=attempt.overall_weighted_score,
+            intermediate_tier_accuracy=attempt.intermediate_tier_accuracy,
+            deep_tier_accuracy=attempt.deep_tier_accuracy,
+            tier_classification=attempt.tier_classification,
             tab_switch_count=attempt.tab_switch_count,
             tab_switch_logs=t_logs,
             questions=q_reviews
@@ -594,42 +616,34 @@ async def reset_assessment_attempt(
 # --- Helper Methods ---
 
 def _compute_attempt_stats(attempt: AssessmentAttempt) -> AttemptResultResponse:
+    from app.services.scoring import calculate_attempt_scoring
+    scoring = calculate_attempt_scoring(attempt)
+
+    attempt.total_score = scoring["overall_weighted_score"]
+    attempt.overall_weighted_score = scoring["overall_weighted_score"]
+    attempt.intermediate_tier_accuracy = scoring["intermediate_tier_accuracy"]
+    attempt.deep_tier_accuracy = scoring["deep_tier_accuracy"]
+    attempt.tier_classification = scoring["tier_classification"]
+
     total_qs = len(attempt.questions)
-    correct_count = 0
-    basic_correct = 0
-    basic_total = 0
-    inter_correct = 0
-    inter_total = 0
-    total_time = 0.0
-
-    for q in attempt.questions:
-        if q.difficulty == "basic":
-            basic_total += 1
-        else:
-            inter_total += 1
-
-        if q.answer:
-            if q.answer.time_taken_seconds:
-                total_time += q.answer.time_taken_seconds
-            if q.answer.is_correct:
-                correct_count += 1
-                if q.difficulty == "basic":
-                    basic_correct += 1
-                else:
-                    inter_correct += 1
-
-    score_pct = round((correct_count / total_qs * 100.0), 1) if total_qs > 0 else 0.0
-    attempt.total_score = score_pct
+    total_time = sum(q.answer.time_taken_seconds for q in attempt.questions if q.answer and q.answer.time_taken_seconds) or 0.0
+    total_correct = scoring["basic_correct"] + scoring["intermediate_correct"] + scoring["deep_correct"]
 
     return AttemptResultResponse(
         attempt_id=attempt.id,
-        total_score=score_pct,
+        total_score=scoring["overall_weighted_score"],
+        overall_weighted_score=scoring["overall_weighted_score"],
+        intermediate_tier_accuracy=scoring["intermediate_tier_accuracy"],
+        deep_tier_accuracy=scoring["deep_tier_accuracy"],
+        tier_classification=scoring["tier_classification"],
         total_questions=total_qs,
-        correct_count=correct_count,
-        basic_correct_count=basic_correct,
-        basic_total=basic_total,
-        intermediate_correct_count=inter_correct,
-        intermediate_total=inter_total,
+        correct_count=total_correct,
+        basic_correct_count=scoring["basic_correct"],
+        basic_total=scoring["basic_total"],
+        intermediate_correct_count=scoring["intermediate_correct"],
+        intermediate_total=scoring["intermediate_total"],
+        deep_correct_count=scoring["deep_correct"],
+        deep_total=scoring["deep_total"],
         total_time_seconds=round(total_time, 1),
         status=attempt.status,
         completed_at=attempt.completed_at

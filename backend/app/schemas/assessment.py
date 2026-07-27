@@ -5,10 +5,14 @@ from datetime import datetime
 class AssessmentCreate(BaseModel):
     title: str
     topic: str = "python"
-    basic_question_count: int = 5
-    intermediate_question_count: int = 5
+    basic_question_count: int = 2
+    intermediate_question_count: int = 6
+    deep_question_count: int = 2
     basic_time_seconds: int = 45
     intermediate_time_seconds: int = 90
+    deep_time_seconds: int = 120
+    min_intermediate_pass_score: float = 60.0
+    min_deep_pass_score: Optional[float] = 40.0
     is_active: bool = True
 
 class AssessmentResponse(BaseModel):
@@ -17,8 +21,12 @@ class AssessmentResponse(BaseModel):
     topic: str
     basic_question_count: int
     intermediate_question_count: int
+    deep_question_count: int = 2
     basic_time_seconds: int
     intermediate_time_seconds: int
+    deep_time_seconds: int = 120
+    min_intermediate_pass_score: float = 60.0
+    min_deep_pass_score: Optional[float] = 40.0
     created_by: int
     created_at: datetime
     is_active: bool
@@ -48,12 +56,18 @@ class AnswerSubmit(BaseModel):
 class AttemptResultResponse(BaseModel):
     attempt_id: int
     total_score: float
+    overall_weighted_score: Optional[float] = None
+    intermediate_tier_accuracy: Optional[float] = None
+    deep_tier_accuracy: Optional[float] = None
+    tier_classification: Optional[str] = None
     total_questions: int
     correct_count: int
     basic_correct_count: int
     basic_total: int
     intermediate_correct_count: int
     intermediate_total: int
+    deep_correct_count: int = 0
+    deep_total: int = 0
     total_time_seconds: float
     status: str
     completed_at: Optional[datetime] = None
@@ -77,6 +91,9 @@ class MentorQuestionReview(BaseModel):
     selected_option_index: Optional[int]
     is_correct: bool
     difficulty: str
+    tier: Optional[str] = None
+    concept_key: Optional[str] = None
+    scenario_theme: Optional[str] = None
     explanation: str
     time_limit_seconds: int
     time_taken_seconds: Optional[float]
@@ -112,6 +129,10 @@ class MentorAttemptSummary(BaseModel):
     started_at: datetime
     completed_at: Optional[datetime]
     total_score: Optional[float]
+    overall_weighted_score: Optional[float] = None
+    intermediate_tier_accuracy: Optional[float] = None
+    deep_tier_accuracy: Optional[float] = None
+    tier_classification: Optional[str] = None
     tab_switch_count: int
 
     class Config:
@@ -134,6 +155,10 @@ class MentorAttemptReview(BaseModel):
     started_at: datetime
     completed_at: Optional[datetime]
     total_score: Optional[float]
+    overall_weighted_score: Optional[float] = None
+    intermediate_tier_accuracy: Optional[float] = None
+    deep_tier_accuracy: Optional[float] = None
+    tier_classification: Optional[str] = None
     tab_switch_count: int
     tab_switch_logs: List[TabSwitchLogSchema] = []
     questions: List[MentorQuestionReview]
