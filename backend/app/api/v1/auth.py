@@ -19,14 +19,18 @@ from app.schemas.user import UserCreate, UserResponse, Token
 rate_limit_records = defaultdict(list)
 
 def check_rate_limit(request: Request):
-    client_ip = request.client.host if request.client else "unknown"
+    x_forwarded = request.headers.get("x-forwarded-for")
+    if x_forwarded:
+        client_ip = x_forwarded.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "unknown"
     now = time.time()
     
     # Clean up timestamps older than 60 seconds
     rate_limit_records[client_ip] = [t for t in rate_limit_records[client_ip] if now - t < 60]
     
-    # Check limit: e.g., max 5 attempts per minute for auth endpoints
-    if len(rate_limit_records[client_ip]) >= 5:
+    # Allow 20 attempts per minute per unique client IP
+    if len(rate_limit_records[client_ip]) >= 20:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many authentication attempts. Please try again in a minute."
@@ -114,8 +118,9 @@ async def login(
     _ = Depends(check_rate_limit)
 ):
     # Authenticate user (form_data.username is treated as email)
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not security.verify_password(form_data.password, user.password_hash):
+    clean_username = form_data.username.strip().lower()
+    user = db.query(User).filter(User.email == clean_username).first()
+    if not user or not security.verify_password(form_data.password.strip(), user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect email or password"

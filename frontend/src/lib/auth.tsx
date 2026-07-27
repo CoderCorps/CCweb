@@ -64,9 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, pass: string): Promise<boolean> => {
     try {
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPass = pass.trim();
       const formData = new FormData();
-      formData.append("username", email);
-      formData.append("password", pass);
+      formData.append("username", cleanEmail);
+      formData.append("password", cleanPass);
 
       const res = await api.post("/auth/login", formData, { skipAuth: true });
 
