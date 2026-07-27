@@ -264,16 +264,15 @@ export default function PublicCandidateAssessmentPage() {
           setTimeLeft(nextQ.time_limit_seconds);
         }
       } else {
-        const errData = await res.json().catch(() => ({}));
-        toast.error(errData.detail || "Failed to submit answer.");
+        await fetchCurrentQuestion();
       }
     } catch (err) {
       console.error(err);
-      toast.error("Error transmitting answer.");
+      await fetchCurrentQuestion();
     } finally {
       setSubmitting(false);
     }
-  }, [question, rawToken, submitting]);
+  }, [question, rawToken, submitting, fetchCurrentQuestion]);
 
   // Timer Countdown Loop
   useEffect(() => {

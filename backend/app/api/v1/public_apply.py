@@ -405,37 +405,36 @@ async def submit_candidate_answer(
         if not question:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found for this attempt")
 
-        if question.answer:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Question already answered")
-
         now = _utcnow()
-        if not question.served_at:
-            question.served_at = now
+        if not question.answer:
+            if not question.served_at:
+                question.served_at = now
 
-        elapsed = (now - question.served_at).total_seconds()
-        is_timeout = elapsed > (question.time_limit_seconds + 3.0)
+            elapsed = (now - question.served_at).total_seconds()
+            is_timeout = elapsed > (question.time_limit_seconds + 3.0)
 
-        if is_timeout:
-            selected_opt = None
-            is_correct = False
-            time_taken = float(question.time_limit_seconds)
-            was_timeout = True
-        else:
-            selected_opt = answer_in.selected_option_index
-            is_correct = (selected_opt == question.correct_option_index) if selected_opt is not None else False
-            time_taken = min(round(elapsed, 2), float(question.time_limit_seconds))
-            was_timeout = False
+            if is_timeout:
+                selected_opt = None
+                is_correct = False
+                time_taken = float(question.time_limit_seconds)
+                was_timeout = True
+            else:
+                selected_opt = answer_in.selected_option_index
+                is_correct = (selected_opt == question.correct_option_index) if selected_opt is not None else False
+                time_taken = min(round(elapsed, 2), float(question.time_limit_seconds))
+                was_timeout = False
 
-        answer_obj = AssessmentAnswer(
-            question_id=question.id,
-            selected_option_index=selected_opt,
-            is_correct=is_correct,
-            time_taken_seconds=time_taken,
-            submitted_at=now,
-            was_timeout=was_timeout
-        )
-        db.add(answer_obj)
-        question.answer = answer_obj
+            answer_obj = AssessmentAnswer(
+                question_id=question.id,
+                selected_option_index=selected_opt,
+                is_correct=is_correct,
+                time_taken_seconds=time_taken,
+                submitted_at=now,
+                was_timeout=was_timeout
+            )
+            db.add(answer_obj)
+            question.answer = answer_obj
+            db.commit()
 
         questions = sorted(attempt.questions, key=lambda x: x.order_index)
         next_q = None
