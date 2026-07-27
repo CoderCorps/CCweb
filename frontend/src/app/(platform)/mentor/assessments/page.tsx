@@ -26,7 +26,8 @@ import {
   Phone,
   GraduationCap,
   Calendar,
-  UserCheck
+  UserCheck,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -56,6 +57,8 @@ interface CandidateUser {
   applied_at?: string | null;
   is_public_candidate?: boolean;
   invitation_token?: string | null;
+  user_id?: number | null;
+  user_status?: string | null;
 }
 
 interface AttemptSummary {
@@ -221,6 +224,21 @@ export default function MentorAssessmentsDashboard() {
       toast.error("Network error loading review.");
     } finally {
       setReviewLoading(false);
+    }
+  };
+
+  const handleApproveCandidateUser = async (userId: number) => {
+    try {
+      const res = await api.post(`/admin/users/${userId}/approve`, {});
+      if (res.ok) {
+        toast.success("Candidate account approved successfully!");
+        if (selectedAssessmentId) fetchAttempts(selectedAssessmentId);
+      } else {
+        toast.error("Failed to approve candidate.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error approving candidate account.");
     }
   };
 
@@ -489,6 +507,36 @@ export default function MentorAssessmentsDashboard() {
                       )}
 
                       <div className="flex items-center gap-2">
+                        {/* Approval Status / Action (Left to Review Details) */}
+                        {isCompleted && (
+                          <>
+                            {att.candidate.user_status === "pending" && att.candidate.user_id && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleApproveCandidateUser(att.candidate.user_id!)}
+                                className="h-9 font-bold text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm animate-pulse"
+                              >
+                                <UserCheck className="h-3.5 w-3.5" /> Approve Candidate
+                              </Button>
+                            )}
+                            {att.candidate.user_status === "active" && (
+                              <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold flex items-center gap-1.5">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Approved Student
+                              </span>
+                            )}
+                            {att.candidate.user_status === "not_registered" && isGoodScore && (
+                              <span className="px-3 py-1 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 text-xs font-mono font-bold flex items-center gap-1.5">
+                                <Sparkles className="h-3.5 w-3.5" /> Passed (≥70%) - Awaiting Signup
+                              </span>
+                            )}
+                            {att.candidate.user_status === "not_registered" && !isGoodScore && (
+                              <span className="px-3 py-1 rounded-xl bg-muted text-muted-foreground border text-xs font-mono font-semibold">
+                                Below 70%
+                              </span>
+                            )}
+                          </>
+                        )}
+
                         <Button
                           size="sm"
                           variant="outline"

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,12 +15,21 @@ import { getAssetUrl } from "@/lib/utils";
 export default function SignupPage() {
   const { user, signup, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"student" | "mentor">("student");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Prefill from URL query params (e.g. redirected after passed assessment)
+  useEffect(() => {
+    const qpEmail = searchParams?.get("email");
+    const qpName = searchParams?.get("name");
+    if (qpEmail) setEmail(qpEmail);
+    if (qpName) setName(qpName);
+  }, [searchParams]);
 
   // If already logged in, redirect to today (students) or dashboard (mentors/admins)
   useEffect(() => {

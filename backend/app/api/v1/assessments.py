@@ -426,17 +426,22 @@ async def flag_tab_switch(
 
     return await asyncio.to_thread(_flag)
 
-def _build_candidate_schema(attempt: AssessmentAttempt) -> CandidateUserSchema:
+def _build_candidate_schema(attempt: AssessmentAttempt, db: Session) -> CandidateUserSchema:
+    email = None
     if attempt.candidate:
-        return CandidateUserSchema(
+        email = attempt.candidate.email
+        res = CandidateUserSchema(
             id=attempt.candidate.id,
             name=attempt.candidate.name,
             email=attempt.candidate.email,
-            is_public_candidate=False
+            is_public_candidate=False,
+            user_id=attempt.candidate.id,
+            user_status=attempt.candidate.status
         )
     elif attempt.invitation and attempt.invitation.application:
         app_rec = attempt.invitation.application
-        return CandidateUserSchema(
+        email = app_rec.email
+        res = CandidateUserSchema(
             id=app_rec.id,
             name=app_rec.name,
             email=app_rec.email,
@@ -452,12 +457,21 @@ def _build_candidate_schema(attempt: AssessmentAttempt) -> CandidateUserSchema:
             invitation_token=attempt.invitation.token
         )
     else:
-        return CandidateUserSchema(
+        res = CandidateUserSchema(
             id=0,
             name="Anonymous Applicant",
             email="candidate@applicant.com",
             is_public_candidate=True
         )
+
+    if email:
+        user_rec = db.query(User).filter(User.email == email.strip().lower()).first()
+        if user_rec:
+            res.user_id = user_rec.id
+            res.user_status = user_rec.status
+        else:
+            res.user_status = "not_registered"
+    return res
 
 # --------------------------------------------------------------------------
 # 8. MENTOR LIST ATTEMPTS FOR ASSESSMENT (Mentor / Admin)
@@ -481,7 +495,7 @@ async def list_assessment_attempts(
             MentorAttemptSummary(
                 id=att.id,
                 assessment_id=att.assessment_id,
-                candidate=_build_candidate_schema(att),
+                candidate=_build_candidate_schema(att, db),
                 status=att.status,
                 started_at=att.started_at,
                 completed_at=att.completed_at,

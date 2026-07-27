@@ -57,7 +57,7 @@ async def signup(
         email=user_in.email,
         password_hash=hashed_password,
         role=user_in.role,
-        status="pending" if user_in.role == "mentor" else "active",
+        status="pending" if user_in.role in ["mentor", "student"] else "active",
         avatar_url=user_in.avatar_url
     )
     db.add(db_user)

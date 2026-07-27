@@ -49,6 +49,29 @@ async def approve_mentor(id: int, db: Session = Depends(get_db), current_admin: 
         raise HTTPException(status_code=404, detail="Mentor not found")
     return {"status": "success", "message": "Mentor approved"}
 
+@router.post("/users/{id}/approve")
+async def approve_user(id: int, db: Session = Depends(get_db), current_admin: User = Depends(get_current_admin)):
+    def _approve():
+        user = db.query(User).filter(User.id == id).first()
+        if not user:
+            return None
+        user.status = "active"
+        user.rejection_reason = None
+        db.add(Notification(
+            user_id=user.id,
+            type="account_approved",
+            message="Your account has been approved! You now have full access to the CoderCorps workspace.",
+            link="/today" if user.role == "student" else "/dashboard"
+        ))
+        db.commit()
+        return user
+
+    user = await asyncio.to_thread(_approve)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"status": "success", "message": "User approved successfully"}
+
+
 @router.post("/mentors/{id}/reject")
 async def reject_mentor(id: int, payload: RejectPayload, db: Session = Depends(get_db), current_admin: User = Depends(get_current_admin)):
     def _reject():

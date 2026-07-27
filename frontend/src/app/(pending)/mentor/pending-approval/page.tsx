@@ -48,7 +48,7 @@ export default function PendingApprovalPage() {
     return () => clearInterval(pollInterval);
   }, [refreshUser]);
 
-  if (!user || user.role !== "mentor" || user.status !== "pending") {
+  if (!user || user.status !== "pending") {
     return null;
   }
 
@@ -120,14 +120,16 @@ export default function PendingApprovalPage() {
           <div className="flex justify-center mb-4">
             <Clock className="h-16 w-16 text-amber-500 animate-pulse" />
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Pending Approval</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">Pending Admin Approval</CardTitle>
           <CardDescription className="text-base mt-2 text-muted-foreground">
-            Your Mentorship application is under review
+            {user.role === "mentor" ? "Your Mentorship application is under review" : "Your Student Account & Assessment results are under review"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            An admin will review your application shortly. Once approved, you will get full access to the mentorship dashboard.
+            {user.role === "mentor" 
+              ? "An admin will review your application shortly. Once approved, you will get full access to the mentorship dashboard."
+              : "An admin is reviewing your assessment results and profile. Once approved, you will get full access to your student workspace and projects!"}
           </p>
 
           <div className="space-y-4">

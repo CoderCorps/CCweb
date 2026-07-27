@@ -98,6 +98,8 @@ class CandidateUserSchema(BaseModel):
     applied_at: Optional[datetime] = None
     is_public_candidate: bool = False
     invitation_token: Optional[str] = None
+    user_id: Optional[int] = None
+    user_status: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -387,6 +387,37 @@ export default function PublicCandidateAssessmentPage() {
           </div>
         </div>
 
+        {/* Next Step Banner for Passed Candidates (>= 70%) */}
+        {result.total_score >= 70 ? (
+          <div className="glass p-6 sm:p-8 rounded-3xl border border-emerald-500/30 bg-emerald-500/10 text-center space-y-4 shadow-lg animate-in zoom-in-95 duration-300">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-xs font-mono font-bold uppercase tracking-wider">
+              <Check className="h-4 w-4" /> Assessment Passed (Score ≥ 70%)
+            </div>
+
+            <div className="space-y-1 max-w-lg mx-auto">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
+                Next Step: Create Your Account
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Congratulations, <span className="font-bold text-foreground">{result.candidate_name}</span>! You passed the Python screening with a score of <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{result.total_score}%</span>. Click below to create your account and submit for admin approval.
+              </p>
+            </div>
+
+            <Button
+              onClick={() => router.push(`/signup?name=${encodeURIComponent(result.candidate_name)}`)}
+              className="font-bold gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-sm sm:text-base shadow-md transition-transform hover:scale-105"
+            >
+              Create Your Account <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="glass p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 text-center space-y-2">
+            <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold font-mono">
+              Minimum passing threshold is 70%. Your score was {result.total_score}%. Review your questions and logic below.
+            </p>
+          </div>
+        )}
+
         {/* Question-by-Question Transparent Breakdown */}
         <div className="space-y-4">
           <h3 className="text-sm font-mono font-bold text-muted-foreground uppercase tracking-wider px-1">
