@@ -144,6 +144,17 @@ export default function PublicCandidateAssessmentPage() {
     }
   }, [rawToken]);
 
+  // Helper to parse ISO date string reliably in UTC
+  const parseUTCDate = useCallback((dateVal: string | null | undefined): number => {
+    if (!dateVal) return Date.now();
+    let str = String(dateVal).trim();
+    if (!str.endsWith("Z") && !str.includes("+") && !str.includes("-")) {
+      str += "Z";
+    }
+    const parsed = new Date(str).getTime();
+    return isNaN(parsed) ? Date.now() : parsed;
+  }, []);
+
   // Fetch Current Question
   const fetchCurrentQuestion = useCallback(async () => {
     try {
@@ -164,10 +175,14 @@ export default function PublicCandidateAssessmentPage() {
 
         let secs = q.time_limit_seconds;
         if (q.served_at) {
-          const servedTime = new Date(q.served_at).getTime();
+          const servedTime = parseUTCDate(q.served_at);
           const nowTime = Date.now();
           const elapsedSecs = Math.floor((nowTime - servedTime) / 1000);
-          secs = Math.max(0, q.time_limit_seconds - elapsedSecs);
+          if (elapsedSecs >= 0 && elapsedSecs < q.time_limit_seconds) {
+            secs = q.time_limit_seconds - elapsedSecs;
+          } else {
+            secs = q.time_limit_seconds;
+          }
         }
         setTimeLeft(secs);
       } else {
@@ -178,7 +193,7 @@ export default function PublicCandidateAssessmentPage() {
     } finally {
       setLoading(false);
     }
-  }, [rawToken]);
+  }, [rawToken, parseUTCDate]);
 
   // Anti-cheat tab switch listener
   useEffect(() => {
