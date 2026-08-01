@@ -52,6 +52,7 @@ export default function MarketingLayout({
               <Link href="/mentors" className="hover:text-foreground transition-colors">Mentors</Link>
               <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
               <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+              <Link href="/report-issue" className="text-amber-500 font-semibold hover:text-amber-400 transition-colors">Report Issue</Link>
             </nav>
           </div>
 
@@ -97,7 +98,9 @@ export default function MarketingLayout({
               <Link href="/mentors" onClick={() => setMobileMenuOpen(false)} className="hover:text-white">Mentors</Link>
               <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="hover:text-white">About</Link>
               <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="hover:text-white">Contact</Link>
+              <Link href="/report-issue" onClick={() => setMobileMenuOpen(false)} className="text-amber-400 font-semibold hover:text-amber-300">Report Issue</Link>
             </nav>
+
             <div className="h-px bg-border my-2" />
             <div className="flex flex-col gap-2">
               {!loading && user ? (

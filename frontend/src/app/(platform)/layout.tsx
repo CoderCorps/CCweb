@@ -94,8 +94,10 @@ export default function PlatformLayout({
     { name: "Projects", href: "/projects", icon: <FolderGit2 className="h-4 w-4" /> },
     { name: "Assessments", href: user.role === "student" ? "/assessments" : "/mentor/assessments", icon: <Award className="h-4 w-4" /> },
     { name: "My Portfolio", href: "/portfolio", icon: <UserCircle className="h-4 w-4" /> },
-    { name: "Settings", href: "/settings", icon: <Settings className="h-4 w-4" /> }
+    { name: "Settings", href: "/settings", icon: <Settings className="h-4 w-4" /> },
+    { name: "Report Issue", href: "/report-issue", icon: <FileText className="h-4 w-4 text-amber-400" /> }
   );
+
 
   // Mentors & Admins get candidate applications, reviews and students links
   if (user.role === "mentor" || user.role === "admin") {
