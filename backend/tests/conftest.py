@@ -128,5 +128,24 @@ def student2_token(student_user2):
     return security.create_access_token(subject=student_user2.id)
 
 
+@pytest.fixture()
+def admin_user(db):
+    from app.models.user import User, Profile
+    from app.core import security
+    user = User(name="Test Admin", email="admin_test_fixture@test.com", password_hash=security.get_password_hash("testpassword"), role="admin", status="active")
+    db.add(user)
+    db.flush()
+    db.add(Profile(user_id=user.id, bio="", college="", skills=[], github_url="", linkedin_url="", resume_url="", is_public=True))
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture()
+def admin_token(admin_user):
+    from app.core import security
+    return security.create_access_token(subject=admin_user.id)
+
+
 def auth_headers(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}

@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Test",
+        "email": "test@test.com",
+        "message": "World",
+        "timestamp": "2026-07-10T13:56:00Z"
+    },
+    {
+        "name": "Test",
+        "email": "test@test.com",
+        "message": "World",
+        "timestamp": "2026-07-10T13:56:00Z"
+    }
+]
