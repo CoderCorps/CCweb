@@ -201,7 +201,7 @@ async def submit_issue_report(
 # 2. SCREENSHOT UPLOAD HANDLER
 # --------------------------------------------------------------------------
 @router.post("/upload-screenshot")
-async def upload_screenshot(file: UploadFile = File(...)):
+async def upload_screenshot(request: Request, file: UploadFile = File(...)):
     # Validate mime type
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
@@ -230,8 +230,10 @@ async def upload_screenshot(file: UploadFile = File(...)):
     with open(file_path, "wb") as f:
         f.write(content)
 
-    public_url = f"/static/uploads/screenshots/{filename}"
+    base = str(request.base_url).rstrip("/")
+    public_url = f"{base}/static/uploads/screenshots/{filename}"
     return {"status": "ok", "screenshot_url": public_url}
+
 
 # --------------------------------------------------------------------------
 # 3. ADMIN / MENTOR: GET REPORTED ISSUES (LIST & TRIAGE)

@@ -248,11 +248,20 @@ def send_issue_report_notification_email(
 
     screenshot_section = ""
     if screenshot_url:
+        full_screenshot_url = screenshot_url
+        if screenshot_url.startswith("/"):
+            backend_base = os.getenv("BACKEND_URL", "").strip("'\" ").rstrip("/")
+            if not backend_base:
+                backend_base = get_frontend_url()
+            full_screenshot_url = f"{backend_base}{screenshot_url}"
+
         screenshot_section = f"""
-        <p style="margin-top: 16px; font-size: 13px; color: #94a3b8;">
-          <strong>Screenshot Attached:</strong> <a href="{screenshot_url}" style="color: #6366f1;">View Screenshot</a>
-        </p>
+        <div style="margin-top: 16px; padding: 12px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px;">
+          <strong style="color: #818cf8; font-size: 13px;">🖼️ Attached Screenshot:</strong><br>
+          <a href="{full_screenshot_url}" style="color: #818cf8; font-weight: bold; word-break: break-all; font-size: 13px;" target="_blank">{full_screenshot_url}</a>
+        </div>
         """
+
 
     plain_text = f"""
 NEW ISSUE REPORT #{report_id}
