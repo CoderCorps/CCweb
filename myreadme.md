@@ -298,12 +298,7 @@ Marcus Vance is leading a team of 5 student developers building a project named 
 
 If you have run the database seeding script (`python app/seed.py`), you can use the following accounts to explore the platform:
 
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin@codercorps.com` | `admin123` |
-| **Mentor** | `mentor@codercorps.com` | `mentor123` |
-| **Student** | `student1@codercorps.com` | `student123` |
-| **Student (Alt)** | `student2@codercorps.com` | `student123` |
+Secured
 
 ---
 
