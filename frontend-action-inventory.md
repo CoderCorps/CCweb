@@ -1,7 +1,7 @@
 # Frontend Action Inventory — CoderCorps
 
-> **PASS 1 & PASS 2 & PASS 3 Complete** — 2026-08-01  
-> Total Interactive Actions Catalogued & Verified: 51 | Tested: 51 | Passing: 51 | Failing: 0 | Blocked: 0
+> **PASS 1 & PASS 2 & PASS 3 Complete** — 2026-08-02  
+> Total Interactive Actions Catalogued & Verified: 57 | Tested: 57 | Passing: 57 | Failing: 0 | Blocked: 0
 
 ---
 
@@ -9,11 +9,12 @@
 
 | Stat | Count |
 |------|-------|
-| Total actions catalogued | 51 |
-| Tested | 51 |
-| PASS | 51 |
+| Total actions catalogued | 57 |
+| Tested | 57 |
+| PASS | 57 |
 | FAIL | 0 |
 | BLOCKED | 0 |
+
 
 ---
 
@@ -72,3 +73,10 @@
 | 49 | `app/(platform)/messages/page.tsx` | `<button>` | `onClick` | Loads specific chat thread | Authenticated | 112 | PASS |
 | 50 | `app/(platform)/messages/page.tsx` | `<form>` | `onSubmit` | `sendMessage` sends direct message | Authenticated | 77 | PASS |
 | 51 | `app/(platform)/rooms/[id]/page.tsx` | `WebsocketProvider` | `Connection` | `handleEditorDidMount` connects collab | Authenticated | 20 | PASS |
+| 52 | `app/(marketing)/report-issue/page.tsx` | `<form>` | `onSubmit` | `handleSubmit` submits report to `/api/v1/issue-reports` | Any | 115 | PASS |
+| 53 | `app/(marketing)/report-issue/page.tsx` | `<input type="file">` | `onChange` | `handleScreenshotChange` uploads preview to `/api/v1/issue-reports/upload-screenshot` | Any | 78 | PASS |
+| 54 | `app/(platform)/admin/issue-reports/page.tsx` | `Dashboard` | `Load` | `fetchReports` retrieves paginated report list & spike count | Admin/Mentor | 40 | PASS |
+| 55 | `app/(platform)/admin/issue-reports/page.tsx` | `<form>` | `onSubmit` | `handleSaveUpdate` updates report status & admin notes | Admin/Mentor | 65 | PASS |
+| 56 | `app/(marketing)/layout.tsx` | `<Link>` | `onClick` | Navigates to `/report-issue` | Any | 142 | PASS |
+| 57 | `app/(platform)/layout.tsx` | `<Link>` | `onClick` | Navigates to `/admin/issue-reports` | Admin/Mentor | 134 | PASS |
+

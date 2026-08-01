@@ -5,7 +5,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1 import auth, programs, projects, submissions, portfolio, dashboard, contact, mentors, activity, certificates, tasks, daily, rooms, notifications, badges
-from app.api.v1 import messages, task_comments, announcements, stuck_flags, peer_reviews, reactions, resources, quizzes, webhooks, recruiters, admin, assessments, public_apply, admin_candidates
+from app.api.v1 import messages, task_comments, announcements, stuck_flags, peer_reviews, reactions, resources, quizzes, webhooks, recruiters, admin, assessments, public_apply, admin_candidates, issue_reports
+from fastapi.staticfiles import StaticFiles
+import os
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -118,6 +121,14 @@ app.include_router(quizzes.router, prefix=f"{settings.API_V1_STR}/quizzes", tags
 app.include_router(assessments.router, prefix=f"{settings.API_V1_STR}/assessments", tags=["assessments"])
 app.include_router(webhooks.router, prefix=f"{settings.API_V1_STR}/webhooks", tags=["webhooks"])
 app.include_router(recruiters.router, prefix=f"{settings.API_V1_STR}/recruiters", tags=["recruiters"])
+app.include_router(issue_reports.router, prefix=f"{settings.API_V1_STR}/issue-reports", tags=["issue-reports"])
+app.include_router(issue_reports.router, prefix="/issue-reports", tags=["issue-reports-root"])
+
+# Mount static upload files directory if it exists
+static_upload_dir = os.path.join(os.path.dirname(__file__), "static")
+os.makedirs(os.path.join(static_upload_dir, "uploads", "screenshots"), exist_ok=True)
+app.mount("/static", StaticFiles(directory=static_upload_dir), name="static")
+
 
 @app.get("/")
 def read_root():

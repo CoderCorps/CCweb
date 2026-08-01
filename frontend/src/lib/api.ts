@@ -194,3 +194,32 @@ export const api = {
   delete: (path: string, options?: RequestOptions) =>
     apiRequest(path, { ...options, method: "DELETE" }),
 };
+
+export async function apiFetch(path: string, options: { method?: string; body?: any; json?: any; skipAuth?: boolean; headers?: Record<string, string> } = {}) {
+  const method = options.method || (options.json ? "POST" : "GET");
+  const opts: RequestOptions = {
+    method,
+    skipAuth: options.skipAuth,
+    headers: options.headers,
+  };
+  if (options.json) {
+    opts.body = JSON.stringify(options.json);
+  } else if (options.body) {
+    opts.body = options.body;
+  }
+  const res = await apiRequest(path, opts);
+  if (!res.ok) {
+    let errorDetail = "API Request failed";
+    try {
+      const errJson = await res.json();
+      errorDetail = errJson.detail || errJson.message || errorDetail;
+    } catch (e) {}
+    throw new Error(errorDetail);
+  }
+  try {
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+

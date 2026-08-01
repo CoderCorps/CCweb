@@ -205,3 +205,168 @@ def send_reminder_email(to_email: str, candidate_name: str, raw_token: str, remi
     </html>
     """
     return send_email(to_email, subject, html, plain_text)
+
+
+def send_issue_report_notification_email(
+    report_id: int,
+    reporter_name: str,
+    reporter_email: str,
+    reporter_role: str,
+    category: str,
+    description: str,
+    page_url: Optional[str] = None,
+    assessment_email_used: Optional[str] = None,
+    assessment_link_received: Optional[bool] = None,
+    assessment_link_worked: Optional[bool] = None,
+    screenshot_url: Optional[str] = None
+) -> Optional[str]:
+    """
+    Sends detailed issue report notification to codercorps@gmail.com.
+    Subject formatted with category prominent for easy inbox triaging.
+    """
+    to_email = "codercorps@gmail.com"
+    category_labels = {
+        "website_bug": "Website Bug",
+        "assessment_email_issue": "Assessment Email Issue",
+        "account_login": "Account & Login Issue",
+        "feature_request": "Feature Request",
+        "other": "General Issue Report"
+    }
+    cat_label = category_labels.get(category, category.replace("_", " ").title())
+    subject = f"[{cat_label}] New report from {reporter_name}"
+
+    assessment_section = ""
+    if category == "assessment_email_issue" or assessment_email_used:
+        assessment_section = f"""
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 16px; border-radius: 10px; margin-top: 16px;">
+          <h4 style="margin: 0 0 10px 0; color: #f59e0b; font-size: 14px;">🎯 Assessment Specific Triage Data</h4>
+          <p style="margin: 4px 0; font-size: 13px; color: #cbd5e1;"><strong>Assessment Email Used:</strong> {assessment_email_used or 'Not specified'}</p>
+          <p style="margin: 4px 0; font-size: 13px; color: #cbd5e1;"><strong>Received Assessment Email?</strong> {'Yes' if assessment_link_received is True else ('No' if assessment_link_received is False else 'Not specified')}</p>
+          <p style="margin: 4px 0; font-size: 13px; color: #cbd5e1;"><strong>Assessment Link Worked?</strong> {'Yes' if assessment_link_worked is True else ('No' if assessment_link_worked is False else 'Not specified')}</p>
+        </div>
+        """
+
+    screenshot_section = ""
+    if screenshot_url:
+        screenshot_section = f"""
+        <p style="margin-top: 16px; font-size: 13px; color: #94a3b8;">
+          <strong>Screenshot Attached:</strong> <a href="{screenshot_url}" style="color: #6366f1;">View Screenshot</a>
+        </p>
+        """
+
+    plain_text = f"""
+NEW ISSUE REPORT #{report_id}
+=======================================
+Category: {cat_label}
+Reporter Name: {reporter_name}
+Reporter Email: {reporter_email}
+Reporter Role: {reporter_role}
+Page URL: {page_url or 'N/A'}
+
+Description:
+{description}
+
+Assessment Email Used: {assessment_email_used or 'N/A'}
+Received Email: {assessment_link_received}
+Link Worked: {assessment_link_worked}
+Screenshot: {screenshot_url or 'N/A'}
+"""
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #090d16; color: #f8fafc; margin: 0; padding: 24px; }}
+        .card {{ max-width: 600px; margin: 0 auto; background: #131b2e; border: 1px solid #1e293b; border-radius: 16px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }}
+        .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 16px; margin-bottom: 20px; }}
+        .tag {{ display: inline-block; padding: 4px 12px; background-color: #6366f1; color: #ffffff; font-size: 12px; font-weight: 700; border-radius: 20px; text-transform: uppercase; }}
+        h2 {{ font-size: 20px; color: #ffffff; margin-top: 12px; }}
+        .meta-table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }}
+        .meta-table td {{ padding: 6px 0; color: #94a3b8; border-bottom: 1px dashed #1e293b; }}
+        .meta-table td.val {{ color: #f8fafc; font-weight: 600; text-align: right; }}
+        .desc-box {{ background: #0b1120; border: 1px solid #1e293b; padding: 16px; border-radius: 10px; font-size: 14px; line-height: 1.6; color: #e2e8f0; white-space: pre-wrap; }}
+        .footer {{ text-align: center; margin-top: 24px; font-size: 11px; color: #64748b; }}
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="header">
+          <span class="tag">{cat_label}</span>
+          <span style="font-size: 12px; color: #64748b;">Report #{report_id}</span>
+        </div>
+        
+        <h2>New Issue Report Submitted</h2>
+        
+        <table class="meta-table">
+          <tr><td>Reporter Name</td><td class="val">{reporter_name}</td></tr>
+          <tr><td>Reporter Email</td><td class="val"><a href="mailto:{reporter_email}" style="color: #818cf8;">{reporter_email}</a></td></tr>
+          <tr><td>Role</td><td class="val">{reporter_role.title()}</td></tr>
+          <tr><td>Page URL</td><td class="val">{page_url or 'Not specified'}</td></tr>
+        </table>
+
+        <div style="margin-bottom: 8px; font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Issue Description</div>
+        <div class="desc-box">{description}</div>
+
+        {assessment_section}
+        {screenshot_section}
+      </div>
+      <div class="footer">
+        CoderCorps Platform • Automated Issue Triage System
+      </div>
+    </body>
+    </html>
+    """
+    return send_email(to_email, subject, html, plain_text)
+
+
+def send_issue_report_confirmation_email(
+    to_email: str,
+    reporter_name: str,
+    report_id: int,
+    category: str
+) -> Optional[str]:
+    """
+    Sends short confirmation receipt to reporter.
+    """
+    subject = f"We've received your report (#{report_id}) — CoderCorps Support"
+    
+    plain_text = f"Hello {reporter_name},\n\nWe have received your issue report (#{report_id}) and our engineering team will look into it shortly.\n\nThank you,\nCoderCorps Support Team"
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #090d16; color: #f8fafc; margin: 0; padding: 24px; }}
+        .card {{ max-width: 520px; margin: 0 auto; background: #131b2e; border: 1px solid #1e293b; border-radius: 16px; padding: 32px; }}
+        .logo {{ font-size: 18px; font-weight: 800; color: #6366f1; margin-bottom: 20px; text-transform: uppercase; }}
+        h2 {{ font-size: 20px; color: #ffffff; margin-top: 0; }}
+        p {{ font-size: 14px; line-height: 1.6; color: #94a3b8; }}
+        .box {{ background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); padding: 16px; border-radius: 10px; font-size: 13px; color: #cbd5e1; margin: 20px 0; }}
+        .footer {{ text-align: center; margin-top: 24px; font-size: 11px; color: #64748b; }}
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="logo">CoderCorps Support</div>
+        <h2>Hello {reporter_name},</h2>
+        <p>Thank you for reaching out to us. We have received your issue report and our support & engineering team is reviewing it.</p>
+        
+        <div class="box">
+          <strong>Report Ticket:</strong> #{report_id}<br>
+          <strong>Status:</strong> Open & Assigned
+        </div>
+
+        <p>If we need any additional details, we will follow up with you directly at this email address.</p>
+      </div>
+      <div class="footer">
+        &copy; CoderCorps Platform • Support System
+      </div>
+    </body>
+    </html>
+    """
+    return send_email(to_email, subject, html, plain_text)
+

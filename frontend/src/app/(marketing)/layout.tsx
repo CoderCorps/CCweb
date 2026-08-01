@@ -139,7 +139,9 @@ export default function MarketingLayout({
             <Link href="/labs" className="hover:text-foreground">Labs</Link>
             <Link href="/about" className="hover:text-foreground">Philosophy</Link>
             <Link href="/contact" className="hover:text-foreground">Support</Link>
+            <Link href="/report-issue" className="hover:text-foreground text-amber-500 font-semibold hover:text-amber-400">Report an Issue</Link>
           </div>
+
           <p className="text-xs text-muted-foreground text-center md:text-right">
             &copy; {new Date().getFullYear()} CoderCorps. Built for builders. No placement guarantees, no shortcuts. Just verified, auditable engineering capabilities.
           </p>

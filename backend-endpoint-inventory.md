@@ -1,7 +1,7 @@
 # Backend Endpoint Inventory — CoderCorps
 
-> **PASS 1 & PASS 2 & PASS 3 Complete** — 2026-08-01  
-> Total Endpoints: 122 | Tested: 122 | Passing: 122 | Failing: 0 | Blocked: 0
+> **PASS 1 & PASS 2 & PASS 3 Complete** — 2026-08-02  
+> Total Endpoints: 126 | Tested: 126 | Passing: 126 | Failing: 0 | Blocked: 0
 
 ---
 
@@ -9,12 +9,13 @@
 
 | Stat | Count |
 |------|-------|
-| Total endpoints | 122 |
-| Tested | 122 |
-| PASS | 122 |
+| Total endpoints | 126 |
+| Tested | 126 |
+| PASS | 126 |
 | FAIL | 0 |
 | BLOCKED | 0 |
 | Bugs Discovered & Fixed | 1 (BUG-001: Critical Admin Role Enforcement) |
+
 
 ---
 
@@ -376,3 +377,15 @@
 |---|--------|-----------|---------|------|------|-------------|--------|
 | 121 | GET | `/api/v1/recruiters/candidates` | List candidate profiles for recruiters | Bearer | any | None | PASS |
 | 122 | GET | `/api/v1/recruiters/candidates/{user_id}/portfolio` | Get candidate portfolio for recruiter | Bearer | any | path: `user_id` | PASS |
+
+---
+
+## issue_reports.py
+
+| # | Method | Full Path | Purpose | Auth | Role | Body/Params | Status |
+|---|--------|-----------|---------|------|------|-------------|--------|
+| 123 | POST | `/api/v1/issue-reports` | Public issue submission form | None / Optional | public | `{reporter_name, reporter_email, reporter_role, category, description, assessment_email_used?, ...}` | PASS |
+| 124 | POST | `/api/v1/issue-reports/upload-screenshot` | Upload screenshot image | None / Optional | public | multipart `file` (≤5MB image) | PASS |
+| 125 | GET | `/api/v1/issue-reports/admin/issue-reports` | Admin list & triage issue reports | Bearer | mentor/admin | query: `status?, category?, date_from?, date_to?` | PASS |
+| 126 | PATCH | `/api/v1/issue-reports/admin/issue-reports/{id}` | Update report status & admin notes | Bearer | mentor/admin | path: `id`, body: `{status?, admin_notes?}` | PASS |
+

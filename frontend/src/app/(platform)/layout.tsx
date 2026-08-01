@@ -131,6 +131,14 @@ export default function PlatformLayout({
   }
 
   // Admin access
+  if (user.role === "admin" || user.role === "mentor") {
+    navLinks.push({
+      name: "Reported Issues",
+      href: "/admin/issue-reports",
+      icon: <FileText className="h-4 w-4 text-amber-500" />
+    });
+  }
+
   if (user.role === "admin") {
     navLinks.push({
       name: "Pending Mentors",
@@ -143,6 +151,7 @@ export default function PlatformLayout({
       icon: <FolderGit2 className="h-4 w-4 text-amber-500" />
     });
   }
+
 
   const handleLogout = async () => {
     await logout();
