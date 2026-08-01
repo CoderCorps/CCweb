@@ -53,7 +53,7 @@ class CandidateApprovePayload(BaseModel):
     email: str
 
 @router.post("/users/{id}/approve")
-async def approve_user(id: int, db: Session = Depends(get_db), current_mentor: User = Depends(get_current_mentor)):
+async def approve_user(id: int, db: Session = Depends(get_db), current_admin: User = Depends(get_current_admin)):
     def _approve():
         user = db.query(User).filter(User.id == id).first()
         if not user:
@@ -75,7 +75,7 @@ async def approve_user(id: int, db: Session = Depends(get_db), current_mentor: U
     return {"status": "success", "message": "User approved successfully"}
 
 @router.post("/candidates/approve")
-async def approve_candidate_by_email(payload: CandidateApprovePayload, db: Session = Depends(get_db), current_mentor: User = Depends(get_current_mentor)):
+async def approve_candidate_by_email(payload: CandidateApprovePayload, db: Session = Depends(get_db), current_admin: User = Depends(get_current_admin)):
     def _approve_by_email():
         clean_email = payload.email.strip().lower()
         user = db.query(User).filter(User.email == clean_email).first()

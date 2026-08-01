@@ -11,6 +11,19 @@
 
 ---
 
+## BUG LOG
+
+### BUG-001: Mentor can approve/activate any user account (IDOR / privilege escalation)
+- **Severity**: 🔴 CRITICAL (security — privilege escalation)
+- **File**: `backend/app/api/v1/admin.py` lines 55-56, 77-78
+- **Description**: `POST /api/v1/admin/users/{id}/approve` and `POST /api/v1/admin/candidates/approve` used `get_current_mentor` dependency instead of `get_current_admin`. Any active mentor could approve any pending user (including making other mentors or students active, bypassing the admin approval flow entirely).
+- **Repro**: Login as a mentor → `POST /api/v1/admin/users/{any_pending_user_id}/approve` → 200 OK (should be 403)
+- **Fix**: Changed `Depends(get_current_mentor)` to `Depends(get_current_admin)` on both endpoints
+- **Commit**: TBD (committed with security fix batch)
+- **Status**: ✅ FIXED
+
+---
+
 ## QA MODULE VERIFICATION LOG (2026-07-27 Audit Pass)
 
 ### 1. Cross-Module Static & Automated Checks
