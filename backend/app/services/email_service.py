@@ -102,9 +102,10 @@ def send_email(to_email: str, subject: str, html_body: str, plain_text_body: Opt
 def send_invitation_email(to_email: str, candidate_name: str, raw_token: str, expires_at_str: str) -> Optional[str]:
     frontend_base = get_frontend_url()
     assessment_link = f"{frontend_base}/assessment/candidate/{raw_token}"
+    report_issue_link = f"{frontend_base}/report-issue"
     subject = "You're Invited: CoderCorps Python Technical Assessment"
     
-    plain_text = f"Hello {candidate_name},\n\nThank you for applying to CoderCorps! Complete your screening assessment here:\n{assessment_link}\n\nValid for 24 hours."
+    plain_text = f"Hello {candidate_name},\n\nThank you for applying to CoderCorps! Complete your screening assessment here:\n{assessment_link}\n\nValid for 24 hours.\n\nHaving trouble? Report an issue here:\n{report_issue_link}"
 
     html = f"""
     <!DOCTYPE html>
@@ -120,6 +121,8 @@ def send_invitation_email(to_email: str, candidate_name: str, raw_token: str, ex
         .btn-container {{ text-align: center; margin: 28px 0; }}
         .btn {{ display: inline-block; padding: 14px 28px; background-color: #6366f1; color: #ffffff !important; text-decoration: none; font-weight: 700; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4); }}
         .info-box {{ background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); padding: 16px; border-radius: 10px; font-size: 12px; color: #cbd5e1; margin-top: 24px; }}
+        .issue-box {{ text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px border-style: dashed; border-color: #1e293b; }}
+        .btn-issue {{ display: inline-block; padding: 10px 20px; background-color: rgba(245, 158, 11, 0.12); color: #f59e0b !important; border: 1px solid rgba(245, 158, 11, 0.35); text-decoration: none; font-weight: 700; border-radius: 8px; font-size: 13px; }}
         .footer {{ text-align: center; margin-top: 24px; font-size: 11px; color: #64748b; }}
       </style>
     </head>
@@ -140,6 +143,11 @@ def send_invitation_email(to_email: str, candidate_name: str, raw_token: str, ex
           • <strong>Single Attempt:</strong> Once started, timer cannot be paused.<br>
           • <strong>Link:</strong> <a href="{assessment_link}" style="color: #818cf8; word-break: break-all;">{assessment_link}</a>
         </div>
+
+        <div class="issue-box">
+          <p style="font-size: 13px; color: #94a3b8; margin: 0 0 10px 0;">Having trouble with this email or assessment link?</p>
+          <a href="{report_issue_link}" class="btn-issue">⚠️ Report an Issue to Support &rarr;</a>
+        </div>
       </div>
       <div class="footer">
         &copy; CoderCorps Platform • Automatic Admissions System
@@ -153,6 +161,7 @@ def send_invitation_email(to_email: str, candidate_name: str, raw_token: str, ex
 def send_reminder_email(to_email: str, candidate_name: str, raw_token: str, reminder_number: int, expires_at_str: str) -> Optional[str]:
     frontend_base = get_frontend_url()
     assessment_link = f"{frontend_base}/assessment/candidate/{raw_token}"
+    report_issue_link = f"{frontend_base}/report-issue"
     
     if reminder_number == 1:
         subject = "Reminder: Your CoderCorps Technical Assessment is Ready (+6h)"
@@ -164,7 +173,7 @@ def send_reminder_email(to_email: str, candidate_name: str, raw_token: str, remi
         subject = "URGENT: CoderCorps Assessment Link Expires in 6 Hours (+18h)"
         urgency_text = "Your assessment link will expire soon! Please complete your test before expiry."
 
-    plain_text = f"Hello {candidate_name},\n\n{urgency_text}\n\nComplete test here:\n{assessment_link}"
+    plain_text = f"Hello {candidate_name},\n\n{urgency_text}\n\nComplete test here:\n{assessment_link}\n\nHaving trouble? Report an issue here:\n{report_issue_link}"
 
     html = f"""
     <!DOCTYPE html>
@@ -180,6 +189,8 @@ def send_reminder_email(to_email: str, candidate_name: str, raw_token: str, remi
         .btn-container {{ text-align: center; margin: 28px 0; }}
         .btn {{ display: inline-block; padding: 14px 28px; background-color: #f59e0b; color: #000000 !important; text-decoration: none; font-weight: 800; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4); }}
         .info-box {{ background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); padding: 16px; border-radius: 10px; font-size: 12px; color: #cbd5e1; margin-top: 24px; }}
+        .issue-box {{ text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px border-style: dashed; border-color: #1e293b; }}
+        .btn-issue {{ display: inline-block; padding: 10px 20px; background-color: rgba(245, 158, 11, 0.12); color: #f59e0b !important; border: 1px solid rgba(245, 158, 11, 0.35); text-decoration: none; font-weight: 700; border-radius: 8px; font-size: 13px; }}
         .footer {{ text-align: center; margin-top: 24px; font-size: 11px; color: #64748b; }}
       </style>
     </head>
@@ -197,6 +208,11 @@ def send_reminder_email(to_email: str, candidate_name: str, raw_token: str, remi
           <strong>Link Expiration Window:</strong> {expires_at_str}<br>
           <strong>Assessment Link:</strong> <a href="{assessment_link}" style="color: #fbbf24; word-break: break-all;">{assessment_link}</a>
         </div>
+
+        <div class="issue-box">
+          <p style="font-size: 13px; color: #94a3b8; margin: 0 0 10px 0;">Having trouble with this link or email delivery?</p>
+          <a href="{report_issue_link}" class="btn-issue">⚠️ Report an Issue to Support &rarr;</a>
+        </div>
       </div>
       <div class="footer">
         &copy; CoderCorps Platform • Automated Reminders
@@ -205,6 +221,7 @@ def send_reminder_email(to_email: str, candidate_name: str, raw_token: str, remi
     </html>
     """
     return send_email(to_email, subject, html, plain_text)
+
 
 
 def send_issue_report_notification_email(
