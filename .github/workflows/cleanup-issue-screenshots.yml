@@ -1,0 +1,29 @@
+name: Weekly Supabase Issue Screenshots Cleanup
+
+on:
+  schedule:
+    # Runs every Monday at 00:00 UTC (0 0 * * 1)
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+jobs:
+  cleanup-screenshots:
+    name: Delete Supabase Screenshots Older Than 7 Days
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Supabase Screenshots Cleanup Script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_BUCKET: issue-screenshots
+        run: |
+          python backend/scripts/cleanup_supabase_screenshots.py
