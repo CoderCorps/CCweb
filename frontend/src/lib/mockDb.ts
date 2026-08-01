@@ -259,6 +259,57 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
     return { status: 200, ok: true, json: async () => ({ detail: "Logged out" }) };
   }
 
+  // --- Issue Reports Endpoints ---
+  if ((path.includes("/issue-reports") || path.includes("/api/v1/issue-reports")) && method === "POST") {
+    if (path.includes("upload-screenshot")) {
+      return {
+        status: 200,
+        ok: true,
+        json: async () => ({ status: "ok", screenshot_url: "/static/uploads/screenshots/mock.png" })
+      };
+    }
+
+    const reportId = Math.floor(Math.random() * 9000) + 1000;
+    const newReport = {
+      id: reportId,
+      reporter_name: bodyObj.reporter_name || "Anonymous",
+      reporter_email: bodyObj.reporter_email || "unknown@example.com",
+      reporter_role: bodyObj.reporter_role || "other",
+      reporter_role_detail: bodyObj.reporter_role_detail || null,
+      category: bodyObj.category || "website_bug",
+      page_url: bodyObj.page_url || null,
+      description: bodyObj.description || "",
+      assessment_email_used: bodyObj.assessment_email_used || null,
+      assessment_link_received: bodyObj.assessment_link_received ?? null,
+      assessment_link_worked: bodyObj.assessment_link_worked ?? null,
+      screenshot_url: bodyObj.screenshot_url || null,
+      status: "open",
+      admin_notes: null,
+      submitted_at: new Date().toISOString(),
+      resolved_at: null,
+      resolved_by: null
+    };
+    return {
+      status: 201,
+      ok: true,
+      json: async () => newReport
+    };
+  }
+
+  if (path.includes("/issue-reports") && method === "GET") {
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        assessment_issues_last_24h: 0
+      })
+    };
+  }
+
   // --- Public Apply Endpoint ---
   if ((path === "/apply" || path === "/api/v1/apply") && method === "POST") {
     return {
@@ -269,6 +320,7 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
       })
     };
   }
+
 
   // --- Public Candidate Assessment Endpoints ---
   if (path.startsWith("/assessment/candidate/") && path.endsWith("/status")) {

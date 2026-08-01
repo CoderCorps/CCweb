@@ -132,39 +132,41 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
       }
     }
 
-    if (response.status === 404) {
-      // Only fall back to mock for GET requests on non-candidate paths.
-      // Assessment candidate endpoints are real backend routes — falling back to
-      // mock DB here would return fake questions and break the stateful flow.
+    if (response.status === 404 || !response.ok) {
       const isCandidateEndpoint = path.includes("/assessment/candidate") || path.includes("/apply");
+      const isIssueReport = path.includes("/issue-reports");
       const isGetRequest = method === "GET";
-      if (isGetRequest && !isCandidateEndpoint) {
-        console.warn(`[API 404] ${url} returned 404. Checking mock database fallback.`);
+
+      if ((isGetRequest || isIssueReport) && !isCandidateEndpoint) {
+        console.warn(`[API HTTP ${response.status}] ${url} returned error. Checking mock database fallback.`);
         const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
         if (mockRes && mockRes.ok) {
           return mockRes as unknown as Response;
         }
-      } else {
-        console.warn(`[API 404] ${url} — skipping mock fallback (candidate/POST endpoint).`);
       }
     }
 
     return response;
   } catch (err) {
     const isCandidateEndpoint = path.includes("/assessment/candidate") || path.includes("/apply");
-    if (isCandidateEndpoint || method !== "GET") {
-      console.error(`[API ERROR] ${method} ${path} failed:`, err);
-      return new Response(
-        JSON.stringify({ detail: "Backend API request failed. Please check your connection and try again." }),
-        { status: 503, headers: { "Content-Type": "application/json" } }
-      ) as unknown as Response;
+    
+    // Always attempt mock fallback for non-candidate routes (including issue-reports)
+    if (!isCandidateEndpoint) {
+      console.warn("Backend API server unreachable. Falling back to frontend mock database.", err);
+      const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
+      if (mockRes && mockRes.ok) {
+        return mockRes as unknown as Response;
+      }
     }
 
-    console.warn("Backend API server unreachable. Falling back to frontend mock database.", err);
-    const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
-    return mockRes as unknown as Response;
+    console.error(`[API ERROR] ${method} ${path} failed:`, err);
+    return new Response(
+      JSON.stringify({ detail: "Backend API request failed. Please check your connection and try again." }),
+      { status: 503, headers: { "Content-Type": "application/json" } }
+    ) as unknown as Response;
   }
 }
+
 
 export const api = {
   get: (path: string, options?: RequestOptions) =>
