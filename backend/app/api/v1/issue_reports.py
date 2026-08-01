@@ -217,7 +217,16 @@ async def upload_screenshot(request: Request, file: UploadFile = File(...)):
             detail="Screenshot file size exceeds maximum limit of 5MB."
         )
 
-    # Save file locally to static upload directory
+    # 1. Primary: Upload to Supabase Storage Bucket / Cloud Storage
+    try:
+        from app.services.supabase_storage import upload_screenshot_to_cloud
+        cloud_url = upload_screenshot_to_cloud(content, file.content_type or "image/png", file.filename)
+        if cloud_url:
+            return {"status": "ok", "screenshot_url": cloud_url}
+    except Exception as e:
+        print(f"[SCREENSHOT UPLOAD NOTICE]: Cloud upload attempt skipped: {e}")
+
+    # 2. Fallback: Save file locally to static upload directory
     upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "uploads", "screenshots")
     os.makedirs(upload_dir, exist_ok=True)
 
@@ -233,6 +242,7 @@ async def upload_screenshot(request: Request, file: UploadFile = File(...)):
     base = str(request.base_url).rstrip("/")
     public_url = f"{base}/static/uploads/screenshots/{filename}"
     return {"status": "ok", "screenshot_url": public_url}
+
 
 
 # --------------------------------------------------------------------------

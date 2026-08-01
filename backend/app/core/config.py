@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
     RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
 
+    # Supabase Storage Settings
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", os.getenv("SUPABASE_SERVICE_ROLE_KEY", ""))
+    SUPABASE_BUCKET: str = os.getenv("SUPABASE_BUCKET", "issue-screenshots")
+    IMGBB_API_KEY: str = os.getenv("IMGBB_API_KEY", "")
+
+
     class Config:
         case_sensitive = True
         env_file = ".env"
