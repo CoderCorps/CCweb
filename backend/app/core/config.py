@@ -12,8 +12,13 @@ class Settings(BaseSettings):
     # Cooldown in seconds for mentor approval pings (24 * 3600 = 86400 seconds / 24 hours)
     MENTOR_APPROVAL_COOLDOWN_SECONDS: int = int(os.getenv("MENTOR_APPROVAL_COOLDOWN_SECONDS", "86400"))
     
+    # Initial Admin Setup (Configurable via Environment Variables)
+    INITIAL_ADMIN_EMAIL: str = os.getenv("INITIAL_ADMIN_EMAIL", "admin@codercorps.com")
+    INITIAL_ADMIN_PASSWORD: str = os.getenv("INITIAL_ADMIN_PASSWORD", "")
+
     # JWT Settings
     JWT_SECRET: str = os.getenv("JWT_SECRET", "super-secret-key-change-in-production")
+
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

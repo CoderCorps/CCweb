@@ -21,13 +21,15 @@ def seed_db():
         print("Dropped and recreated all database tables.")
 
         # 1. Create Users
-        admin_pass = security.get_password_hash("admin123")
+        from app.core.config import settings
+        raw_admin_pass = settings.INITIAL_ADMIN_PASSWORD or "dev_admin_seed_pass_2026"
+        admin_pass = security.get_password_hash(raw_admin_pass)
         mentor_pass = security.get_password_hash("mentor123")
         student_pass = security.get_password_hash("student123")
 
         admin = User(
-            name="Admin System",
-            email="admin@codercorps.com",
+            name="System Admin",
+            email=settings.INITIAL_ADMIN_EMAIL or "admin@codercorps.com",
             password_hash=admin_pass,
             role="admin",
             avatar_url="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"

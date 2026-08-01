@@ -69,23 +69,36 @@ async def startup_event():
             except Exception:
                 pass
 
-        # Seed admin user if none exists
+        # Seed initial admin user safely if no admin exists in the database
         db = SessionLocal()
         try:
+            import secrets
             admin_user = db.query(User).filter(User.role == "admin").first()
             if not admin_user:
-                print("[STARTUP]: Creating default admin user (admin@codercorps.com)")
+                admin_email = settings.INITIAL_ADMIN_EMAIL or "admin@codercorps.com"
+                admin_pass = settings.INITIAL_ADMIN_PASSWORD
+                was_generated = False
+                if not admin_pass:
+                    admin_pass = secrets.token_urlsafe(16)
+                    was_generated = True
+
                 admin_user = User(
-                    name="Admin System",
-                    email="admin@codercorps.com",
-                    password_hash=security.get_password_hash("admin123"),
+                    name="System Admin",
+                    email=admin_email,
+                    password_hash=security.get_password_hash(admin_pass),
                     role="admin",
                     status="active"
                 )
                 db.add(admin_user)
                 db.commit()
+
+                if was_generated:
+                    print(f"[STARTUP SECURITY]: Created initial admin ({admin_email}) with generated secure password: {admin_pass}")
+                else:
+                    print(f"[STARTUP SECURITY]: Created initial admin ({admin_email}) using configured INITIAL_ADMIN_PASSWORD.")
         finally:
             db.close()
+
     except Exception as e:
         print(f"[STARTUP INIT WARNING]: {e}")
 
