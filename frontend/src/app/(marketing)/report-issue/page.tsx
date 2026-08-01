@@ -74,13 +74,10 @@ export default function ReportIssuePage() {
     }
   }, [user]);
 
-  // Handle Screenshot Upload
-  const handleScreenshotChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  // Process File for Instant Local Preview + Async Backend Upload
+  const processFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file (PNG, JPG, WebP).");
+      setError("Please select a valid image file (PNG, JPG, WebP, GIF).");
       return;
     }
 
@@ -90,26 +87,53 @@ export default function ReportIssuePage() {
     }
 
     setError(null);
-    setUploadingScreenshot(true);
 
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
+    // 1. Instant client-side Data URL preview
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      setScreenshotUrl(dataUrl);
 
-      const res = await apiFetch("/issue-reports/upload-screenshot", {
-        method: "POST",
-        body: formData,
-      });
+      // 2. Background backend upload attempt
+      try {
+        setUploadingScreenshot(true);
+        const formData = new FormData();
+        formData.append("file", file);
 
-      if (res && res.screenshot_url) {
-        setScreenshotUrl(res.screenshot_url);
+        const res = await apiFetch("/issue-reports/upload-screenshot", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (res && res.screenshot_url) {
+          setScreenshotUrl(res.screenshot_url);
+        }
+      } catch (err: any) {
+        console.warn("Backend screenshot upload warning (using local preview):", err);
+      } finally {
+        setUploadingScreenshot(false);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to upload screenshot preview.");
-    } finally {
-      setUploadingScreenshot(false);
-    }
+    };
+    reader.readAsDataURL(file);
   };
+
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -476,7 +500,12 @@ export default function ReportIssuePage() {
               </button>
             </div>
           ) : (
-            <label className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-6 cursor-pointer bg-background/50 hover:bg-muted/20 transition-all text-center">
+            <label
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/50 rounded-2xl p-6 cursor-pointer bg-background/50 hover:bg-muted/20 transition-all text-center"
+            >
+
               {uploadingScreenshot ? (
                 <div className="flex items-center gap-2 text-primary font-medium text-sm">
                   <Loader2 className="h-5 w-5 animate-spin" /> Uploading image...

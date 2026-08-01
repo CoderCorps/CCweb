@@ -26,7 +26,8 @@ class IssueReport(Base):
     assessment_link_received = Column(Boolean, nullable=True)
     assessment_link_worked = Column(Boolean, nullable=True)
 
-    screenshot_url = Column(String(500), nullable=True)
+    screenshot_url = Column(Text, nullable=True)
+
     status = Column(String(50), nullable=False, default="open", index=True) # 'open' | 'in_progress' | 'resolved'
     admin_notes = Column(Text, nullable=True)
 
