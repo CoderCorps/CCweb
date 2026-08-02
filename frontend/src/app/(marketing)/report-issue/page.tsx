@@ -39,14 +39,17 @@ export default function ReportIssuePage() {
   // Screenshot upload state
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
-
-  // Honeypot field (hidden from real users, bots fill)
-  const [honeypot, setHoneypot] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Form submission state
   const [submitting, setSubmitting] = useState(false);
+  const [submitProgress, setSubmitProgress] = useState(0);
+  const [submitStepText, setSubmitStepText] = useState("Preparing submission...");
   const [error, setError] = useState<string | null>(null);
   const [submittedReport, setSubmittedReport] = useState<any | null>(null);
+
+  // Honeypot field (hidden from real users, bots fill)
+  const [honeypot, setHoneypot] = useState("");
 
   // Auto-fill logged in user info and referrer URL
   useEffect(() => {
@@ -74,7 +77,7 @@ export default function ReportIssuePage() {
     }
   }, [user]);
 
-  // Process File for Instant Local Preview + Async Backend Upload
+  // Process File for Instant Local Preview + XHR Cloud Upload Progress
   const processFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setError("Please select a valid image file (PNG, JPG, WebP, GIF).");
@@ -82,11 +85,9 @@ export default function ReportIssuePage() {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError("Screenshot image size must be 5MB or less.");
+      setError("Screenshot file size exceeds maximum limit of 5MB.");
       return;
     }
-
-    setError(null);
 
     // 1. Instant client-side Data URL preview
     const reader = new FileReader();
@@ -94,36 +95,62 @@ export default function ReportIssuePage() {
       const dataUrl = reader.result as string;
       setScreenshotUrl(dataUrl);
 
-      // 2. Upload screenshot to Supabase Storage via Next.js API route
+      // 2. Upload screenshot to Supabase Storage via Next.js API route with XHR progress
       try {
         setUploadingScreenshot(true);
+        setUploadProgress(5);
         setError(null);
+
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("/api/issue-reports/upload-screenshot", {
-          method: "POST",
-          body: formData,
-        });
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/issue-reports/upload-screenshot", true);
 
-        if (response.ok) {
-          const res = await response.json();
-          if (res && res.screenshot_url && typeof res.screenshot_url === "string" && res.screenshot_url.trim().length > 0) {
-            console.log("[REPORT ISSUE] Supabase public image URL set:", res.screenshot_url);
-            setScreenshotUrl(res.screenshot_url);
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 90);
+            setUploadProgress(percent);
           }
-        } else {
-          const errData = await response.json().catch(() => ({}));
-          const detailMsg = errData?.detail || "Cloud storage upload failed.";
-          console.error("[REPORT ISSUE UPLOAD ERROR]", response.status, detailMsg);
-          setError(`⚠️ Screenshot upload failed: ${detailMsg} You can try selecting the image again or submit the report without a screenshot.`);
+        };
+
+        xhr.onload = () => {
+          setUploadProgress(100);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const res = JSON.parse(xhr.responseText);
+              if (res && res.screenshot_url && typeof res.screenshot_url === "string" && res.screenshot_url.trim().length > 0) {
+                console.log("[REPORT ISSUE] Supabase public image URL set:", res.screenshot_url);
+                setScreenshotUrl(res.screenshot_url);
+              }
+            } catch (e) {
+              console.error("[REPORT ISSUE UPLOAD JSON PARSE ERROR]", e);
+            }
+          } else {
+            let detailMsg = "Cloud storage upload failed.";
+            try {
+              const errData = JSON.parse(xhr.responseText);
+              detailMsg = errData?.detail || detailMsg;
+            } catch (e) {}
+            console.error("[REPORT ISSUE UPLOAD ERROR]", xhr.status, detailMsg);
+            setError(`⚠️ Screenshot upload failed: ${detailMsg} You can try selecting the image again or submit the report without a screenshot.`);
+            setScreenshotUrl(null);
+          }
+          setUploadingScreenshot(false);
+        };
+
+        xhr.onerror = () => {
+          console.error("[REPORT ISSUE UPLOAD NETWORK ERROR]");
+          setError("⚠️ Screenshot upload network error. Please check your connection and try again.");
           setScreenshotUrl(null);
-        }
+          setUploadingScreenshot(false);
+        };
+
+        xhr.send(formData);
       } catch (err: any) {
         console.error("[REPORT ISSUE UPLOAD EXCEPTION]", err);
-        setError(`⚠️ Screenshot upload network error: ${err.message || "Failed to reach upload server."}`);
+        setError(`⚠️ Screenshot upload error: ${err.message || "Failed to reach upload server."}`);
         setScreenshotUrl(null);
-      } finally {
         setUploadingScreenshot(false);
       }
     };
@@ -157,7 +184,25 @@ export default function ReportIssuePage() {
     }
 
     setSubmitting(true);
+    setSubmitProgress(10);
+    setSubmitStepText("Validating report data...");
     setError(null);
+
+    const progressTimer = setInterval(() => {
+      setSubmitProgress((prev) => {
+        if (prev < 35) {
+          setSubmitStepText("Validating report details...");
+          return prev + 5;
+        } else if (prev < 70) {
+          setSubmitStepText("Processing ticket & registering issue...");
+          return prev + 5;
+        } else if (prev < 92) {
+          setSubmitStepText("Sending email to codercorps@gmail.com...");
+          return prev + 2;
+        }
+        return prev;
+      });
+    }, 120);
 
     try {
       const payload: Record<string, any> = {
@@ -183,14 +228,21 @@ export default function ReportIssuePage() {
         body: JSON.stringify(payload),
       });
 
+      clearInterval(progressTimer);
+
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.detail || "Failed to submit report. Please try again.");
       }
 
+      setSubmitProgress(100);
+      setSubmitStepText("Submission Complete!");
       const res = await response.json();
-      setSubmittedReport(res || { id: "SUCCESS", reporter_email: reporterEmail });
+      setTimeout(() => {
+        setSubmittedReport(res || { id: "SUCCESS", reporter_email: reporterEmail });
+      }, 300);
     } catch (err: any) {
+      clearInterval(progressTimer);
       setError(err.message || "Failed to submit issue report. Please check your connection.");
     } finally {
       setSubmitting(false);
@@ -517,8 +569,21 @@ export default function ReportIssuePage() {
             >
 
               {uploadingScreenshot ? (
-                <div className="flex items-center gap-2 text-primary font-medium text-sm">
-                  <Loader2 className="h-5 w-5 animate-spin" /> Uploading image...
+                <div className="w-full space-y-2 py-2">
+                  <div className="flex items-center justify-between text-xs font-semibold text-primary">
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" /> Uploading screenshot to Supabase...
+                    </span>
+                    <span className="font-mono text-xs bg-primary/20 px-2 py-0.5 rounded-full border border-primary/30">
+                      {uploadProgress}%
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-200 ease-out" 
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2 text-muted-foreground">
@@ -539,20 +604,34 @@ export default function ReportIssuePage() {
           )}
         </div>
 
-        {/* Submit Button */}
+        {/* Submit Button with Real-time Progress Bar & Percentage */}
         <Button
           type="submit"
           disabled={submitting || uploadingScreenshot}
-          className="w-full py-3.5 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/20 transition-all"
+          className="relative w-full py-4 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/20 transition-all overflow-hidden"
         >
-          {submitting ? (
-            <span className="flex items-center gap-2">
-              <Loader2 className="h-5 w-5 animate-spin" /> Submitting Issue Report...
-            </span>
-          ) : (
-            "Submit Report & Send to Support →"
+          {submitting && (
+            <div 
+              className="absolute left-0 top-0 bottom-0 bg-white/20 transition-all duration-150 ease-out" 
+              style={{ width: `${submitProgress}%` }}
+            />
           )}
+
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            {submitting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>{submitStepText}</span>
+                <span className="font-mono text-xs bg-black/40 text-white px-2 py-0.5 rounded-full border border-white/20 ml-1">
+                  {submitProgress}%
+                </span>
+              </>
+            ) : (
+              "Submit Report & Send to Support →"
+            )}
+          </span>
         </Button>
+
       </form>
     </div>
   );
