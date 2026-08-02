@@ -405,3 +405,139 @@ def send_issue_report_confirmation_email(
     """
     return send_email(to_email, subject, html, plain_text)
 
+
+def send_password_reset_email(to_email: str, user_name: str, raw_token: str) -> Optional[str]:
+    """
+    Sends password reset request email with a 30-minute single-use token link.
+    """
+    frontend_base = get_frontend_url()
+    reset_link = f"{frontend_base}/reset-password/{raw_token}"
+    report_issue_link = f"{frontend_base}/report-issue"
+    subject = "Reset Your CoderCorps Password"
+
+    plain_text = f"""Hello {user_name},
+
+We received a request to reset your CoderCorps account password.
+
+Click the link below to set a new password (valid for 30 minutes):
+{reset_link}
+
+If you did not request a password reset, you can safely ignore this email — your password will remain unchanged.
+
+Having trouble or suspect unauthorized activity? Report an issue here:
+{report_issue_link}
+"""
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #090d16; color: #f8fafc; margin: 0; padding: 24px; }}
+        .card {{ max-width: 560px; margin: 0 auto; background: #131b2e; border: 1px solid #1e293b; border-radius: 16px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }}
+        .logo {{ font-size: 20px; font-weight: 800; color: #6366f1; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 1px; }}
+        h2 {{ font-size: 22px; color: #ffffff; margin-top: 0; }}
+        p {{ font-size: 14px; line-height: 1.6; color: #94a3b8; }}
+        .btn {{ display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 15px; padding: 14px 28px; border-radius: 10px; margin: 20px 0; text-align: center; shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }}
+        .notice {{ background: rgba(99, 102, 241, 0.08); border-left: 4px solid #6366f1; padding: 14px; border-radius: 6px; font-size: 13px; color: #cbd5e1; margin: 20px 0; }}
+        .footer {{ text-align: center; margin-top: 32px; font-size: 12px; color: #64748b; border-top: 1px solid #1e293b; padding-top: 20px; }}
+        .footer a {{ color: #6366f1; text-decoration: none; }}
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="logo">CoderCorps</div>
+        <h2>Password Reset Request</h2>
+        <p>Hello <strong>{user_name}</strong>,</p>
+        <p>We received a request to reset the password for your CoderCorps account. Click the button below to set a new password:</p>
+        
+        <div style="text-align: center;">
+          <a href="{reset_link}" class="btn" target="_blank">Reset Password →</a>
+        </div>
+
+        <div class="notice">
+          ⏱️ <strong>Security Note:</strong> This reset link is valid for <strong>30 minutes</strong> and can only be used once.
+        </div>
+
+        <p>If you did not request a password reset, please ignore this message — your account is safe and no changes have been made.</p>
+
+        <div class="footer">
+          If the button doesn't work, copy and paste this link into your browser:<br>
+          <a href="{reset_link}">{reset_link}</a><br><br>
+          Suspect unauthorized access? <a href="{report_issue_link}">Report an issue immediately</a>.
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+    return send_email(to_email, subject, html, plain_text)
+
+
+def send_password_changed_notification_email(to_email: str, user_name: str) -> Optional[str]:
+    """
+    Notifies account of record that their password was changed.
+    """
+    frontend_base = get_frontend_url()
+    login_link = f"{frontend_base}/login"
+    report_issue_link = f"{frontend_base}/report-issue"
+    subject = "Security Notice: Your CoderCorps Password Was Changed"
+
+    plain_text = f"""Hello {user_name},
+
+This email confirms that the password for your CoderCorps account ({to_email}) was successfully changed.
+
+All existing active sessions across all devices have been logged out for security.
+
+If you made this change, you can log in with your new password here:
+{login_link}
+
+IF YOU DID NOT CHANGE YOUR PASSWORD, YOUR ACCOUNT MAY BE COMPROMISED.
+Please report an issue immediately so our security team can lock the account:
+{report_issue_link}
+"""
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #090d16; color: #f8fafc; margin: 0; padding: 24px; }}
+        .card {{ max-width: 560px; margin: 0 auto; background: #131b2e; border: 1px solid #1e293b; border-radius: 16px; padding: 32px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }}
+        .logo {{ font-size: 20px; font-weight: 800; color: #10b981; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 1px; }}
+        h2 {{ font-size: 22px; color: #ffffff; margin-top: 0; }}
+        p {{ font-size: 14px; line-height: 1.6; color: #94a3b8; }}
+        .btn {{ display: inline-block; background: #10b981; color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 15px; padding: 14px 28px; border-radius: 10px; margin: 20px 0; text-align: center; }}
+        .alert {{ background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 14px; border-radius: 6px; font-size: 13px; color: #fca5a5; margin: 20px 0; }}
+        .footer {{ text-align: center; margin-top: 32px; font-size: 12px; color: #64748b; border-top: 1px solid #1e293b; padding-top: 20px; }}
+        .footer a {{ color: #ef4444; text-decoration: none; font-weight: 600; }}
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="logo">CoderCorps Security</div>
+        <h2>Password Successfully Changed</h2>
+        <p>Hello <strong>{user_name}</strong>,</p>
+        <p>This is a security confirmation that the password for your account (<strong>{to_email}</strong>) was successfully changed.</p>
+        <p>🔒 For your safety, <strong>all active sessions across all devices have been logged out</strong>. You will need to log in again with your new password.</p>
+        
+        <div style="text-align: center;">
+          <a href="{login_link}" class="btn" target="_blank">Log In Now →</a>
+        </div>
+
+        <div class="alert">
+          🚨 <strong>Did not change your password?</strong><br>
+          If you did not perform this action, someone else may have accessed your account. <a href="{report_issue_link}" style="color:#ffffff; text-decoration:underline;">Report an issue immediately</a> so we can secure your account.
+        </div>
+
+        <div class="footer">
+          CoderCorps Platform • Automated Security Notification
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+    return send_email(to_email, subject, html, plain_text)
+
+

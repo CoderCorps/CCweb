@@ -5,7 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1 import auth, programs, projects, submissions, portfolio, dashboard, contact, mentors, activity, certificates, tasks, daily, rooms, notifications, badges
-from app.api.v1 import messages, task_comments, announcements, stuck_flags, peer_reviews, reactions, resources, quizzes, webhooks, recruiters, admin, assessments, public_apply, admin_candidates, issue_reports
+from app.api.v1 import messages, task_comments, announcements, stuck_flags, peer_reviews, reactions, resources, quizzes, webhooks, recruiters, admin, assessments, public_apply, admin_candidates, issue_reports, password_reset
+
 from fastapi.staticfiles import StaticFiles
 import os
 
@@ -136,6 +137,9 @@ app.include_router(webhooks.router, prefix=f"{settings.API_V1_STR}/webhooks", ta
 app.include_router(recruiters.router, prefix=f"{settings.API_V1_STR}/recruiters", tags=["recruiters"])
 app.include_router(issue_reports.router, prefix=f"{settings.API_V1_STR}/issue-reports", tags=["issue-reports"])
 app.include_router(issue_reports.router, prefix="/issue-reports", tags=["issue-reports-root"])
+app.include_router(password_reset.router, prefix=f"{settings.API_V1_STR}/auth", tags=["password-reset"])
+app.include_router(password_reset.router, prefix="/auth", tags=["password-reset-root"])
+
 
 # Mount static upload files directory if it exists
 static_upload_dir = os.path.join(os.path.dirname(__file__), "static")

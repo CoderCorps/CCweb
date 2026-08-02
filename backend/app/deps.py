@@ -53,7 +53,12 @@ async def get_current_user_unverified(
     if not user:
         raise credentials_exception
 
+    token_tv = payload.get("tv")
+    if token_tv is not None and token_tv != user.token_version:
+        raise credentials_exception
+
     return user
+
 
 async def get_current_user(
     request: Request,

@@ -110,8 +110,9 @@ async def signup(
     db.refresh(db_user) # Reload user to include profile relationship
 
     # Generate tokens
-    access_token = security.create_access_token(subject=db_user.id)
-    refresh_token = security.create_refresh_token(subject=db_user.id)
+    access_token = security.create_access_token(subject=db_user.id, token_version=db_user.token_version)
+    refresh_token = security.create_refresh_token(subject=db_user.id, token_version=db_user.token_version)
+
 
     # Set refresh token in HttpOnly cookie
     response.set_cookie(
@@ -147,9 +148,9 @@ async def login(
         )
     
     # Generate tokens
-    access_token = security.create_access_token(subject=user.id)
-    refresh_token = security.create_refresh_token(subject=user.id)
- 
+    access_token = security.create_access_token(subject=user.id, token_version=user.token_version)
+    refresh_token = security.create_refresh_token(subject=user.id, token_version=user.token_version)
+
     # Set refresh token in HttpOnly cookie
     response.set_cookie(
         key="refresh_token",
@@ -193,10 +194,19 @@ async def refresh_token_route(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found"
         )
+
+    # Verify session version
+    token_tv = payload.get("tv")
+    if token_tv is not None and token_tv != user.token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired due to password change. Please log in again."
+        )
     
     # Generate new access token and refresh token
-    new_access_token = security.create_access_token(subject=user.id)
-    new_refresh_token = security.create_refresh_token(subject=user.id)
+    new_access_token = security.create_access_token(subject=user.id, token_version=user.token_version)
+    new_refresh_token = security.create_refresh_token(subject=user.id, token_version=user.token_version)
+
 
     response.set_cookie(
         key="refresh_token",

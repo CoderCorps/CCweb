@@ -145,4 +145,17 @@ Located in [`backend/app/services/scoring.py`](file:///d:/MycoderCorps/backend/a
   - `Intermediate — Ready`: `intermediate_tier_accuracy >= 60%` AND `deep_tier_accuracy < min_deep_pass_score` (default 40%)
   - `Advanced — Strong Candidate`: Both intermediate (≥ 60%) AND deep (≥ 40%) accuracy thresholds met.
 
+---
+
+## 🔐 Password Reset & Session Security Model
+
+The CoderCorps authentication system implements a zero-trust, privacy-first password reset workflow:
+
+1. **Zero Information Leakage**: Neither `/auth/forgot-password` nor `/auth/reset-password/{token}/verify` reveals whether a given email exists in the database. All requests return identical HTTP status codes and responses.
+2. **Short-Lived Hashed Tokens**: Reset links contain 32-byte cryptographically random tokens (`secrets.token_urlsafe(32)`) valid for **30 minutes**. Tokens are stored exclusively as SHA-256 hex hashes (`hashlib.sha256`) at rest in the database.
+3. **Single-Use Enforcement**: Tokens can be used exactly once. Requesting a new reset link immediately invalidates any previously unused reset token for that account.
+4. **Global Session Invalidation**: Upon a successful password reset, `user.token_version` is incremented. All previously issued JWT access tokens and refresh tokens across **all devices** are immediately revoked, logging out all active sessions and requiring re-authentication.
+5. **Security Audit Logging & Notifications**: Password reset requests, invalid attempts, and completions are recorded in `security_audit_logs`. A security notification email is automatically dispatched to the account email of record upon password modification.
+
+
 

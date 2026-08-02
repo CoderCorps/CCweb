@@ -15,9 +15,10 @@ class User(Base):
     rejection_reason: Mapped[str] = mapped_column(Text, nullable=True)
     avatar_url: Mapped[str] = mapped_column(Text, nullable=True)
     unlocked_skills: Mapped[dict] = mapped_column(JSON, default=list, nullable=False)
-    skill_points: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    token_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     last_reminder_sent_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+
 
     # Relationships
     profile: Mapped["Profile"] = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")

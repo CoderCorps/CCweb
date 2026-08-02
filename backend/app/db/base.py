@@ -14,4 +14,6 @@ from app.models.skill import SkillNode, UserSkill
 from app.models.assessment import Assessment, AssessmentAttempt, AssessmentQuestion, AssessmentAnswer, QuestionFingerprintHistory
 from app.models.candidate import CandidateApplication, AssessmentInvitation, ReminderLog
 from app.models.issue_report import IssueReport
+from app.models.password_reset import PasswordResetToken, SecurityAuditLog
+
 
