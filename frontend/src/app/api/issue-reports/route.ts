@@ -155,6 +155,8 @@ async function sendReporterConfirmationEmail(payload: any, reportId: string | nu
   });
 }
 
+let consecutiveEmailFailures = 0;
+
 export async function POST(req: NextRequest) {
   try {
     const payload = await req.json().catch(() => ({}));
@@ -165,7 +167,7 @@ export async function POST(req: NextRequest) {
 
     const reportId = Math.floor(Math.random() * 900000) + 100000;
 
-    // STEP 1: Attempt to post to backend Python DB (if backend server is configured & online)
+    // STEP 1: Attempt to post to backend Python DB (if backend server is online)
     try {
       const backendUrl = getBackendUrl();
       const backendRes = await fetch(`${backendUrl}/issue-reports`, {
@@ -178,23 +180,41 @@ export async function POST(req: NextRequest) {
         console.log("[NEXTJS API ISSUE REPORT] Saved to backend DB:", d?.id);
       }
     } catch (backendErr) {
-      console.warn("[NEXTJS API ISSUE REPORT] Backend DB notice (proceeding with direct email dispatch):", backendErr);
+      console.warn("[NEXTJS API ISSUE REPORT] Backend DB notice (proceeding with email dispatch):", backendErr);
     }
 
-    // STEP 2: Direct Email Dispatch to codercorps@gmail.com over Gmail SMTP
+    // STEP 2: Email Dispatch to codercorps@gmail.com over Gmail SMTP
+    let emailSuccess = false;
+    let emailErrorMessage = "";
     try {
       await sendAdminNotificationEmail(payload, reportId);
-      console.log(`[NEXTJS API ISSUE REPORT] Email notification sent to ${MAIL_TO} for report #${reportId}`);
-    } catch (emailErr) {
-      console.error("[NEXTJS API ISSUE REPORT] Admin email send error:", emailErr);
+      consecutiveEmailFailures = 0;
+      emailSuccess = true;
+      console.log(`[NEXTJS API ISSUE REPORT SUCCESS] Email notification sent to ${MAIL_TO} for report #${reportId}`);
+    } catch (emailErr: any) {
+      consecutiveEmailFailures++;
+      emailErrorMessage = emailErr?.message || "SMTP delivery error";
+      console.error(`[NEXTJS API ISSUE REPORT ERROR] Email dispatch failed (Consecutive Failures: ${consecutiveEmailFailures}):`, emailErr);
+
+      if (consecutiveEmailFailures >= 3) {
+        console.error(`[SYSTEM CRITICAL ALERT]: Issue report email delivery to ${MAIL_TO} has failed ${consecutiveEmailFailures} times consecutively! Verify SMTP_USER, SMTP_PASSWORD, and provider settings.`);
+      }
     }
 
-    // STEP 3: Direct Receipt Email Dispatch to reporter
-    try {
-      await sendReporterConfirmationEmail(payload, reportId);
-      console.log(`[NEXTJS API ISSUE REPORT] Receipt sent to ${payload.reporter_email}`);
-    } catch (receiptErr) {
-      console.warn("[NEXTJS API ISSUE REPORT] Receipt email send notice:", receiptErr);
+    // STEP 3: Receipt Email Dispatch to reporter
+    if (emailSuccess) {
+      try {
+        await sendReporterConfirmationEmail(payload, reportId);
+        console.log(`[NEXTJS API ISSUE REPORT] Receipt sent to ${payload.reporter_email}`);
+      } catch (receiptErr) {
+        console.warn("[NEXTJS API ISSUE REPORT] Receipt email send notice:", receiptErr);
+      }
+    }
+
+    if (!emailSuccess) {
+      return NextResponse.json({
+        detail: `Issue report logged (#${reportId}), but email delivery to ${MAIL_TO} encountered an error: ${emailErrorMessage}. Please contact support directly if urgent.`
+      }, { status: 502 });
     }
 
     return NextResponse.json({
@@ -203,6 +223,7 @@ export async function POST(req: NextRequest) {
       status: "open",
       message: "Issue report submitted successfully and sent to support.",
     });
+
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to submit issue report.";
     console.error("[NEXTJS API ISSUE REPORT ERROR]", err);

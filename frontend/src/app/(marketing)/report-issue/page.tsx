@@ -94,9 +94,10 @@ export default function ReportIssuePage() {
       const dataUrl = reader.result as string;
       setScreenshotUrl(dataUrl);
 
-      // 2. Background cloud upload attempt to Supabase via Next.js API route
+      // 2. Upload screenshot to Supabase Storage via Next.js API route
       try {
         setUploadingScreenshot(true);
+        setError(null);
         const formData = new FormData();
         formData.append("file", file);
 
@@ -108,18 +109,27 @@ export default function ReportIssuePage() {
         if (response.ok) {
           const res = await response.json();
           if (res && res.screenshot_url && typeof res.screenshot_url === "string" && res.screenshot_url.trim().length > 0) {
-            console.log("[REPORT ISSUE] Supabase image URL set:", res.screenshot_url);
+            console.log("[REPORT ISSUE] Supabase public image URL set:", res.screenshot_url);
             setScreenshotUrl(res.screenshot_url);
           }
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          const detailMsg = errData?.detail || "Cloud storage upload failed.";
+          console.error("[REPORT ISSUE UPLOAD ERROR]", response.status, detailMsg);
+          setError(`⚠️ Screenshot upload failed: ${detailMsg} You can try selecting the image again or submit the report without a screenshot.`);
+          setScreenshotUrl(null);
         }
       } catch (err: any) {
-        console.warn("Screenshot upload notice (retaining local preview):", err);
+        console.error("[REPORT ISSUE UPLOAD EXCEPTION]", err);
+        setError(`⚠️ Screenshot upload network error: ${err.message || "Failed to reach upload server."}`);
+        setScreenshotUrl(null);
       } finally {
         setUploadingScreenshot(false);
       }
     };
     reader.readAsDataURL(file);
   };
+
 
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -11,9 +11,23 @@
 
 ---
 
-## BUG LOG
+## RECENTLY FIXED ISSUES
+
+### 🔴 [FIXED] Silent Email Delivery & Supabase Screenshot Upload Failures on Deployed Site
+- **Files:** `frontend/src/app/(marketing)/report-issue/page.tsx`, `frontend/src/app/api/issue-reports/route.ts`, `frontend/src/app/api/issue-reports/upload-screenshot/route.ts`, `backend/app/services/supabase_storage.py`, `backend/app/services/email_service.py`
+- **Root Cause Analysis (Empirical Evidence):**
+  1. **Email Delivery Failure**: On Vercel deployments, `SMTP_USER` and `SMTP_PASSWORD` were unconfigured in production environment variables. The API handler caught the exception with a silent `catch` block and returned `{ ok: true }` to the client. Additionally, failed screenshot uploads fell back to giant 2MB–5MB Base64 Data URLs (`data:image/png;base64,...`) inside JSON payloads, exceeding Gmail SMTP message limits.
+  2. **Supabase Upload Failure**: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` were empty in environment settings. The client `processFile` function caught the 500 status silently without notifying the user ("Screenshot upload failed, please try again or submit without it"), causing broken Base64 payloads to be sent.
+- **Fixes & System Alerts Implemented:**
+  1. **Next.js Serverless API Routes**: Built `/api/issue-reports` and `/api/issue-reports/upload-screenshot` in Next.js to upload screenshots directly to Supabase Storage bucket `issue-screenshots` via REST API and dispatch emails directly via `nodemailer` over Gmail SMTP.
+  2. **Loud User-Facing Error Banners**: `report-issue/page.tsx` now explicitly displays a warning banner (`⚠️ Screenshot upload failed: [reason]`) if image upload fails, and clears `screenshotUrl` to prevent Base64 payload bloat.
+  3. **Consecutive Failure Alerts**: Added memory failure counters `consecutiveEmailFailures` and `consecutiveUploadFailures` that log explicit `[SYSTEM CRITICAL ALERT]` messages after 3+ consecutive failures.
+- **Regression Test:** Verified zero TypeScript errors (`npx tsc --noEmit`) and 6/6 passing pytest tests.
+
+---
 
 ### BUG-001: Mentor can approve/activate any user account (IDOR / privilege escalation)
+
 - **Severity**: 🔴 CRITICAL (security — privilege escalation)
 - **File**: `backend/app/api/v1/admin.py` lines 55-56, 77-78
 - **Description**: `POST /api/v1/admin/users/{id}/approve` and `POST /api/v1/admin/candidates/approve` used `get_current_mentor` dependency instead of `get_current_admin`. Any active mentor could approve any pending user (including making other mentors or students active, bypassing the admin approval flow entirely).
