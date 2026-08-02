@@ -94,23 +94,26 @@ export default function ReportIssuePage() {
       const dataUrl = reader.result as string;
       setScreenshotUrl(dataUrl);
 
-      // 2. Background backend upload attempt
+      // 2. Background cloud upload attempt to Supabase via Next.js API route
       try {
         setUploadingScreenshot(true);
         const formData = new FormData();
         formData.append("file", file);
 
-        const res = await apiFetch("/issue-reports/upload-screenshot", {
+        const response = await fetch("/api/issue-reports/upload-screenshot", {
           method: "POST",
           body: formData,
         });
 
-        if (res && res.screenshot_url && typeof res.screenshot_url === "string" && res.screenshot_url.trim().length > 0) {
-          setScreenshotUrl(res.screenshot_url);
+        if (response.ok) {
+          const res = await response.json();
+          if (res && res.screenshot_url && typeof res.screenshot_url === "string" && res.screenshot_url.trim().length > 0) {
+            console.log("[REPORT ISSUE] Supabase image URL set:", res.screenshot_url);
+            setScreenshotUrl(res.screenshot_url);
+          }
         }
-
       } catch (err: any) {
-        console.warn("Backend screenshot upload warning (using local preview):", err);
+        console.warn("Screenshot upload notice (retaining local preview):", err);
       } finally {
         setUploadingScreenshot(false);
       }
@@ -125,7 +128,7 @@ export default function ReportIssuePage() {
 
   const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
-    e.stopPropagation();
+    setDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) processFile(file);
   };
@@ -138,36 +141,24 @@ export default function ReportIssuePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    if (!reporterName.trim()) {
-      setError("Please enter your name.");
-      return;
-    }
-
-    if (!reporterEmail.trim() || !reporterEmail.includes("@")) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    if (!description.trim() || description.trim().length < 5) {
-      setError("Please provide a description of the issue (at least 5 characters).");
+    if (!reporterName.trim() || !reporterEmail.trim() || !description.trim()) {
+      setError("Please fill in all required fields (Name, Email, Description).");
       return;
     }
 
     setSubmitting(true);
+    setError(null);
 
     try {
-      const payload: any = {
+      const payload: Record<string, any> = {
         reporter_name: reporterName.trim(),
         reporter_email: reporterEmail.trim(),
         reporter_role: reporterRole,
-        reporter_role_detail: reporterRole === "other" && reporterRoleDetail.trim() ? reporterRoleDetail.trim() : undefined,
+        reporter_role_detail: reporterRole === "other" && reporterRoleDetail.trim() ? reporterRoleDetail.trim() : null,
         category,
-        page_url: pageUrl.trim() || undefined,
         description: description.trim(),
-        screenshot_url: screenshotUrl || undefined,
-        honeypot: honeypot || undefined,
+        page_url: pageUrl.trim() || null,
+        screenshot_url: screenshotUrl || null,
       };
 
       if (category === "assessment_email_issue") {
@@ -176,11 +167,18 @@ export default function ReportIssuePage() {
         payload.assessment_link_worked = assessmentLinkWorked;
       }
 
-      const res = await apiFetch("/issue-reports", {
+      const response = await fetch("/api/issue-reports", {
         method: "POST",
-        json: payload,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || "Failed to submit report. Please try again.");
+      }
+
+      const res = await response.json();
       setSubmittedReport(res || { id: "SUCCESS", reporter_email: reporterEmail });
     } catch (err: any) {
       setError(err.message || "Failed to submit issue report. Please check your connection.");
@@ -188,6 +186,7 @@ export default function ReportIssuePage() {
       setSubmitting(false);
     }
   };
+
 
   // -------------------------------------------------------------------------
   // CONFIRMATION SCREEN
