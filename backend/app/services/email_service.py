@@ -9,7 +9,16 @@ from email.mime.text import MIMEText
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 
+# Robustly locate .env file from backend or root directory
+backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+env_file = os.path.join(backend_dir, ".env")
+if not os.path.exists(env_file):
+    env_file = os.path.join(backend_dir, "backend", ".env")
+
+load_dotenv(dotenv_path=env_file)
 load_dotenv()
+
+
 
 logger = logging.getLogger(__name__)
 
