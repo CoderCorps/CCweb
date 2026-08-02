@@ -128,10 +128,10 @@ export default function ReportIssuePage() {
 
   const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
-    setDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) processFile(file);
   };
+
 
   const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
