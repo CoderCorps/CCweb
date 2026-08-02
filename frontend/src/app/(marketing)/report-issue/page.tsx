@@ -105,9 +105,10 @@ export default function ReportIssuePage() {
           body: formData,
         });
 
-        if (res && res.screenshot_url) {
+        if (res && res.screenshot_url && typeof res.screenshot_url === "string" && res.screenshot_url.trim().length > 0) {
           setScreenshotUrl(res.screenshot_url);
         }
+
       } catch (err: any) {
         console.warn("Backend screenshot upload warning (using local preview):", err);
       } finally {

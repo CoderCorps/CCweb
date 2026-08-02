@@ -265,9 +265,10 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
       return {
         status: 200,
         ok: true,
-        json: async () => ({ status: "ok", screenshot_url: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800" })
+        json: async () => ({ status: "ok", screenshot_url: null })
       };
     }
+
 
 
     const reportId = Math.floor(Math.random() * 9000) + 1000;
