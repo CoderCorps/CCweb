@@ -44,7 +44,9 @@ async def startup_event():
 
         Base.metadata.create_all(bind=engine)
         alter_statements = [
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 1",
             "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(500)",
+
             "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS github_url VARCHAR(500)",
             "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS resume_url VARCHAR(500)",
             "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS instagram_url VARCHAR(500)",
