@@ -241,24 +241,6 @@ class AccountUpdate(BaseModel):
     current_password: Optional[str] = None
     new_password: Optional[str] = None
 
-@router.post("/forgot-password")
-async def forgot_password(
-    payload: ForgotPasswordRequest,
-    db: Session = Depends(get_db)
-):
-    # Search user by email
-    user = db.query(User).filter(User.email == payload.email).first()
-    
-    # In development mode, log reset token to console if user exists.
-    # Return generic success response to prevent user enumeration.
-    if user:
-        reset_token = security.create_access_token(subject=user.id, expires_delta=timedelta(hours=1))
-        print(f"\n[DEV MODE] PASSWORD RESET REQUEST FOR {user.email}")
-        print(f"[DEV MODE] RESET TOKEN: {reset_token}\n")
-        # TODO: Wire a real email provider like Resend or SendGrid here
-        
-    return {"message": "If this email exists in our system, a password reset link has been sent."}
-
 @router.patch("/account")
 async def update_account(
     payload: AccountUpdate,
