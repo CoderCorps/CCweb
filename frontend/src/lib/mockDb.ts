@@ -92,6 +92,15 @@ let mockUsers: User[] = [
       resume_url: "",
       is_public: true
     } as MockProfile
+  },
+  {
+    id: 4,
+    name: "Admin User",
+    email: "admin@codercorps.com",
+    role: "admin",
+    avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+    created_at: new Date().toISOString(),
+    profile: null
   }
 ];
 
@@ -1073,5 +1082,7 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
 
   return { status: 404, ok: false, json: async () => ({ detail: "Not found" }) };
 }
+
+
 
 
