@@ -1,22 +1,16 @@
 import io
 import hashlib
-import qrcode
-from PIL import Image, ImageDraw, ImageFont
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models.submission import Certificate
 
 def render_certificate_image(template, fields, merge_data) -> bytes:
-    # We download or open the image. Since it might be a remote URL, we will mock it if it is missing
-    # but let's assume it is a local path or we just create a blank image for safety in this mock
+    from PIL import Image, ImageDraw, ImageFont
     
     img = Image.new("RGB", (template.width_px, template.height_px), color="white")
     draw = ImageDraw.Draw(img)
     
     try:
-        # try loading default font
         font = ImageFont.truetype("arial.ttf", 60)
     except IOError:
         font = ImageFont.load_default()
@@ -27,9 +21,13 @@ def render_certificate_image(template, fields, merge_data) -> bytes:
         
         if field.field_key == "qr_code":
             if "public_url" in merge_data:
-                qr = qrcode.make(merge_data["public_url"])
-                qr = qr.resize((300, 300))
-                img.paste(qr, (int(x), int(y)))
+                try:
+                    import qrcode
+                    qr = qrcode.make(merge_data["public_url"])
+                    qr = qr.resize((300, 300))
+                    img.paste(qr, (int(x), int(y)))
+                except Exception:
+                    pass
         else:
             text = str(merge_data.get(field.field_key, f"{{{field.field_key}}}"))
             draw.text((x, y), text, fill=(0, 0, 0), font=font)
@@ -39,12 +37,12 @@ def render_certificate_image(template, fields, merge_data) -> bytes:
     return img_byte_arr.getvalue()
 
 def render_certificate_pdf(png_bytes: bytes, width: int, height: int) -> bytes:
+    from PIL import Image
+    image = Image.open(io.BytesIO(png_bytes))
+    if image.mode != "RGB":
+        image = image.convert("RGB")
     pdf_buffer = io.BytesIO()
-    c = canvas.Canvas(pdf_buffer, pagesize=(width, height))
-    img_reader = ImageReader(io.BytesIO(png_bytes))
-    c.drawImage(img_reader, 0, 0, width, height)
-    c.showPage()
-    c.save()
+    image.save(pdf_buffer, format="PDF")
     return pdf_buffer.getvalue()
 
 def generate_certificate_number(db: Session) -> str:
