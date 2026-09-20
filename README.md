@@ -4,7 +4,7 @@
 
 A modern engineering accelerator platform built for community-led project development, code reviews, and verifiable project completion credentials.
 
-## 🏗️ Tech Stack
+## 🏗️ Tech Stacks
 
 - **Frontend**: Next.js 14+ (App Router) + React + TypeScript + Tailwind CSS + Framer Motion + GSAP
 - **Backend**: Python FastAPI + SQLAlchemy ORM + Pydantic v2 + SQLite/PostgreSQL (Supabase)
