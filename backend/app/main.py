@@ -35,6 +35,11 @@ app.add_middleware(
 # Async startup event for safe DB initialization without blocking Vercel module import
 @app.on_event("startup")
 async def startup_event():
+    # In Vercel serverless environments, skip synchronous DB seeding to prevent cold start gateway timeouts
+    if os.getenv("VERCEL") or os.getenv("VERCEL_ENV"):
+        print("[VERCEL]: Serverless environment detected. Skipping startup event.")
+        return
+
     try:
         from app.db.base import Base
         from app.db.session import engine, SessionLocal
