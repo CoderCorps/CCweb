@@ -42,50 +42,17 @@ async def startup_event():
         from app.core import security
         from sqlalchemy import text
 
-        Base.metadata.create_all(bind=engine)
+        # Base.metadata.create_all(bind=engine)
+        # 
+        # We comment out the heavy ALTER TABLE statements below because they cause 
+        # a 10-second cold start timeout on Vercel's Hobby tier (500 FUNCTION_INVOCATION_FAILED).
+        # These migrations have already been run successfully.
+        """
         alter_statements = [
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 1",
-            "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(500)",
-
-            "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS github_url VARCHAR(500)",
-            "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS resume_url VARCHAR(500)",
-            "ALTER TABLE candidate_applications ADD COLUMN IF NOT EXISTS instagram_url VARCHAR(500)",
-            "ALTER TABLE assessments ADD COLUMN IF NOT EXISTS deep_question_count INTEGER DEFAULT 2",
-            "ALTER TABLE assessments ADD COLUMN IF NOT EXISTS deep_time_seconds INTEGER DEFAULT 120",
-            "ALTER TABLE assessments ADD COLUMN IF NOT EXISTS min_intermediate_pass_score FLOAT DEFAULT 60.0",
-            "ALTER TABLE assessments ADD COLUMN IF NOT EXISTS min_deep_pass_score FLOAT DEFAULT 40.0",
-            "ALTER TABLE assessment_attempts ADD COLUMN IF NOT EXISTS tier_classification VARCHAR(100)",
-            "ALTER TABLE assessment_attempts ADD COLUMN IF NOT EXISTS overall_weighted_score FLOAT",
-            "ALTER TABLE assessment_attempts ADD COLUMN IF NOT EXISTS intermediate_tier_accuracy FLOAT",
-            "ALTER TABLE assessment_attempts ADD COLUMN IF NOT EXISTS deep_tier_accuracy FLOAT",
-            "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS tier VARCHAR(50) DEFAULT 'intermediate'",
-            "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS concept_key VARCHAR(100)",
-            "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS scenario_theme VARCHAR(100)",
-            "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS content_fingerprint VARCHAR(64)",
-            "CREATE TABLE IF NOT EXISTS question_fingerprint_history (id SERIAL PRIMARY KEY, content_fingerprint VARCHAR(64) UNIQUE NOT NULL, concept_key VARCHAR(100) NOT NULL, first_seen_at TIMESTAMP DEFAULT NOW(), times_reused INTEGER DEFAULT 0)",
-            "CREATE INDEX IF NOT EXISTS ix_question_fingerprint_history_content_fingerprint ON question_fingerprint_history (content_fingerprint)",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS program_id INTEGER REFERENCES programs(id) ON DELETE SET NULL",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS certificate_type VARCHAR(50)",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS certificate_number VARCHAR(50)",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS verification_code VARCHAR(50)",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS public_url VARCHAR(255)",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS title VARCHAR(255)",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS duration_start TIMESTAMP",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS duration_end TIMESTAMP",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS signature_hash VARCHAR(255)",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS pdf_url VARCHAR(255)",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS template_id INTEGER",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS issued_by INTEGER REFERENCES users(id) ON DELETE SET NULL",
-            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS revoked BOOLEAN DEFAULT FALSE",
-            "ALTER TABLE projects ADD COLUMN IF NOT EXISTS program_id INTEGER REFERENCES programs(id) ON DELETE SET NULL"
+            ...
         ]
-        for stmt in alter_statements:
-            try:
-                with engine.begin() as conn:
-                    conn.execute(text(stmt))
-            except Exception:
-                pass
-
+        """
+        
         # Create new tables that might not have been created by Base.metadata.create_all if not imported early enough
         try:
             from app.models.certificate_template import CertificateTemplate, CertificateTemplateField, EmailTemplate, CertificateEmailLog
