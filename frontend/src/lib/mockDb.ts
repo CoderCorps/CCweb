@@ -880,27 +880,7 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
     return { status: 200, ok: true, json: async () => mockEvents };
   }
 
-  // --- Public Certificate Details ---
-  if (path.startsWith("/certificates/") && method === "GET") {
-    const certId = parseInt(path.split("/")[2]);
-    const mockCert = {
-      id: certId,
-      holder_name: "Rohan Verma",
-      project_title: "Distributed E-Commerce API Engine",
-      issued_at: new Date().toISOString(),
-      criteria_met: {
-        student_name: "Rohan Verma",
-        project_title: "Distributed E-Commerce API Engine",
-        mentor_name: "Atul Sharma",
-        demo_url: "https://youtube.com/watch?v=mockdemo",
-        repo_url: "https://github.com/codercorps/ecommerce-api",
-        approved_at: new Date().toISOString(),
-        audit_message: "Verifiable Software Engineering Achievement. This certificate validates actual codebase contributions (GitHub Pull Requests merged, functional demo delivered, and code reviewed by a professional engineering mentor)."
-      },
-      mentor_name: "Atul Sharma"
-    };
-    return { status: 200, ok: true, json: async () => mockCert };
-  }
+  // removed mock cert
 
   // --- Technical Screening Assessments (Offline Fallback) ---
   if (path === "/assessments" || path === "/assessments/") {
@@ -1093,4 +1073,5 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
 
   return { status: 404, ok: false, json: async () => ({ detail: "Not found" }) };
 }
+
 

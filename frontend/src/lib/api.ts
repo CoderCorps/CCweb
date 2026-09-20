@@ -172,21 +172,21 @@ export const api = {
   get: (path: string, options?: RequestOptions) =>
     apiRequest(path, { ...options, method: "GET" }),
   
-  post: (path: string, body: Record<string, unknown> | FormData, options?: RequestOptions) =>
+  post: (path: string, body: any, options?: RequestOptions) =>
     apiRequest(path, {
       ...options,
       method: "POST",
       body: body instanceof FormData ? body : JSON.stringify(body),
     }),
   
-  patch: (path: string, body: Record<string, unknown> | FormData, options?: RequestOptions) =>
+  patch: (path: string, body: any, options?: RequestOptions) =>
     apiRequest(path, {
       ...options,
       method: "PATCH",
       body: body instanceof FormData ? body : JSON.stringify(body),
     }),
   
-  put: (path: string, body: Record<string, unknown> | FormData, options?: RequestOptions) =>
+  put: (path: string, body: any, options?: RequestOptions) =>
     apiRequest(path, {
       ...options,
       method: "PUT",

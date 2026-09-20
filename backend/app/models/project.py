@@ -12,12 +12,14 @@ class Project(Base):
     status: Mapped[str] = mapped_column(String(50), default="planning", nullable=False) # 'planning' | 'active' | 'completed' | 'pending_approval' | 'rejected'
     rejection_reason: Mapped[str] = mapped_column(Text, nullable=True)
     mentor_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    program_id: Mapped[int] = mapped_column(Integer, ForeignKey("programs.id", ondelete="SET NULL"), nullable=True)
     start_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
     end_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
 
     # Relationships
     mentor: Mapped["User"] = relationship("User", foreign_keys=[mentor_id])
+    program: Mapped["Program"] = relationship("Program")
     members: Mapped[list["ProjectMember"]] = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
     sprints: Mapped[list["Sprint"]] = relationship("Sprint", back_populates="project", cascade="all, delete-orphan")
     submissions: Mapped[list["Submission"]] = relationship("Submission", back_populates="project", cascade="all, delete-orphan")

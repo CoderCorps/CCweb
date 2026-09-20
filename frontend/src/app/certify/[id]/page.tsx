@@ -24,6 +24,8 @@ interface CertificateData {
   issued_at: string;
   criteria_met: Record<string, string>;
   mentor_name: string;
+  title?: string;
+  certificate_number?: string;
 }
 
 export default function CertifyPage() {
@@ -36,28 +38,16 @@ export default function CertifyPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get(`/certificates/${id}`, { skipAuth: true });
+        let res = await api.get(`/certificates/verify/${id}`, { skipAuth: true });
+        if (!res.ok) {
+            // fallback to old ID based fetching for backwards compatibility
+            res = await api.get(`/certificates/${id}`, { skipAuth: true });
+        }
         if (res.ok) {
           const data = await res.json();
           setCert(data);
         } else {
-          // Fallback mock for development
-          setCert({
-            id: Number(id),
-            holder_name: "Rohan Verma",
-            project_title: "Distributed E-Commerce API Engine",
-            issued_at: new Date().toISOString(),
-            criteria_met: {
-              student_name: "Rohan Verma",
-              project_title: "Distributed E-Commerce API Engine",
-              mentor_name: "Atul Sharma",
-              demo_url: "https://youtube.com/watch?v=mockdemo",
-              repo_url: "https://github.com/codercorps/ecommerce-api",
-              approved_at: new Date().toISOString(),
-              audit_message: "Verifiable Software Engineering Achievement. This certificate validates actual codebase contributions (GitHub Pull Requests merged, functional demo delivered, and code reviewed by a professional engineering mentor).",
-            },
-            mentor_name: "Atul Sharma",
-          });
+          setNotFound(true);
         }
       } catch {
         setNotFound(true);
@@ -119,8 +109,10 @@ export default function CertifyPage() {
             <ShieldCheck className="h-3.5 w-3.5" />
             VERIFIED ACHIEVEMENT
           </div>
-          <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Certificate of Completion</h1>
-          <p className="text-sm text-muted-foreground font-mono">CoderCorps Engineering Program · Certificate ID: CORPS-{cert.id}</p>
+          <h1 className="text-3xl font-extrabold text-foreground tracking-tight">{cert.title || "Certificate of Completion"}</h1>
+          <p className="text-sm text-muted-foreground font-mono">
+            CoderCorps Engineering Program · Certificate ID: {cert.certificate_number || `CORPS-${cert.id}`}
+          </p>
         </motion.div>
 
         {/* Main certificate card */}

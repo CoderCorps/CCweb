@@ -139,6 +139,11 @@ export default function PlatformLayout({
       href: "/admin/issue-reports",
       icon: <FileText className="h-4 w-4 text-amber-500" />
     });
+    navLinks.push({
+      name: "Certificates",
+      href: "/admin/certificates",
+      icon: <Award className="h-4 w-4 text-green-400" />
+    });
   }
 
   if (user.role === "admin") {

@@ -31,7 +31,7 @@ class User(Base):
     assigned_mentor_reports: Mapped[list["DailyReport"]] = relationship("DailyReport", foreign_keys="[DailyReport.mentor_id]", back_populates="mentor")
     submissions: Mapped[list["Submission"]] = relationship("Submission", foreign_keys="[Submission.user_id]", back_populates="user")
     reviewed_submissions: Mapped[list["Submission"]] = relationship("Submission", foreign_keys="[Submission.reviewed_by_id]", back_populates="reviewer")
-    certificates: Mapped[list["Certificate"]] = relationship("Certificate", back_populates="user")
+    certificates: Mapped[list["Certificate"]] = relationship("Certificate", foreign_keys="[Certificate.user_id]", back_populates="user")
     notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     messages_sent: Mapped[list["DirectMessage"]] = relationship("DirectMessage", foreign_keys="[DirectMessage.sender_id]", back_populates="sender", cascade="all, delete-orphan")
     messages_received: Mapped[list["DirectMessage"]] = relationship("DirectMessage", foreign_keys="[DirectMessage.recipient_id]", back_populates="recipient", cascade="all, delete-orphan")

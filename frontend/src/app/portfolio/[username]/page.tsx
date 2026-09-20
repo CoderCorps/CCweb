@@ -265,7 +265,7 @@ export default function PublicPortfolioPage() {
                       </div>
                     {/* Verify link */}
                       <Link
-                        href={`/certify/${cert.id}`}
+                        href={`/certify/${(cert as any).verification_code || cert.id}`}
                         className="inline-flex items-center gap-1 text-xs font-mono text-emerald-400 hover:text-emerald-300 hover:underline transition-colors"
                       >
                         <ShieldCheck className="h-3.5 w-3.5" />

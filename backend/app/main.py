@@ -63,7 +63,21 @@ async def startup_event():
             "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS scenario_theme VARCHAR(100)",
             "ALTER TABLE assessment_questions ADD COLUMN IF NOT EXISTS content_fingerprint VARCHAR(64)",
             "CREATE TABLE IF NOT EXISTS question_fingerprint_history (id SERIAL PRIMARY KEY, content_fingerprint VARCHAR(64) UNIQUE NOT NULL, concept_key VARCHAR(100) NOT NULL, first_seen_at TIMESTAMP DEFAULT NOW(), times_reused INTEGER DEFAULT 0)",
-            "CREATE INDEX IF NOT EXISTS ix_question_fingerprint_history_content_fingerprint ON question_fingerprint_history (content_fingerprint)"
+            "CREATE INDEX IF NOT EXISTS ix_question_fingerprint_history_content_fingerprint ON question_fingerprint_history (content_fingerprint)",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS program_id INTEGER REFERENCES programs(id) ON DELETE SET NULL",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS certificate_type VARCHAR(50)",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS certificate_number VARCHAR(50)",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS verification_code VARCHAR(50)",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS public_url VARCHAR(255)",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS title VARCHAR(255)",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS duration_start TIMESTAMP",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS duration_end TIMESTAMP",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS signature_hash VARCHAR(255)",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS pdf_url VARCHAR(255)",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS template_id INTEGER",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS issued_by INTEGER REFERENCES users(id) ON DELETE SET NULL",
+            "ALTER TABLE certificates ADD COLUMN IF NOT EXISTS revoked BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE projects ADD COLUMN IF NOT EXISTS program_id INTEGER REFERENCES programs(id) ON DELETE SET NULL"
         ]
         for stmt in alter_statements:
             try:
@@ -71,6 +85,18 @@ async def startup_event():
                     conn.execute(text(stmt))
             except Exception:
                 pass
+
+        # Create new tables that might not have been created by Base.metadata.create_all if not imported early enough
+        try:
+            from app.models.certificate_template import CertificateTemplate, CertificateTemplateField, EmailTemplate, CertificateEmailLog
+            Base.metadata.create_all(bind=engine, tables=[
+                CertificateTemplate.__table__,
+                CertificateTemplateField.__table__,
+                EmailTemplate.__table__,
+                CertificateEmailLog.__table__
+            ])
+        except Exception:
+            pass
 
         # Seed initial admin user safely if no admin exists in the database
         db = SessionLocal()
@@ -106,6 +132,7 @@ async def startup_event():
         print(f"[STARTUP INIT WARNING]: {e}")
 
 # Include Routers (both /api/v1 and root prefixes for Vercel path compatibility)
+from app.api.v1 import certificate_templates, email_templates
 app.include_router(public_apply.router, prefix=f"{settings.API_V1_STR}", tags=["public-apply"])
 app.include_router(public_apply.router, prefix="", tags=["public-apply-root"])
 app.include_router(admin_candidates.router, prefix=f"{settings.API_V1_STR}/admin", tags=["admin-candidates"])
@@ -121,6 +148,8 @@ app.include_router(contact.router, prefix=f"{settings.API_V1_STR}/contact", tags
 app.include_router(mentors.router, prefix=f"{settings.API_V1_STR}/mentors", tags=["mentors"])
 app.include_router(activity.router, prefix=f"{settings.API_V1_STR}/activity", tags=["activity"])
 app.include_router(certificates.router, prefix=f"{settings.API_V1_STR}/certificates", tags=["certificates"])
+app.include_router(certificate_templates.router, prefix=f"{settings.API_V1_STR}/certificate-templates", tags=["certificate-templates"])
+app.include_router(email_templates.router, prefix=f"{settings.API_V1_STR}/email-templates", tags=["email-templates"])
 app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}", tags=["tasks"])
 app.include_router(daily.router, prefix=f"{settings.API_V1_STR}/daily", tags=["daily"])
 app.include_router(rooms.router, tags=["rooms"])
