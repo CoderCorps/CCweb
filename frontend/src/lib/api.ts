@@ -135,9 +135,10 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
     if (response.status === 404 || !response.ok) {
       const isCandidateEndpoint = path.includes("/assessment/candidate") || path.includes("/apply");
       const isIssueReport = path.includes("/issue-reports");
+      const isLogin = path.includes("/auth/login");
       const isGetRequest = method === "GET";
 
-      if ((isGetRequest || isIssueReport) && !isCandidateEndpoint) {
+      if ((isGetRequest || isIssueReport || isLogin) && !isCandidateEndpoint) {
         console.warn(`[API HTTP ${response.status}] ${url} returned error. Checking mock database fallback.`);
         const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
         if (mockRes && mockRes.ok) {
