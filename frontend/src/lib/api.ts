@@ -73,11 +73,6 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
     }
   }
 
-  if (FORCE_MOCK) {
-    const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
-    return mockRes as unknown as Response;
-  }
-
   const url = `${API_BASE_URL}${path}`;
   const headers = new Headers(options.headers || {});
 
@@ -100,7 +95,6 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
       cache: "no-store",
       ...options,
       headers,
-      credentials: "include",
     });
 
     if (response.status === 401 && !options.skipAuth) {
@@ -111,19 +105,33 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
           cache: "no-store",
           ...options,
           headers,
-          credentials: "include",
         });
-      }
-    } else if (response.status === 403) {
-      try {
-        const clonedRes = response.clone();
-        const data = await clonedRes.json();
-        if (data?.detail === "mentor_pending_approval" && typeof window !== "undefined") {
-          if (window.location.pathname !== "/mentor/pending-approval") {
-            window.location.href = "/mentor/pending-approval";
+      } else {
+        if (typeof window !== "undefined") {
+          const publicRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
+          const isPublicRoute = publicRoutes.some(route => window.location.pathname.startsWith(route));
+          if (!isPublicRoute) {
+            window.location.href = "/login";
           }
-        } else if (data?.detail === "mentor_rejected" && typeof window !== "undefined") {
-          if (window.location.pathname !== "/mentor/rejected") {
+        }
+      }
+    }
+
+    if (response.status === 403) {
+      try {
+        const errData = await response.clone().json();
+        if (errData.detail === "Not approved yet") {
+          if (typeof window !== "undefined") {
+            const role = inMemoryToken ? JSON.parse(atob(inMemoryToken.split('.')[1])).role : null;
+            if (role === "student") {
+              window.location.href = "/student/pending-approval";
+            } else if (role === "mentor") {
+              window.location.href = "/mentor/pending-approval";
+            }
+          }
+        }
+        if (errData.detail === "Account rejected") {
+          if (typeof window !== "undefined") {
             window.location.href = "/mentor/rejected";
           }
         }
@@ -132,34 +140,8 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
       }
     }
 
-    if (response.status === 404 || !response.ok) {
-      const isCandidateEndpoint = path.includes("/assessment/candidate") || path.includes("/apply");
-      const isIssueReport = path.includes("/issue-reports");
-      const isLogin = path.includes("/auth/login");
-      const isGetRequest = method === "GET";
-
-      if ((isGetRequest || isIssueReport || isLogin) && !isCandidateEndpoint) {
-        console.warn(`[API HTTP ${response.status}] ${url} returned error. Checking mock database fallback.`);
-        const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
-        if (mockRes && mockRes.ok) {
-          return mockRes as unknown as Response;
-        }
-      }
-    }
-
     return response;
   } catch (err) {
-    const isCandidateEndpoint = path.includes("/assessment/candidate") || path.includes("/apply");
-    
-    // Always attempt mock fallback for non-candidate routes (including issue-reports)
-    if (!isCandidateEndpoint) {
-      console.warn("Backend API server unreachable. Falling back to frontend mock database.", err);
-      const mockRes = handleMockRequest(path, method, requestBody as Record<string, unknown> | FormData | undefined);
-      if (mockRes && mockRes.ok) {
-        return mockRes as unknown as Response;
-      }
-    }
-
     console.error(`[API ERROR] ${method} ${path} failed:`, err);
     return new Response(
       JSON.stringify({ detail: "Backend API request failed. Please check your connection and try again." }),
