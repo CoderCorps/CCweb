@@ -139,10 +139,16 @@ app.include_router(password_reset.router, prefix=f"{settings.API_V1_STR}/auth", 
 app.include_router(password_reset.router, prefix="/auth", tags=["password-reset-root"])
 
 
-# Mount static upload files directory if it exists
-static_upload_dir = os.path.join(os.path.dirname(__file__), "static")
-os.makedirs(os.path.join(static_upload_dir, "uploads", "screenshots"), exist_ok=True)
-app.mount("/static", StaticFiles(directory=static_upload_dir), name="static")
+# Mount static upload files directory safely (fallback to /tmp on serverless environments like Vercel)
+try:
+    if os.getenv("VERCEL") or os.getenv("VERCEL_ENV"):
+        static_upload_dir = "/tmp/static"
+    else:
+        static_upload_dir = os.path.join(os.path.dirname(__file__), "static")
+    os.makedirs(os.path.join(static_upload_dir, "uploads", "screenshots"), exist_ok=True)
+    app.mount("/static", StaticFiles(directory=static_upload_dir), name="static")
+except Exception as e:
+    print(f"[STATIC MOUNT WARNING]: Could not mount static files: {e}")
 
 
 @app.get("/")
