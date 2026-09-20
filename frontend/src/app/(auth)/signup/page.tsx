@@ -56,14 +56,11 @@ export default function SignupPage() {
     setSubmitting(true);
 
     try {
-      const success = await signup(name, email, password, role);
-      if (success) {
+      const result = await signup(name, email, password, role);
+      if (result.success) {
         // Will be redirected by useEffect once user state updates
       } else {
-        setError(role === "student"
-          ? "Account creation failed. Make sure you are signing up with the same email you used for the assessment."
-          : "Account creation failed. Email may already be in use."
-        );
+        setError(result.error || "Account creation failed. Please try again.");
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");

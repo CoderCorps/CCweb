@@ -30,11 +30,11 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<boolean>;
-  signup: (name: string, email: string, pass: string, role: string) => Promise<boolean>;
+  login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (name: string, email: string, pass: string, role: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  /** Returns the current in-memory JWT access token — for WebSocket connections */
+  /** Returns the current in-memory JWT access token - for WebSocket connections */
   getToken: () => string | null;
 }
 
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = async (email: string, pass: string): Promise<boolean> => {
+  const login = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const cleanEmail = email.trim().toLowerCase();
       const cleanPass = pass.trim();
@@ -73,15 +73,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await api.post("/auth/login", formData, { skipAuth: true });
 
       if (!res.ok) {
-        return false;
+        let errMsg = "Invalid email or password.";
+        try {
+          const errorData = await res.json();
+          errMsg = errorData.detail || errMsg;
+        } catch (e) { }
+        return { success: false, error: errMsg };
       }
 
       const data = await res.json();
       setAccessToken(data.access_token);
       setUser(data.user);
-      return true;
+      return { success: true };
     } catch (err) {
-      return false;
+      return { success: false, error: "An unexpected error occurred." };
     }
   };
 
@@ -90,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     pass: string,
     role: string
-  ): Promise<boolean> => {
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const res = await api.post(
         "/auth/signup",
@@ -99,15 +104,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       );
 
       if (!res.ok) {
-        return false;
+        let errMsg = "Account creation failed.";
+        try {
+          const errorData = await res.json();
+          errMsg = errorData.detail || errMsg;
+        } catch (e) { }
+        return { success: false, error: errMsg };
       }
 
       const data = await res.json();
       setAccessToken(data.access_token);
       setUser(data.user);
-      return true;
+      return { success: true };
     } catch (err) {
-      return false;
+      return { success: false, error: "An unexpected error occurred." };
     }
   };
 

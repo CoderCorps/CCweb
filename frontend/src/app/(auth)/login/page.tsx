@@ -38,11 +38,11 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         // Will be redirected by useEffect once user state updates
       } else {
-        setError("Invalid email or password. Please try again.");
+        setError(result.error || "Invalid email or password. Please try again.");
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
