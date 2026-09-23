@@ -107,9 +107,21 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
           headers,
         });
       } else {
-        if (typeof window !== "undefined") {
-          const publicRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
-          const isPublicRoute = publicRoutes.some(route => window.location.pathname.startsWith(route));
+        if (typeof window !== "undefined" && path !== "/auth/me") {
+          const publicRoutes = [
+            "/login",
+            "/signup",
+            "/forgot-password",
+            "/reset-password",
+            "/portfolio",
+            "/certify",
+            "/apply",
+            "/report-issue",
+          ];
+          const pathname = window.location.pathname;
+          const isPublicRoute =
+            pathname === "/" ||
+            publicRoutes.some((route) => pathname.startsWith(route));
           if (!isPublicRoute) {
             window.location.href = "/login";
           }
