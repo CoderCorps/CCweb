@@ -48,7 +48,8 @@ function ManageTemplatesPage() {
               x_percent: f.x_percent,
               y_percent: f.y_percent,
               font_size: f.font_size || 20,
-              color: f.color || "#000000"
+              color: f.color || "#000000",
+              text_align: f.text_align || "left"
             })));
           }
         }
@@ -120,7 +121,8 @@ function ManageTemplatesPage() {
         x_percent: f.x_percent,
         y_percent: f.y_percent,
         font_size: f.font_size || 20,
-        color: f.color || "#000000"
+        color: f.color || "#000000",
+        text_align: f.text_align || "left"
       })));
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -213,6 +215,18 @@ function ManageTemplatesPage() {
                         onChange={(e) => updateSelectedField("font_size", parseInt(e.target.value))}
                         className="w-20 h-8 text-xs"
                       />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">Align:</span>
+                      <select 
+                        value={selectedField.text_align || "left"} 
+                        onChange={(e) => updateSelectedField("text_align", e.target.value)}
+                        className="h-8 text-xs rounded border border-input bg-background px-2"
+                      >
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                      </select>
                     </div>
                   </div>
                 </div>

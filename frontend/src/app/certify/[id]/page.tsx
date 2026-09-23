@@ -200,6 +200,7 @@ export default function CertifyPage() {
                 aspectRatio: "2000 / 1414",
                 maxWidth: "960px",
                 backgroundColor: "#0b0f19",
+                containerType: "inline-size",
               }}
             >
               {/* Background Layer */}
@@ -283,10 +284,11 @@ export default function CertifyPage() {
                       style={{
                         left: `${f.x_percent}%`,
                         top: `${f.y_percent}%`,
-                        fontSize: `clamp(11px, ${fontSizeScale * 1.6}vw, ${f.font_size || 28}px)`,
+                        fontSize: `${((f.font_size || 28) / 800) * 100}cqi`,
                         color: f.color || (useFallbackBackground ? "#ffffff" : "#000000"),
                         fontFamily: f.font_family || "inherit",
-                        textAlign: (f.text_align as any) || "center",
+                        textAlign: (f.text_align as any) || "left",
+                        transform: f.text_align === "center" ? "translate(-50%, -50%)" : f.text_align === "right" ? "translate(-100%, -50%)" : "translate(0%, -50%)",
                       }}
                     >
                       {val}

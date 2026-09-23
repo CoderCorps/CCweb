@@ -11,6 +11,7 @@ export interface Field {
   y_percent: number;
   font_size: number;
   color: string;
+  text_align?: string;
 }
 
 interface EditorProps {
@@ -21,9 +22,82 @@ interface EditorProps {
   onSelect: (id: string | null) => void;
 }
 
+const DraggableField = ({
+  f,
+  scale,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  onSelect,
+  onChange,
+  fields,
+}: {
+  f: Field;
+  scale: number;
+  CANVAS_WIDTH: number;
+  CANVAS_HEIGHT: number;
+  onSelect: (id: string) => void;
+  onChange: (fields: Field[]) => void;
+  fields: Field[];
+}) => {
+  const textRef = useRef<any>(null);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (textRef.current) {
+      const width = textRef.current.width();
+      const height = textRef.current.height();
+      let ox = 0;
+      if (f.text_align === "center") ox = width / 2;
+      else if (f.text_align === "right") ox = width;
+      let oy = height / 2;
+
+      if (offset.x !== ox || offset.y !== oy) {
+        setOffset({ x: ox, y: oy });
+        textRef.current.getLayer()?.batchDraw();
+      }
+    }
+  }, [f.text_align, f.field_key, f.font_size, scale]);
+
+  const x = (f.x_percent / 100) * CANVAS_WIDTH;
+  const y = (f.y_percent / 100) * CANVAS_HEIGHT;
+  const fontSize = f.font_size * scale || 30 * scale;
+
+  return (
+    <Text
+      ref={textRef}
+      id={f.id}
+      text={f.field_key === "qr_code" ? "{qr_code}" : `{${f.field_key}}`}
+      x={x}
+      y={y}
+      offsetX={offset.x}
+      offsetY={offset.y}
+      fontSize={fontSize}
+      fill={f.color || "#000"}
+      draggable
+      onClick={() => onSelect(f.id)}
+      onTap={() => onSelect(f.id)}
+      onDragEnd={(e) => {
+        const newX = e.target.x();
+        const newY = e.target.y();
+
+        const newFields = fields.map((field) =>
+          field.id === f.id
+            ? {
+                ...field,
+                x_percent: (newX / CANVAS_WIDTH) * 100,
+                y_percent: (newY / CANVAS_HEIGHT) * 100,
+              }
+            : field
+        );
+        onChange(newFields);
+      }}
+    />
+  );
+};
+
 const CertificateCanvasEditor: React.FC<EditorProps> = ({ backgroundImageUrl, fields, onChange, selectedId, onSelect }) => {
   const [image] = useImage(backgroundImageUrl, "anonymous");
-  
+
   // Hardcode base canvas size for preview
   const CANVAS_WIDTH = 800;
   const scale = image ? CANVAS_WIDTH / image.width : 1;
@@ -39,6 +113,8 @@ const CertificateCanvasEditor: React.FC<EditorProps> = ({ backgroundImageUrl, fi
         trRef.current.nodes([node]);
         trRef.current.getLayer().batchDraw();
       }
+    } else if (trRef.current) {
+      trRef.current.nodes([]);
     }
   }, [selectedId, fields]);
 
@@ -64,46 +140,23 @@ const CertificateCanvasEditor: React.FC<EditorProps> = ({ backgroundImageUrl, fi
                 onSelect(null);
               }}
             />
-            {fields.map((f) => {
-              const x = (f.x_percent / 100) * CANVAS_WIDTH;
-              const y = (f.y_percent / 100) * CANVAS_HEIGHT;
-              const fontSize = (f.font_size * scale) || (30 * scale);
-              
-              return (
-                <Text
-                  key={f.id}
-                  id={f.id}
-                  text={`{${f.field_key}}`}
-                  x={x}
-                  y={y}
-                  fontSize={fontSize}
-                  fill={f.color || "#000"}
-                  draggable
-                  onClick={() => onSelect(f.id)}
-                  onTap={() => onSelect(f.id)}
-                  onDragEnd={(e) => {
-                    const newX = e.target.x();
-                    const newY = e.target.y();
-                    
-                    const newFields = fields.map(field => 
-                      field.id === f.id ? {
-                        ...field,
-                        x_percent: (newX / CANVAS_WIDTH) * 100,
-                        y_percent: (newY / CANVAS_HEIGHT) * 100
-                      } : field
-                    );
-                    onChange(newFields);
-                  }}
-                />
-              );
-            })}
-            {selectedId && (
-              <Transformer
-                ref={trRef}
-                boundBoxFunc={(oldBox, newBox) => newBox}
-                resizeEnabled={false}
+            {fields.map((f) => (
+              <DraggableField
+                key={f.id}
+                f={f}
+                scale={scale}
+                CANVAS_WIDTH={CANVAS_WIDTH}
+                CANVAS_HEIGHT={CANVAS_HEIGHT}
+                onSelect={onSelect}
+                onChange={onChange}
+                fields={fields}
               />
-            )}
+            ))}
+            <Transformer
+              ref={trRef}
+              boundBoxFunc={(oldBox, newBox) => newBox}
+              resizeEnabled={false}
+            />
           </Layer>
         </Stage>
       ) : (
@@ -114,4 +167,3 @@ const CertificateCanvasEditor: React.FC<EditorProps> = ({ backgroundImageUrl, fi
 };
 
 export default CertificateCanvasEditor;
-
