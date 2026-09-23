@@ -261,6 +261,7 @@ export default function CertifyPage() {
                           width: "10%",
                           height: "auto",
                           aspectRatio: "1/1",
+                          transform: "translate(0%, -50%)",
                         }}
                       >
                         {/* Dynamic Live QR code */}
@@ -284,7 +285,7 @@ export default function CertifyPage() {
                       style={{
                         left: `${f.x_percent}%`,
                         top: `${f.y_percent}%`,
-                        fontSize: `${((f.font_size || 28) / 800) * 100}cqi`,
+                        fontSize: `${((f.font_size || 28) / (cert.template?.width_px || 2000)) * 100}cqi`,
                         color: f.color || (useFallbackBackground ? "#ffffff" : "#000000"),
                         fontFamily: f.font_family || "inherit",
                         textAlign: (f.text_align as any) || "left",
