@@ -86,7 +86,7 @@ export async function apiRequest(path: string, options: RequestOptions = {}) {
     }
   }
 
-  if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
+  if (!(options.body instanceof FormData) && !(options.body instanceof URLSearchParams) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -171,21 +171,21 @@ export const api = {
     apiRequest(path, {
       ...options,
       method: "POST",
-      body: body instanceof FormData ? body : JSON.stringify(body),
+      body: body instanceof FormData || body instanceof URLSearchParams ? body : JSON.stringify(body),
     }),
   
   patch: (path: string, body: any, options?: RequestOptions) =>
     apiRequest(path, {
       ...options,
       method: "PATCH",
-      body: body instanceof FormData ? body : JSON.stringify(body),
+      body: body instanceof FormData || body instanceof URLSearchParams ? body : JSON.stringify(body),
     }),
   
   put: (path: string, body: any, options?: RequestOptions) =>
     apiRequest(path, {
       ...options,
       method: "PUT",
-      body: body instanceof FormData ? body : JSON.stringify(body),
+      body: body instanceof FormData || body instanceof URLSearchParams ? body : JSON.stringify(body),
     }),
   
   delete: (path: string, options?: RequestOptions) =>

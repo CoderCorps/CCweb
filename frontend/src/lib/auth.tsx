@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const cleanEmail = email.trim().toLowerCase();
       const cleanPass = pass.trim();
-      const formData = new FormData();
+      const formData = new URLSearchParams();
       formData.append("username", cleanEmail);
       formData.append("password", cleanPass);
 
