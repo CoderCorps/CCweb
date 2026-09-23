@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const cleanPass = pass.trim();
+      const cleanPass = pass;
       const formData = new URLSearchParams();
       formData.append("username", cleanEmail);
       formData.append("password", cleanPass);

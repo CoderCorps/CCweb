@@ -141,7 +141,7 @@ async def login(
     # Authenticate user (form_data.username is treated as email)
     clean_username = form_data.username.strip().lower()
     user = db.query(User).filter(User.email == clean_username).first()
-    if not user or not security.verify_password(form_data.password.strip(), user.password_hash):
+    if not user or not security.verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect email or password"
