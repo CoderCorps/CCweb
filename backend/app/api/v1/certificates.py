@@ -16,6 +16,23 @@ from app.services.email_service import get_frontend_url
 
 router = APIRouter()
 
+class CertificateFieldPublic(BaseModel):
+    field_key: str
+    x_percent: float
+    y_percent: float
+    font_size: Optional[int] = 20
+    color: Optional[str] = "#000000"
+    font_family: Optional[str] = None
+    text_align: Optional[str] = "left"
+
+class CertificateTemplatePublic(BaseModel):
+    id: int
+    name: str
+    background_image_url: str
+    width_px: int = 2000
+    height_px: int = 1414
+    fields: List[CertificateFieldPublic] = []
+
 class CertificatePublicResponse(BaseModel):
     id: int
     holder_name: str
@@ -31,6 +48,7 @@ class CertificatePublicResponse(BaseModel):
     title: Optional[str] = None
     revoked: bool = False
     pdf_url: Optional[str] = None
+    template: Optional[CertificateTemplatePublic] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -155,14 +173,38 @@ async def send_batch(req: CertificateBatchSendRequest, db: Session = Depends(get
     db.commit()
     return {"message": f"Sent {sent_count} emails"}
 
-@router.get("/{cert_id}", response_model=CertificatePublicResponse)
-def get_certificate(cert_id: int, db: Session = Depends(get_db)):
-    cert = db.query(Certificate).filter(Certificate.id == cert_id).first()
-    if not cert:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Certificate not found")
-
+def _format_cert_response(cert: Certificate, db: Session) -> CertificatePublicResponse:
     holder = db.query(User).filter(User.id == cert.user_id).first()
     mentor_name = cert.criteria_met.get("mentor_name") if cert.criteria_met else None
+
+    template_data = None
+    tpl = cert.template
+    if not tpl and cert.template_id:
+        tpl = db.query(CertificateTemplate).filter(CertificateTemplate.id == cert.template_id).first()
+    if not tpl:
+        tpl = db.query(CertificateTemplate).first()
+
+    if tpl:
+        fields = [
+            CertificateFieldPublic(
+                field_key=f.field_key,
+                x_percent=f.x_percent,
+                y_percent=f.y_percent,
+                font_size=f.font_size,
+                color=f.color,
+                font_family=f.font_family,
+                text_align=f.text_align
+            )
+            for f in (tpl.fields or [])
+        ]
+        template_data = CertificateTemplatePublic(
+            id=tpl.id,
+            name=tpl.name,
+            background_image_url=tpl.background_image_url,
+            width_px=tpl.width_px or 2000,
+            height_px=tpl.height_px or 1414,
+            fields=fields
+        )
 
     return CertificatePublicResponse(
         id=cert.id,
@@ -176,30 +218,21 @@ def get_certificate(cert_id: int, db: Session = Depends(get_db)):
         verification_code=cert.verification_code,
         title=cert.title,
         revoked=cert.revoked,
-        pdf_url=cert.pdf_url
+        pdf_url=cert.pdf_url,
+        template=template_data
     )
+
+@router.get("/{cert_id}", response_model=CertificatePublicResponse)
+def get_certificate(cert_id: int, db: Session = Depends(get_db)):
+    cert = db.query(Certificate).filter(Certificate.id == cert_id).first()
+    if not cert:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Certificate not found")
+    return _format_cert_response(cert, db)
 
 @router.get("/verify/{verification_code}", response_model=CertificatePublicResponse)
 def verify_certificate(verification_code: str, db: Session = Depends(get_db)):
     cert = db.query(Certificate).filter(Certificate.verification_code == verification_code).first()
     if not cert:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Certificate not found")
-        
-    holder = db.query(User).filter(User.id == cert.user_id).first()
-    mentor_name = cert.criteria_met.get("mentor_name") if cert.criteria_met else None
-
-    return CertificatePublicResponse(
-        id=cert.id,
-        holder_name=holder.name if holder else "Unknown",
-        project_title=cert.project.title if cert.project else cert.title,
-        issued_at=cert.issued_at,
-        criteria_met=cert.criteria_met or {},
-        mentor_name=mentor_name,
-        certificate_number=cert.certificate_number,
-        public_url=cert.public_url,
-        verification_code=cert.verification_code,
-        title=cert.title,
-        revoked=cert.revoked,
-        pdf_url=cert.pdf_url
-    )
+    return _format_cert_response(cert, db)
 

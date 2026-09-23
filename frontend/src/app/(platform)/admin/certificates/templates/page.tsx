@@ -69,8 +69,13 @@ function ManageTemplatesPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const localUrl = URL.createObjectURL(file);
-    setBgImageUrl(localUrl);
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setBgImageUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const updateSelectedField = (key: string, value: any) => {
