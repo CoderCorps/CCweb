@@ -197,8 +197,6 @@ export default function CertifyPage() {
               id="certificate-render-frame"
               className="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-border/40 select-none print:border-none print:shadow-none print:rounded-none"
               style={{
-                aspectRatio: "2000 / 1414",
-                maxWidth: "960px",
                 backgroundColor: "#0b0f19",
                 containerType: "inline-size",
               }}
@@ -209,12 +207,12 @@ export default function CertifyPage() {
                 <img
                   src={cert.template?.background_image_url}
                   alt="Certificate Template Background"
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="w-full h-auto block"
                   onError={() => setImgError(true)}
                 />
               ) : (
                 /* Fallback Official Elegant Parchment Frame if custom image isn't reachable */
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-6 sm:p-12 flex flex-col justify-between border-[12px] border-amber-500/20">
+                <div className="w-full bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-6 sm:p-12 flex flex-col justify-between border-[12px] border-amber-500/20" style={{ aspectRatio: "2000 / 1414" }}>
                   <div className="absolute inset-2 border-2 border-dashed border-amber-400/30 pointer-events-none rounded-lg" />
                   
                   {/* Decorative Header */}
@@ -288,6 +286,7 @@ export default function CertifyPage() {
                         fontSize: `${((f.font_size || 28) / (cert.template?.width_px || 2000)) * 100}cqi`,
                         color: f.color || (useFallbackBackground ? "#ffffff" : "#000000"),
                         fontFamily: f.font_family || "inherit",
+                        lineHeight: 1,
                         textAlign: (f.text_align as any) || "left",
                         transform: f.text_align === "center" ? "translate(-50%, -50%)" : f.text_align === "right" ? "translate(-100%, -50%)" : "translate(0%, -50%)",
                       }}
