@@ -14,7 +14,45 @@ async def upload_template_background(file: UploadFile = File(...), current_user 
         raise HTTPException(status_code=400, detail="Only image files (PNG, JPG, WEBP) are allowed")
     
     file_bytes = await file.read()
-    public_url = upload_screenshot_to_cloud(file_bytes, content_type=file.content_type, filename=file.filename)
+    
+    # Compress/optimize large high-res certificate templates if needed
+    content_type = file.content_type
+    ext = ".png"
+    try:
+        import io
+        from PIL import Image
+        img = Image.open(io.BytesIO(file_bytes))
+        max_dim = 2400
+        if img.width > max_dim or img.height > max_dim:
+            img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+        
+        out_buf = io.BytesIO()
+        if img.mode in ("RGBA", "P"):
+            img.save(out_buf, format="PNG", optimize=True)
+            content_type = "image/png"
+            ext = ".png"
+        else:
+            img.save(out_buf, format="JPEG", quality=92, optimize=True)
+            content_type = "image/jpeg"
+            ext = ".jpg"
+        file_bytes = out_buf.getvalue()
+    except Exception:
+        pass
+
+    public_url = upload_screenshot_to_cloud(
+        file_bytes,
+        content_type=content_type,
+        filename=f"template_{file.filename or 'cert'}{ext}",
+        target_bucket="certificate-templates"
+    )
+    if not public_url:
+        public_url = upload_screenshot_to_cloud(
+            file_bytes,
+            content_type=content_type,
+            filename=f"template_{file.filename or 'cert'}{ext}",
+            target_bucket="issue-screenshots"
+        )
+        
     if not public_url:
         raise HTTPException(status_code=500, detail="Failed to upload image to Supabase cloud storage")
         
