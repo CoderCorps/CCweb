@@ -253,7 +253,7 @@ export default function CertifyPage() {
                     return (
                       <div
                         key={idx}
-                        className="absolute transform -translate-x-1/2 -translate-y-1/2 bg-white p-1 sm:p-1.5 rounded-lg shadow-lg flex items-center justify-center"
+                        className="absolute bg-white p-1 sm:p-1.5 rounded-lg shadow-lg flex items-center justify-center"
                         style={{
                           left: `${f.x_percent}%`,
                           top: `${f.y_percent}%`,
@@ -279,7 +279,7 @@ export default function CertifyPage() {
                   return (
                     <div
                       key={idx}
-                      className="absolute transform -translate-x-1/2 -translate-y-1/2 whitespace-nowrap pointer-events-none font-bold tracking-normal drop-shadow-md"
+                      className="absolute whitespace-nowrap pointer-events-none font-bold tracking-normal drop-shadow-md"
                       style={{
                         left: `${f.x_percent}%`,
                         top: `${f.y_percent}%`,
