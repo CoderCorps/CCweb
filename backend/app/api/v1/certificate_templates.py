@@ -3,9 +3,22 @@ from sqlalchemy.orm import Session
 from app.deps import get_db, get_current_mentor, get_current_admin
 from app.models.certificate_template import CertificateTemplate, CertificateTemplateField
 from app.schemas.certificate_template import CertificateTemplateCreate, CertificateTemplateResponse, CertificateTemplateFieldCreate, CertificateTemplateFieldResponse
+from app.services.supabase_storage import upload_screenshot_to_cloud
 from typing import List
 
 router = APIRouter()
+
+@router.post("/upload-background")
+async def upload_template_background(file: UploadFile = File(...), current_user = Depends(get_current_mentor)):
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files (PNG, JPG, WEBP) are allowed")
+    
+    file_bytes = await file.read()
+    public_url = upload_screenshot_to_cloud(file_bytes, content_type=file.content_type, filename=file.filename)
+    if not public_url:
+        raise HTTPException(status_code=500, detail="Failed to upload image to Supabase cloud storage")
+        
+    return {"url": public_url}
 
 @router.post("", response_model=CertificateTemplateResponse)
 def create_template(template: CertificateTemplateCreate, db: Session = Depends(get_db), current_user = Depends(get_current_mentor)):

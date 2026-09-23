@@ -7,20 +7,14 @@ import urllib.parse
 from typing import Optional
 from app.core.config import settings
 
-def upload_screenshot_to_cloud(file_bytes: bytes, content_type: str = "image/png", filename: Optional[str] = None) -> Optional[str]:
+def upload_screenshot_to_cloud(file_bytes: bytes, content_type: str = "image/png", filename: Optional[str] = None, target_bucket: Optional[str] = None) -> Optional[str]:
     """
     Uploads an image file to Supabase Storage (or cloud storage fallback)
     and returns a 100% accessible public HTTPS URL.
-    
-    Supported Environment Variables:
-      - SUPABASE_URL: e.g. https://xyzcompany.supabase.co
-      - SUPABASE_KEY / SUPABASE_SERVICE_ROLE_KEY: Supabase secret or anon key
-      - SUPABASE_BUCKET: Bucket name (default: 'issue-screenshots')
-      - IMGBB_API_KEY: (Optional) ImgBB API key as fallback
     """
     supabase_url = (os.getenv("SUPABASE_URL") or settings.SUPABASE_URL or "").strip("'\" ").rstrip("/")
     supabase_key = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY") or settings.SUPABASE_KEY or "").strip("'\" ")
-    bucket = (os.getenv("SUPABASE_BUCKET") or settings.SUPABASE_BUCKET or "issue-screenshots").strip("'\" ")
+    bucket = (target_bucket or os.getenv("SUPABASE_BUCKET") or settings.SUPABASE_BUCKET or "issue-screenshots").strip("'\" ")
 
     ext = os.path.splitext(filename or "shot.png")[1]
     if not ext or ext.lower() not in [".png", ".jpg", ".jpeg", ".webp", ".gif"]:

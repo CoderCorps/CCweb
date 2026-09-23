@@ -22,6 +22,15 @@ function ManageTemplatesPage() {
   const [savedTemplates, setSavedTemplates] = useState<any[]>([]);
   
   const [initialEmailData, setInitialEmailData] = useState<any>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [fields, setFields] = useState([
+    { id: "1", field_key: "student_name", x_percent: 50, y_percent: 50, font_size: 60, color: "#ffffff" },
+    { id: "2", field_key: "certificate_number", x_percent: 10, y_percent: 90, font_size: 20, color: "#dddddd" },
+    { id: "3", field_key: "issue_date", x_percent: 80, y_percent: 90, font_size: 20, color: "#dddddd" },
+    { id: "4", field_key: "qr_code", x_percent: 80, y_percent: 10, font_size: 0, color: "transparent" }
+  ]);
+
+  const selectedField = fields.find(f => f.id === selectedFieldId);
 
   React.useEffect(() => {
     api.get("/certificate-templates").then(res => res.json()).then(data => {
@@ -51,24 +60,17 @@ function ManageTemplatesPage() {
         const t = data.find((x: any) => x.id.toString() === editEmailId);
         if (t) {
           setInitialEmailData(t);
-          // scroll to bottom where email editor is
           setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }), 300);
         }
       }).catch(console.error);
     }
   }, [editId, editEmailId]);
-  const [fields, setFields] = useState([
-    { id: "1", field_key: "student_name", x_percent: 50, y_percent: 50, font_size: 60, color: "#ffffff" },
-    { id: "2", field_key: "certificate_number", x_percent: 10, y_percent: 90, font_size: 20, color: "#dddddd" },
-    { id: "3", field_key: "issue_date", x_percent: 80, y_percent: 90, font_size: 20, color: "#dddddd" },
-    { id: "4", field_key: "qr_code", x_percent: 80, y_percent: 10, font_size: 0, color: "transparent" }
-  ]);
 
-  const selectedField = fields.find(f => f.id === selectedFieldId);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Show immediate local preview
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
@@ -76,6 +78,29 @@ function ManageTemplatesPage() {
       }
     };
     reader.readAsDataURL(file);
+
+    // Upload to Supabase Storage via backend
+    setIsUploading(true);
+    const toastId = toast.loading("Uploading design to Supabase Cloud Storage...");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await api.post("/certificate-templates/upload-background", formData);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          setBgImageUrl(data.url);
+          toast.success("Design uploaded to Supabase Storage successfully!", { id: toastId });
+        }
+      } else {
+        toast.error("Failed to upload to cloud storage, using local preview.", { id: toastId });
+      }
+    } catch (err) {
+      toast.error("Cloud storage upload error.", { id: toastId });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const updateSelectedField = (key: string, value: any) => {
