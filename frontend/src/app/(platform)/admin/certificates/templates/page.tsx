@@ -25,10 +25,10 @@ function ManageTemplatesPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [fields, setFields] = useState([
-    { id: "1", field_key: "student_name", x_percent: 50, y_percent: 50, font_size: 60, color: "#ffffff" },
-    { id: "2", field_key: "certificate_number", x_percent: 10, y_percent: 90, font_size: 20, color: "#dddddd" },
-    { id: "3", field_key: "issue_date", x_percent: 80, y_percent: 90, font_size: 20, color: "#dddddd" },
-    { id: "4", field_key: "qr_code", x_percent: 80, y_percent: 10, font_size: 0, color: "transparent" }
+    { id: "1", field_key: "student_name", x_percent: 50, y_percent: 50, font_size: 60, color: "#ffffff", text_align: "center" },
+    { id: "2", field_key: "certificate_number", x_percent: 10, y_percent: 90, font_size: 20, color: "#dddddd", text_align: "left" },
+    { id: "3", field_key: "issue_date", x_percent: 80, y_percent: 90, font_size: 20, color: "#dddddd", text_align: "left" },
+    { id: "4", field_key: "qr_code", x_percent: 80, y_percent: 10, font_size: 0, color: "transparent", text_align: "left" }
   ]);
 
   const selectedField = fields.find(f => f.id === selectedFieldId);
@@ -352,8 +352,8 @@ function ManageTemplatesPage() {
                       fontSize: `${(f.font_size / 2000) * 100}cqi`,
                       color: f.color || "#ffffff",
                       lineHeight: 1,
-                      textAlign: ((f as any).text_align as any) || "left",
-                      transform: (f as any).text_align === "center" ? "translate(-50%, -50%)" : (f as any).text_align === "right" ? "translate(-100%, -50%)" : "translate(0%, -50%)",
+                      textAlign: (f.text_align as any) || "left",
+                      transform: f.text_align === "center" ? "translate(-50%, -50%)" : f.text_align === "right" ? "translate(-100%, -50%)" : "translate(0%, -50%)",
                     }}
                   >
                     {val}

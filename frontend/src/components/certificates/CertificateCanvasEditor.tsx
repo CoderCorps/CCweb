@@ -11,7 +11,7 @@ export interface Field {
   y_percent: number;
   font_size: number;
   color: string;
-  text_align?: string;
+  text_align: string;
 }
 
 interface EditorProps {
