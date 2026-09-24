@@ -252,11 +252,11 @@ export default function CertifyPage() {
                     return (
                       <div
                         key={idx}
-                        className="absolute bg-white p-1 sm:p-1.5 rounded-lg shadow-lg flex items-center justify-center"
+                        className="absolute bg-white p-2 rounded-lg shadow-lg flex items-center justify-center"
                         style={{
                           left: `${f.x_percent}%`,
                           top: `${f.y_percent}%`,
-                          width: "10%",
+                          width: "12%",
                           height: "auto",
                           aspectRatio: "1/1",
                           transform: "translate(0%, -50%)",
@@ -265,7 +265,7 @@ export default function CertifyPage() {
                         {/* Dynamic Live QR code */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(verifyUrl)}`}
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=H&data=${encodeURIComponent(verifyUrl)}`}
                           alt="Verification QR"
                           className="w-full h-full object-contain"
                         />

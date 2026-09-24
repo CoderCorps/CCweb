@@ -28,7 +28,7 @@ function ManageTemplatesPage() {
     { id: "1", field_key: "student_name", x_percent: 50, y_percent: 50, font_size: 60, color: "#ffffff", text_align: "center" },
     { id: "2", field_key: "certificate_number", x_percent: 10, y_percent: 90, font_size: 20, color: "#dddddd", text_align: "left" },
     { id: "3", field_key: "issue_date", x_percent: 80, y_percent: 90, font_size: 20, color: "#dddddd", text_align: "left" },
-    { id: "4", field_key: "qr_code", x_percent: 80, y_percent: 10, font_size: 0, color: "transparent", text_align: "left" }
+    { id: "4", field_key: "qr_code", x_percent: 80, y_percent: 10, font_size: 20, color: "#aaaaaa", text_align: "left" }
   ]);
 
   const selectedField = fields.find(f => f.id === selectedFieldId);
@@ -308,11 +308,11 @@ function ManageTemplatesPage() {
                   return (
                     <div
                       key={f.id}
-                      className="absolute bg-white p-1 sm:p-1.5 rounded-lg shadow-lg flex items-center justify-center"
+                      className="absolute bg-white p-2 rounded-lg shadow-lg flex items-center justify-center"
                       style={{
                         left: `${f.x_percent}%`,
                         top: `${f.y_percent}%`,
-                        width: "10%",
+                        width: "12%",
                         height: "auto",
                         aspectRatio: "1/1",
                         transform: "translate(0%, -50%)",
@@ -320,7 +320,7 @@ function ManageTemplatesPage() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent("https://codercorps.com/certify/PREVIEW")}`}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=H&data=${encodeURIComponent("https://codercorps.com/certify/PREVIEW")}`}
                         alt="QR Preview"
                         className="w-full h-full object-contain"
                       />
