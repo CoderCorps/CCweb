@@ -41,7 +41,7 @@ const DraggableField = ({
 }) => {
   const textRef = useRef<any>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [sampleQr] = useImage("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=CODERCORPS_PREVIEW", "anonymous");
+  const [sampleQr] = useImage("https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=M&margin=4&data=CODERCORPS_PREVIEW", "anonymous");
 
   useEffect(() => {
     if (textRef.current && f.field_key !== "qr_code") {
@@ -63,7 +63,7 @@ const DraggableField = ({
   const y = (f.y_percent / 100) * CANVAS_HEIGHT;
 
   if (f.field_key === "qr_code") {
-    const qrSize = CANVAS_WIDTH * 0.12;
+    const qrSize = CANVAS_WIDTH * 0.13;
     return (
       <Group
         ref={textRef}

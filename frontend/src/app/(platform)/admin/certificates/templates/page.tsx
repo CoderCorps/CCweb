@@ -325,11 +325,11 @@ function ManageTemplatesPage() {
                   return (
                     <div
                       key={f.id}
-                      className="absolute bg-white p-2 rounded-lg shadow-lg flex items-center justify-center"
+                      className="absolute bg-white p-2 rounded-xl shadow-2xl flex items-center justify-center border-2 border-white"
                       style={{
                         left: `${f.x_percent}%`,
                         top: `${f.y_percent}%`,
-                        width: "12%",
+                        width: "13%",
                         height: "auto",
                         aspectRatio: "1/1",
                         transform: "translate(0%, -50%)",
@@ -337,9 +337,9 @@ function ManageTemplatesPage() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=H&data=${encodeURIComponent("https://codercorps.com/certify/PREVIEW")}`}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&ecc=M&margin=4&data=${encodeURIComponent("https://codercorps.com/certify/PREVIEW")}`}
                         alt="QR Preview"
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-contain block"
                       />
                     </div>
                   );

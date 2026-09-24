@@ -250,13 +250,17 @@ export default function CertifyPage() {
                 cert.template.fields.map((f, idx) => {
                   if (f.field_key === "qr_code") {
                     return (
-                      <div
+                      <a
                         key={idx}
-                        className="absolute bg-white p-2 rounded-lg shadow-lg flex items-center justify-center"
+                        href={verifyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Click to view verified certificate link"
+                        className="absolute bg-white p-2 rounded-xl shadow-2xl flex items-center justify-center border-2 border-white transition-transform hover:scale-105 cursor-pointer z-30"
                         style={{
                           left: `${f.x_percent}%`,
                           top: `${f.y_percent}%`,
-                          width: "12%",
+                          width: "13%",
                           height: "auto",
                           aspectRatio: "1/1",
                           transform: "translate(0%, -50%)",
@@ -265,11 +269,11 @@ export default function CertifyPage() {
                         {/* Dynamic Live QR code */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=H&data=${encodeURIComponent(verifyUrl)}`}
-                          alt="Verification QR"
-                          className="w-full h-full object-contain"
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&ecc=M&margin=4&data=${encodeURIComponent(verifyUrl)}`}
+                          alt="Verification QR Code"
+                          className="w-full h-full object-contain block"
                         />
-                      </div>
+                      </a>
                     );
                   }
 
