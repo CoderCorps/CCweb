@@ -33,6 +33,32 @@ function ManageTemplatesPage() {
 
   const selectedField = fields.find(f => f.id === selectedFieldId);
 
+  const mapTemplateFields = (rawFields: any[]) => {
+    const list = rawFields.map((f: any) => ({
+      id: f.id.toString(),
+      field_key: f.field_key,
+      x_percent: Number(f.x_percent),
+      y_percent: Number(f.y_percent),
+      font_size: Number(f.font_size) || (f.field_key === "student_name" ? 60 : 20),
+      color: (f.field_key === "qr_code" || !f.color || f.color === "transparent") ? "#ffffff" : f.color,
+      text_align: f.text_align || (f.field_key === "student_name" ? "center" : "left")
+    }));
+
+    if (!list.some((f: any) => f.field_key === "qr_code")) {
+      list.push({
+        id: "qr_code_default",
+        field_key: "qr_code",
+        x_percent: 80,
+        y_percent: 10,
+        font_size: 20,
+        color: "#ffffff",
+        text_align: "left"
+      });
+    }
+
+    return list;
+  };
+
   React.useEffect(() => {
     api.get("/certificate-templates").then(res => res.json()).then(data => {
       setSavedTemplates(data);
@@ -43,15 +69,7 @@ function ManageTemplatesPage() {
           setTemplateName(t.name);
           setBgImageUrl(t.background_image_url);
           if (t.fields && t.fields.length > 0) {
-            setFields(t.fields.map((f: any) => ({
-              id: f.id.toString(),
-              field_key: f.field_key,
-              x_percent: f.x_percent,
-              y_percent: f.y_percent,
-              font_size: f.font_size || 20,
-              color: f.color || "#000000",
-              text_align: f.text_align || "left"
-            })));
+            setFields(mapTemplateFields(t.fields));
           }
         }
       }
@@ -115,16 +133,7 @@ function ManageTemplatesPage() {
     setTemplateName(t.name);
     setBgImageUrl(t.background_image_url);
     if (t.fields && t.fields.length > 0) {
-      // Map backend fields to frontend expected fields
-      setFields(t.fields.map((f: any) => ({
-        id: f.id.toString(),
-        field_key: f.field_key,
-        x_percent: f.x_percent,
-        y_percent: f.y_percent,
-        font_size: f.font_size || 20,
-        color: f.color || "#000000",
-        text_align: f.text_align || "left"
-      })));
+      setFields(mapTemplateFields(t.fields));
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -203,39 +212,47 @@ function ManageTemplatesPage() {
               <div className="flex items-center gap-4 p-4 border border-primary/40 bg-primary/5 rounded-lg">
                 <Settings2 className="w-5 h-5 text-primary" />
                 <div>
-                  <label className="text-xs font-bold block mb-1">Editing Field: {selectedField.field_key}</label>
-                  <div className="flex gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs">Color:</span>
-                      <input 
-                        type="color" 
-                        value={selectedField.color} 
-                        onChange={(e) => updateSelectedField("color", e.target.value)}
-                        className="w-8 h-8 rounded cursor-pointer"
-                      />
+                  <label className="text-xs font-bold block mb-1">
+                    Editing Field: <span className="font-mono text-primary">{selectedField.field_key}</span>
+                  </label>
+                  {selectedField.field_key === "qr_code" ? (
+                    <p className="text-xs text-muted-foreground">
+                      Verification QR Code Card (12% width) — Drag the white QR box on the canvas to place it anywhere on the certificate.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">Color:</span>
+                        <input 
+                          type="color" 
+                          value={selectedField.color} 
+                          onChange={(e) => updateSelectedField("color", e.target.value)}
+                          className="w-8 h-8 rounded cursor-pointer"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">Size:</span>
+                        <Input 
+                          type="number" 
+                          value={selectedField.font_size} 
+                          onChange={(e) => updateSelectedField("font_size", parseInt(e.target.value) || 20)}
+                          className="w-20 h-8 text-xs"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">Align:</span>
+                        <select 
+                          value={selectedField.text_align || "left"} 
+                          onChange={(e) => updateSelectedField("text_align", e.target.value)}
+                          className="h-8 text-xs rounded border border-input bg-background px-2"
+                        >
+                          <option value="left">Left</option>
+                          <option value="center">Center</option>
+                          <option value="right">Right</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs">Size:</span>
-                      <Input 
-                        type="number" 
-                        value={selectedField.font_size} 
-                        onChange={(e) => updateSelectedField("font_size", parseInt(e.target.value))}
-                        className="w-20 h-8 text-xs"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs">Align:</span>
-                      <select 
-                        value={selectedField.text_align || "left"} 
-                        onChange={(e) => updateSelectedField("text_align", e.target.value)}
-                        className="h-8 text-xs rounded border border-input bg-background px-2"
-                      >
-                        <option value="left">Left</option>
-                        <option value="center">Center</option>
-                        <option value="right">Right</option>
-                      </select>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}

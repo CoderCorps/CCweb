@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Stage, Layer, Text, Image as KonvaImage, Transformer } from "react-konva";
+import { Stage, Layer, Text, Image as KonvaImage, Transformer, Group, Rect } from "react-konva";
 import useImage from "use-image";
 
 export interface Field {
@@ -41,9 +41,10 @@ const DraggableField = ({
 }) => {
   const textRef = useRef<any>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [sampleQr] = useImage("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=CODERCORPS_PREVIEW", "anonymous");
 
   useEffect(() => {
-    if (textRef.current) {
+    if (textRef.current && f.field_key !== "qr_code") {
       const width = textRef.current.width();
       const height = textRef.current.height();
       let ox = 0;
@@ -60,13 +61,75 @@ const DraggableField = ({
 
   const x = (f.x_percent / 100) * CANVAS_WIDTH;
   const y = (f.y_percent / 100) * CANVAS_HEIGHT;
+
+  if (f.field_key === "qr_code") {
+    const qrSize = CANVAS_WIDTH * 0.12;
+    return (
+      <Group
+        ref={textRef}
+        id={f.id}
+        x={x}
+        y={y}
+        offsetY={qrSize / 2}
+        draggable
+        onClick={() => onSelect(f.id)}
+        onTap={() => onSelect(f.id)}
+        onDragEnd={(e) => {
+          const newX = e.target.x();
+          const newY = e.target.y();
+          const newFields = fields.map((field) =>
+            field.id === f.id
+              ? {
+                  ...field,
+                  x_percent: (newX / CANVAS_WIDTH) * 100,
+                  y_percent: (newY / CANVAS_HEIGHT) * 100,
+                }
+              : field
+          );
+          onChange(newFields);
+        }}
+      >
+        <Rect
+          width={qrSize}
+          height={qrSize}
+          fill="#ffffff"
+          cornerRadius={6}
+          shadowColor="#000000"
+          shadowBlur={6}
+          shadowOpacity={0.3}
+          stroke="#3b82f6"
+          strokeWidth={1}
+        />
+        {sampleQr ? (
+          <KonvaImage
+            image={sampleQr}
+            x={6}
+            y={6}
+            width={qrSize - 12}
+            height={qrSize - 12}
+          />
+        ) : (
+          <Text
+            text="[QR CODE]"
+            fontSize={12 * scale}
+            fontStyle="bold"
+            fill="#000000"
+            width={qrSize}
+            y={qrSize / 2 - 6}
+            align="center"
+          />
+        )}
+      </Group>
+    );
+  }
+
   const fontSize = f.font_size * scale || 30 * scale;
 
   return (
     <Text
       ref={textRef}
       id={f.id}
-      text={f.field_key === "qr_code" ? "{qr_code}" : `{${f.field_key}}`}
+      text={`{${f.field_key}}`}
       x={x}
       y={y}
       offsetX={offset.x}
