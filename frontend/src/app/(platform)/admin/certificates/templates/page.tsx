@@ -6,7 +6,7 @@ import { CertificateCanvasEditor } from "@/components/certificates/CertificateEd
 import EmailTemplateEditor from "@/components/certificates/EmailTemplateEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, Settings2 } from "lucide-react";
+import { Upload, Settings2, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 
@@ -23,6 +23,7 @@ function ManageTemplatesPage() {
   
   const [initialEmailData, setInitialEmailData] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [fields, setFields] = useState([
     { id: "1", field_key: "student_name", x_percent: 50, y_percent: 50, font_size: 60, color: "#ffffff" },
     { id: "2", field_key: "certificate_number", x_percent: 10, y_percent: 90, font_size: 20, color: "#dddddd" },
@@ -189,7 +190,13 @@ function ManageTemplatesPage() {
           <div className="space-y-4">
             <div className="bg-muted p-4 rounded-lg border text-sm text-muted-foreground flex justify-between items-center">
               <span>Drag the text fields to position them. Click on a field to edit its style.</span>
-              <Button onClick={handleSaveTemplate} size="sm">Save Canvas Layout</Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setShowPreview(true)} size="sm" variant="outline" className="gap-1.5">
+                  <Eye className="w-4 h-4" />
+                  Preview
+                </Button>
+                <Button onClick={handleSaveTemplate} size="sm">Save Canvas Layout</Button>
+              </div>
             </div>
             
             {selectedField && (
@@ -266,6 +273,97 @@ function ManageTemplatesPage() {
             }
         }} />
       </div>
+
+      {/* Live Preview Modal */}
+      {showPreview && bgImageUrl && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
+          <div className="relative w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
+            {/* Close Button */}
+            <button
+              onClick={() => setShowPreview(false)}
+              className="absolute -top-10 right-0 text-white/70 hover:text-white transition-colors flex items-center gap-1.5 text-sm font-mono"
+            >
+              <X className="w-4 h-4" /> Close Preview
+            </button>
+            <p className="absolute -top-10 left-0 text-white/50 text-xs font-mono">
+              LIVE PREVIEW — This is how the certificate will look on the public link
+            </p>
+
+            {/* Certificate Render Frame — mirrors certify/[id]/page.tsx exactly */}
+            <div
+              className="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-border/40 select-none"
+              style={{ containerType: "inline-size", backgroundColor: "#0b0f19" }}
+            >
+              {/* Background image */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={bgImageUrl}
+                alt="Certificate Background Preview"
+                className="w-full h-auto block"
+              />
+
+              {/* Overlaid dynamic fields */}
+              {fields.map((f) => {
+                if (f.field_key === "qr_code") {
+                  return (
+                    <div
+                      key={f.id}
+                      className="absolute bg-white p-1 sm:p-1.5 rounded-lg shadow-lg flex items-center justify-center"
+                      style={{
+                        left: `${f.x_percent}%`,
+                        top: `${f.y_percent}%`,
+                        width: "10%",
+                        height: "auto",
+                        aspectRatio: "1/1",
+                        transform: "translate(0%, -50%)",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent("https://codercorps.com/certify/PREVIEW")}`}
+                        alt="QR Preview"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  );
+                }
+
+                const sampleValues: Record<string, string> = {
+                  student_name: "Atul Sharma",
+                  holder_name: "Atul Sharma",
+                  name: "Atul Sharma",
+                  certificate_number: "CC-2026-00010",
+                  issue_date: "September 24, 2026",
+                  date: "September 24, 2026",
+                  project_title: "CoderCorps Web Platform",
+                  title: "Certificate of Completion",
+                  mentor_name: "Divakar Singh",
+                  reviewer_name: "Divakar Singh",
+                };
+                const val = sampleValues[f.field_key] || `{${f.field_key}}`;
+
+                return (
+                  <div
+                    key={f.id}
+                    className="absolute whitespace-nowrap pointer-events-none font-bold tracking-normal drop-shadow-md"
+                    style={{
+                      left: `${f.x_percent}%`,
+                      top: `${f.y_percent}%`,
+                      fontSize: `${(f.font_size / 2000) * 100}cqi`,
+                      color: f.color || "#ffffff",
+                      lineHeight: 1,
+                      textAlign: ((f as any).text_align as any) || "left",
+                      transform: (f as any).text_align === "center" ? "translate(-50%, -50%)" : (f as any).text_align === "right" ? "translate(-100%, -50%)" : "translate(0%, -50%)",
+                    }}
+                  >
+                    {val}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
