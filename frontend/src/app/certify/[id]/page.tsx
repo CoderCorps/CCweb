@@ -16,9 +16,12 @@ import {
   FolderGit2, 
   Download, 
   Eye, 
-  FileCheck2
+  FileCheck2,
+  CreditCard,
+  Image as ImageIcon
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 interface TemplateField {
   field_key: string;
@@ -58,8 +61,10 @@ export default function CertifyPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"visual" | "audit">("visual");
+  const [activeTab, setActiveTab] = useState<"visual" | "card" | "audit">("visual");
   const [imgError, setImgError] = useState(false);
+  const [downloadingPng, setDownloadingPng] = useState(false);
+  const [downloadingCard, setDownloadingCard] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -87,6 +92,58 @@ export default function CertifyPage() {
     await navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadPng = async () => {
+    const frame = document.getElementById("certificate-render-frame");
+    if (!frame || !cert) return;
+    setDownloadingPng(true);
+    const toastId = toast.loading("Generating high-resolution Certificate PNG...");
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(frame, {
+        pixelRatio: 2,
+        quality: 1,
+        cacheBust: true,
+      });
+      const link = document.createElement("a");
+      const certNum = cert.certificate_number || `CC-2026-${String(cert.id).padStart(5, "0")}`;
+      link.download = `${cert.holder_name.replace(/\s+/g, "_")}_Certificate_${certNum}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Certificate downloaded as PNG!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate PNG image. You can also use Print / Save as PDF.", { id: toastId });
+    } finally {
+      setDownloadingPng(false);
+    }
+  };
+
+  const handleDownloadCard = async () => {
+    const card = document.getElementById("credential-card-render-frame");
+    if (!card || !cert) return;
+    setDownloadingCard(true);
+    const toastId = toast.loading("Generating Credential Badge Card PNG...");
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(card, {
+        pixelRatio: 2,
+        quality: 1,
+        cacheBust: true,
+      });
+      const link = document.createElement("a");
+      const certNum = cert.certificate_number || `CC-2026-${String(cert.id).padStart(5, "0")}`;
+      link.download = `${cert.holder_name.replace(/\s+/g, "_")}_Credential_Card_${certNum}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Credential Card downloaded as PNG!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate Card image.", { id: toastId });
+    } finally {
+      setDownloadingCard(false);
+    }
   };
 
   if (loading) {
@@ -172,6 +229,17 @@ export default function CertifyPage() {
               Certificate View
             </button>
             <button
+              onClick={() => setActiveTab("card")}
+              className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "card"
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "bg-muted/60 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              Credential Card
+            </button>
+            <button
               onClick={() => setActiveTab("audit")}
               className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === "audit"
@@ -186,31 +254,26 @@ export default function CertifyPage() {
         </motion.div>
 
         {/* Visual Certificate View */}
-        {activeTab === "visual" && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="w-full flex justify-center"
+        <div className={activeTab === "visual" ? "w-full flex justify-center" : "fixed -left-[9999px] top-0 pointer-events-none opacity-0"}>
+          <div 
+            id="certificate-render-frame"
+            className="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-border/40 select-none print:border-none print:shadow-none print:rounded-none"
+            style={{
+              backgroundColor: "#0b0f19",
+              containerType: "inline-size",
+            }}
           >
-            <div 
-              id="certificate-render-frame"
-              className="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-border/40 select-none print:border-none print:shadow-none print:rounded-none"
-              style={{
-                backgroundColor: "#0b0f19",
-                containerType: "inline-size",
-              }}
-            >
-              {/* Background Layer */}
-              {!useFallbackBackground ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={cert.template?.background_image_url}
-                  alt="Certificate Template Background"
-                  className="w-full h-auto block"
-                  onError={() => setImgError(true)}
-                />
-              ) : (
+            {/* Background Layer */}
+            {!useFallbackBackground ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={cert.template?.background_image_url}
+                alt="Certificate Template Background"
+                className="w-full h-auto block"
+                crossOrigin="anonymous"
+                onError={() => setImgError(true)}
+              />
+            ) : (
                 /* Fallback Official Elegant Parchment Frame if custom image isn't reachable */
                 <div className="w-full bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-6 sm:p-12 flex flex-col justify-between border-[12px] border-amber-500/20" style={{ aspectRatio: "2000 / 1414" }}>
                   <div className="absolute inset-2 border-2 border-dashed border-amber-400/30 pointer-events-none rounded-lg" />
@@ -320,8 +383,80 @@ export default function CertifyPage() {
                 </div>
               )}
             </div>
-          </motion.div>
-        )}
+          </div>
+
+        {/* Credential Card View */}
+        <div className={activeTab === "card" ? "w-full flex justify-center py-4" : "fixed -left-[9999px] top-0 pointer-events-none opacity-0"}>
+          <div
+            id="credential-card-render-frame"
+            className="w-full max-w-xl rounded-3xl overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 border-2 border-indigo-500/40 shadow-2xl relative text-white select-none"
+            style={{ minHeight: "360px" }}
+          >
+            {/* Ambient lighting glows */}
+            <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Header: Verified Organization Badge */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-5 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                  <ShieldCheck className="w-6 h-6 text-indigo-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono tracking-widest text-indigo-400 font-extrabold uppercase">CoderCorps Guild</p>
+                  <p className="text-sm font-bold text-slate-100">Verified Engineering Credential</p>
+                </div>
+              </div>
+              <div className="inline-flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wide shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                VERIFIED
+              </div>
+            </div>
+
+            {/* Card Body: Credential Holder & Title */}
+            <div className="py-7 space-y-2 relative z-10">
+              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-slate-400 font-semibold">Awarded To</p>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-md">
+                {cert.holder_name}
+              </h2>
+              <div className="pt-2">
+                <span className="inline-block px-3 py-1 rounded-lg bg-indigo-500/20 border border-indigo-400/30 text-xs sm:text-sm font-semibold text-indigo-200">
+                  {cert.project_title || cert.title || "CoderCorps Engineering Program"}
+                </span>
+              </div>
+            </div>
+
+            {/* Card Footer: Metadata + Scannable QR Badge */}
+            <div className="flex items-end justify-between border-t border-white/10 pt-5 relative z-10">
+              <div className="space-y-2.5">
+                <div>
+                  <p className="text-[9px] font-mono uppercase text-slate-400">Credential ID</p>
+                  <p className="text-xs font-mono font-bold text-slate-200">{certNumber}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-mono uppercase text-slate-400">Issue Date</p>
+                  <p className="text-xs font-semibold text-slate-300">{issueDateFormatted}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-mono uppercase text-slate-400">Audited By</p>
+                  <p className="text-xs font-semibold text-slate-300">{cert.mentor_name || "CoderCorps Mentor"}</p>
+                </div>
+              </div>
+
+              {/* Verified QR badge on card */}
+              <div className="bg-white p-2.5 rounded-2xl shadow-xl flex flex-col items-center shrink-0 border-2 border-white">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&ecc=M&margin=4&data=${encodeURIComponent(verifyUrl)}`}
+                  alt="QR Verification"
+                  className="w-20 h-20 sm:w-24 sm:h-24 object-contain block"
+                  crossOrigin="anonymous"
+                />
+                <span className="text-[8px] font-mono font-bold text-slate-800 tracking-wider mt-1 uppercase">Scan to Verify</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Audit Details Card (Tab or Print) */}
         {(activeTab === "audit" || typeof window === "undefined") && (
@@ -392,23 +527,43 @@ export default function CertifyPage() {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-wrap items-center justify-center gap-3 pt-2 print:hidden"
+          className="flex flex-wrap items-center justify-center gap-3 pt-4 print:hidden"
         >
+          <button
+            onClick={handleDownloadPng}
+            disabled={downloadingPng}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-600/20 active:scale-95 cursor-pointer disabled:opacity-50"
+          >
+            <ImageIcon className="h-4 w-4" />
+            {downloadingPng ? "Generating PNG..." : "Save as PNG"}
+          </button>
+
+          <button
+            onClick={handleDownloadCard}
+            disabled={downloadingCard}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer disabled:opacity-50"
+          >
+            <CreditCard className="h-4 w-4" />
+            {downloadingCard ? "Generating Card..." : "Save as Card"}
+          </button>
+
           <button
             id="share-cert-btn"
             onClick={handleShare}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-primary/20"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? "Link Copied!" : "Share Certificate"}
+            {copied ? "Link Copied!" : "Share Link"}
           </button>
+
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-card/60 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-card/60 transition-colors cursor-pointer"
           >
             <Download className="h-4 w-4" />
-            Print / Save as PDF
+            Print / PDF
           </button>
+
           <Link
             href="/"
             className="text-xs font-mono text-muted-foreground hover:text-foreground transition-colors ml-2"
