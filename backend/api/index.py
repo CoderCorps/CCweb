@@ -16,6 +16,9 @@ try:
     from app.main import app as main_app
     app = main_app
 except Exception as e:
+    # Save error info to separate variables because Python 3 deletes
+    # the 'as e' target after the except block exits
+    startup_error = str(e)
     err_traceback = traceback.format_exc()
     print(f"[VERCEL STARTUP ERROR]:\n{err_traceback}")
 
@@ -33,7 +36,7 @@ except Exception as e:
             status_code=500,
             content={
                 "error": "Backend server failed to start on Vercel",
-                "detail": str(e),
+                "detail": startup_error,
                 "traceback": err_traceback
             }
         )

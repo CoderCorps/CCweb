@@ -16,7 +16,7 @@ for env_path in [
         break
 load_dotenv()
 
-PROD_SUPABASE_DB = "postgresql://postgres.arbhdndsmpzvuliiopru:Coder%402004corps@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?sslmode=require"
+PROD_SUPABASE_DB = "postgresql+psycopg2://postgres.arbhdndsmpzvuliiopru:Coder%402004corps@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?sslmode=require"
 
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
