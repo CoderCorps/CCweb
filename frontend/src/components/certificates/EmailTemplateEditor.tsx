@@ -24,6 +24,7 @@ export default function EmailTemplateEditor({ initialData, onSave }: EmailTempla
       <div>
         <label className="text-sm font-semibold">Email Subject</label>
         <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Your CoderCorps Certificate" />
+        <p className="text-[11px] text-muted-foreground mt-1">Available variables in subject: {'{{name}}'}, {'{{certificate_number}}'}</p>
       </div>
       
       <div>

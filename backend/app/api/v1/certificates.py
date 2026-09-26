@@ -143,16 +143,39 @@ async def send_batch(req: CertificateBatchSendRequest, db: Session = Depends(get
             continue
             
         user = db.query(User).filter(User.id == cert.user_id).first()
+        if not user:
+            continue
         
-        # Replace merge variables
+        # Replace merge variables in both body and subject
+        user_name = user.name or "Student"
+        cert_num = cert.certificate_number or ""
+        cert_url = cert.public_url or ""
+        proj_title = cert.title or (cert.project.title if cert.project else "Engineering Program")
+        
+        replacements = {
+            "{{name}}": user_name,
+            "{name}": user_name,
+            "{{student_name}}": user_name,
+            "{student_name}": user_name,
+            "{{holder_name}}": user_name,
+            "{holder_name}": user_name,
+            "{{certificate_number}}": cert_num,
+            "{certificate_number}": cert_num,
+            "{{certificate_link}}": cert_url,
+            "{certificate_link}": cert_url,
+            "{{project_title}}": proj_title,
+            "{project_title}": proj_title,
+        }
+        
         html = email_tpl.body_html
-        html = html.replace("{{name}}", user.name)
-        html = html.replace("{{certificate_number}}", cert.certificate_number or "")
-        html = html.replace("{{certificate_link}}", cert.public_url or "")
+        subject = email_tpl.subject or "Your CoderCorps Certificate"
+        for k, v in replacements.items():
+            html = html.replace(k, v)
+            subject = subject.replace(k, v)
         
         try:
             # We would attach the PDF here but omitting attachment logic in this mock 
-            await asyncio.to_thread(send_email, user.email, email_tpl.subject, html, "View your certificate at " + (cert.public_url or ""))
+            await asyncio.to_thread(send_email, user.email, subject, html, "View your certificate at " + cert_url)
             
             log = CertificateEmailLog(
                 certificate_id=cert.id,
