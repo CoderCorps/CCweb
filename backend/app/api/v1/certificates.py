@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, List
 import datetime
 import uuid
 import asyncio
+import re
 from app.deps import get_db, get_current_mentor
 from app.models.submission import Certificate
 from app.models.user import User
@@ -15,6 +16,22 @@ from app.services.certificate_render import generate_certificate_number, render_
 from app.services.email_service import get_frontend_url
 
 router = APIRouter()
+
+def _normalize_template_text(text: str) -> str:
+    """Normalize template text to ensure variable placeholders match correctly.
+    
+    Strips zero-width Unicode characters (ZWSP, ZWNJ, ZWJ, BOM) and converts
+    fullwidth braces ｛｝ to ASCII braces {} so that {{name}} replacement works
+    even if the template was pasted from a rich-text editor or browser.
+    """
+    if not text:
+        return text
+    # Remove zero-width characters that can be invisibly inserted via copy-paste
+    for ch in ('\u200b', '\u200c', '\u200d', '\ufeff', '\u00a0'):
+        text = text.replace(ch, '')
+    # Normalize fullwidth curly braces to ASCII
+    text = text.replace('\uff5b', '{').replace('\uff5d', '}')
+    return text
 
 class CertificateFieldPublic(BaseModel):
     field_key: str
@@ -167,8 +184,8 @@ async def send_batch(req: CertificateBatchSendRequest, db: Session = Depends(get
             "{project_title}": proj_title,
         }
         
-        html = email_tpl.body_html
-        subject = email_tpl.subject or "Your CoderCorps Certificate"
+        html = _normalize_template_text(email_tpl.body_html)
+        subject = _normalize_template_text(email_tpl.subject) or "Your CoderCorps Certificate"
         for k, v in replacements.items():
             html = html.replace(k, v)
             subject = subject.replace(k, v)

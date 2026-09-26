@@ -3,6 +3,7 @@ import os
 import traceback
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -17,9 +18,15 @@ try:
 except Exception as e:
     err_traceback = traceback.format_exc()
     print(f"[VERCEL STARTUP ERROR]:\n{err_traceback}")
-    
+
     app = FastAPI(title="CoderCorps Vercel Fallback")
-    
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     @app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
     async def boot_failure_handler(full_path: str):
         return JSONResponse(
@@ -33,5 +40,3 @@ except Exception as e:
 
 application = app
 handler = app
-
-
