@@ -32,6 +32,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.responses import JSONResponse
+from fastapi import Request
+import traceback
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_trace = traceback.format_exc()
+    print(f"[UNHANDLED EXCEPTION]: {exc}\n{error_trace}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "error_type": type(exc).__name__, "traceback": error_trace}
+    )
+
 # Async startup event for safe DB initialization without blocking Vercel module import
 @app.on_event("startup")
 async def startup_event():
