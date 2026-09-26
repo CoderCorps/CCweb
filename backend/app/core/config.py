@@ -2,6 +2,21 @@ import os
 from typing import List, Union, Any
 from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+
+# Search for .env in current, parent, or backend directories
+for env_path in [
+    os.path.join(os.path.dirname(__file__), "..", "..", ".env"),
+    os.path.join(os.path.dirname(__file__), "..", ".env"),
+    os.path.join(os.getcwd(), ".env"),
+    os.path.join(os.getcwd(), "backend", ".env"),
+]:
+    if os.path.exists(env_path):
+        load_dotenv(dotenv_path=env_path)
+        break
+load_dotenv()
+
+PROD_SUPABASE_DB = "postgresql://postgres.arbhdndsmpzvuliiopru:Coder%402004corps@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres"
 
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
@@ -24,7 +39,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # Database Settings
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/codercorps")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", PROD_SUPABASE_DB)
     
     # SMTP Email Settings
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
