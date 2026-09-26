@@ -131,6 +131,17 @@ async def signup(
         "user": db_user
     }
 
+@router.get("/db-test")
+def db_test(db: Session = Depends(get_db)):
+    try:
+        from sqlalchemy import text
+        res = db.execute(text("SELECT 1")).scalar()
+        user_count = db.query(User).count()
+        return {"db_status": "ok", "select_1": res, "user_count": user_count, "bind": str(db.get_bind().url)}
+    except Exception as e:
+        import traceback
+        return {"db_status": "error", "error": str(e), "traceback": traceback.format_exc()}
+
 @router.post("/login", response_model=Token)
 async def login(
     response: Response,
@@ -138,35 +149,46 @@ async def login(
     db: Session = Depends(get_db),
     _ = Depends(check_rate_limit)
 ):
-    # Authenticate user (form_data.username is treated as email)
-    clean_username = form_data.username.strip().lower()
-    user = db.query(User).filter(User.email == clean_username).first()
-    if not user or not security.verify_password(form_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect email or password"
+    try:
+        # Authenticate user (form_data.username is treated as email)
+        clean_username = form_data.username.strip().lower()
+        user = db.query(User).filter(User.email == clean_username).first()
+        if not user or not security.verify_password(form_data.password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Incorrect email or password"
+            )
+        
+        # Generate tokens
+        access_token = security.create_access_token(subject=user.id, token_version=user.token_version)
+        refresh_token = security.create_refresh_token(subject=user.id, token_version=user.token_version)
+
+        # Set refresh token in HttpOnly cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+            samesite="none",
+            secure=True,
         )
-    
-    # Generate tokens
-    access_token = security.create_access_token(subject=user.id, token_version=user.token_version)
-    refresh_token = security.create_refresh_token(subject=user.id, token_version=user.token_version)
 
-    # Set refresh token in HttpOnly cookie
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        samesite="none",
-        secure=True,
-    )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "refresh_token": refresh_token,
-        "user": user
-    }
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "refresh_token": refresh_token,
+            "user": user
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        err_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+        print(f"[LOGIN ERROR]: {err_msg}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=err_msg
+        )
 
 @router.post("/refresh", response_model=Token)
 async def refresh_token_route(
