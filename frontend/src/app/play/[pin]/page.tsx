@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef, use } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import {
   QuestionStartedPayload,
@@ -9,12 +10,9 @@ import {
 } from '@/types/quiz';
 import { CheckCircle2, XCircle, Trophy, Sparkles, Loader2, Clock } from 'lucide-react';
 
-interface PlayPageProps {
-  params: Promise<{ pin: string }>;
-}
-
-export default function PlayPinPage({ params }: PlayPageProps) {
-  const { pin } = use(params);
+export default function PlayPinPage() {
+  const routeParams = useParams();
+  const pin = (routeParams?.pin as string) || '';
 
   // Participant State
   const [nickname, setNickname] = useState('');

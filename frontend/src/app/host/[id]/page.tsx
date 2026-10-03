@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef, use } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import {
@@ -24,12 +25,9 @@ import {
   Eye,
 } from 'lucide-react';
 
-interface HostPageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default function HostDisplayPage({ params }: HostPageProps) {
-  const { id: sessionId } = use(params);
+export default function HostDisplayPage() {
+  const routeParams = useParams();
+  const sessionId = (routeParams?.id as string) || '';
 
   // Session Data
   const [session, setSession] = useState<any>(null);

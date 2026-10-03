@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import {
   Play,
@@ -17,12 +18,9 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
-interface ControlPageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default function SessionControlPage({ params }: ControlPageProps) {
-  const { id: sessionId } = use(params);
+export default function SessionControlPage() {
+  const routeParams = useParams();
+  const sessionId = (routeParams?.id as string) || '';
 
   const [session, setSession] = useState<any>(null);
   const [quiz, setQuiz] = useState<any>(null);
@@ -37,19 +35,23 @@ export default function SessionControlPage({ params }: ControlPageProps) {
 
   // Fetch session details
   const fetchSession = async () => {
+    if (!sessionId) return;
     try {
       const res = await fetch(`/api/sessions/${sessionId}`);
       const data = await res.json();
       if (res.ok) {
         setSession(data.session);
         setQuiz(data.quiz);
-        setTotalQuestions(data.total_questions);
-        setCurrentQuestion(data.current_question);
-        setParticipantCount(data.participant_count);
-        setAnsweredCount(data.answered_count);
+        setTotalQuestions(data.total_questions || 0);
+        setCurrentQuestion(data.current_question || null);
+        setParticipantCount(data.participant_count || 0);
+        setAnsweredCount(data.answered_count || 0);
+      } else {
+        setErrorMsg(data.error || 'Failed to load session');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load session:', err);
+      setErrorMsg(err.message || 'Error connecting to server');
     } finally {
       setLoading(false);
     }
@@ -150,6 +152,26 @@ export default function SessionControlPage({ params }: ControlPageProps) {
         <div className="flex items-center gap-3 text-slate-400">
           <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
           <span className="font-bold">Loading session control...</span>
+        </div>
+      </main>
+    );
+  }
+
+  if (!session) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-2xl">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+          <h2 className="text-xl font-black">Session Not Found</h2>
+          <p className="text-sm text-slate-400">
+            {errorMsg || 'This quiz session could not be retrieved from the server.'}
+          </p>
+          <Link
+            href="/admin/quizzes"
+            className="inline-block px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition shadow-lg"
+          >
+            Back to Quizzes
+          </Link>
         </div>
       </main>
     );

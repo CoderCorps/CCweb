@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useRef, use } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { useApprovalThreadStore } from "@/stores";
@@ -10,9 +11,9 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
-export default function ApprovalThreadPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const projectId = parseInt(resolvedParams.id);
+export default function ApprovalThreadPage() {
+  const routeParams = useParams();
+  const projectId = parseInt((routeParams?.id as string) || "0", 10);
   const { user, loading } = useAuth();
   const { messages, setMessages, connect, disconnect, sendMessage, isConnected } = useApprovalThreadStore();
   const [project, setProject] = useState<any>(null);
