@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Github, Linkedin } from "@/components/ui/icons";
+import { SkillGalaxy3D } from "@/components/ui/SkillGalaxy3D";
 
 export default function PortfolioEditorPage() {
   const { user, refreshUser } = useAuth();
@@ -351,7 +352,7 @@ export default function PortfolioEditorPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Provide recruiters with this link to view your public developer card backed by cryptography-signed project certificates.
+                Provide recruiters and peers with this link to view your public developer card showcasing your officially released certificates, merged pull requests, and verified project deliverables.
               </p>
               
               <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2 font-mono text-xs text-foreground">
@@ -374,6 +375,19 @@ export default function PortfolioEditorPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* 3D Skill Galaxy Constellation Preview */}
+      <div className="space-y-4 pt-6 border-t border-border/40">
+        <div>
+          <h2 className="text-base font-bold font-mono uppercase tracking-wider text-foreground flex items-center gap-2">
+            <span>🌌 My 3D Skill Galaxy Constellation</span>
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Interactive real-time preview of your competencies as viewed by recruiters and mentors.
+          </p>
+        </div>
+        <SkillGalaxy3D unlockedSkills={skills ? skills.split(",").map(s => s.trim()).filter(Boolean) : []} skillPoints={(user as any)?.skill_points || 350} />
       </div>
     </div>
   );

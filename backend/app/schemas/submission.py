@@ -31,7 +31,14 @@ class CertificateResponse(BaseModel):
     id: int
     user_id: int
     project_id: Optional[int] = None
+    project_title: Optional[str] = None
     issued_at: datetime.datetime
     criteria_met: dict
+    certificate_number: Optional[str] = None
+    verification_code: Optional[str] = None
+    public_url: Optional[str] = None
+    title: Optional[str] = None
+    pdf_url: Optional[str] = None
+    revoked: bool = False
 
     model_config = ConfigDict(from_attributes=True)

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { StuckStudentsWidget } from "@/components/dashboard/stuck-students-widget";
+import { WeeklySkillDigestCard } from "@/components/dashboard/WeeklySkillDigestCard";
 
 import type { DashboardData } from "@/stores";
 
@@ -40,9 +41,14 @@ export default function DashboardPage() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // User role update states
+  // User role update states & Confirmation Guard
   const [updatingUserId, setUpdatingUserId] = useState<number | null>(null);
   const [updatingRole, setUpdatingRole] = useState(false);
+  const [pendingRoleChange, setPendingRoleChange] = useState<{
+    user: { id: number; name: string; email: string; role: string };
+    targetRole: string;
+  } | null>(null);
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
@@ -74,27 +80,39 @@ export default function DashboardPage() {
     }
   };
 
-  const handleRoleChange = async (targetUserId: number, nextRole: string) => {
-    setUpdatingUserId(targetUserId);
+  const initiateRoleChange = (targetUser: any, nextRole: string) => {
+    if (targetUser.role === nextRole) return;
+    setPendingRoleChange({ user: targetUser, targetRole: nextRole });
+    setRoleDialogOpen(true);
+  };
+
+  const confirmRoleChange = async () => {
+    if (!pendingRoleChange) return;
+    const { user: targetUser, targetRole } = pendingRoleChange;
+
+    setUpdatingUserId(targetUser.id);
     setUpdatingRole(true);
 
     try {
-      const res = await api.patch(`/dashboard/users/${targetUserId}/role`, {
-        role: nextRole
+      const res = await api.patch(`/dashboard/users/${targetUser.id}/role`, {
+        role: targetRole,
       });
 
       if (res.ok) {
+        toast.success(`Role for ${targetUser.name} updated to ${targetRole.toUpperCase()}`);
+        setRoleDialogOpen(false);
+        setPendingRoleChange(null);
         invalidate();
         fetchDashboard();
       } else {
         const errDetail = await res.json().catch(() => ({}));
-        toast.error(errDetail.detail || "Failed to update role");
+        toast.error(errDetail.detail || "Failed to update user role");
       }
-    } catch (err) {
-      toast.error("Error contacting api server");
+    } catch {
+      toast.error("Error contacting API server while changing user role");
     } finally {
-      setUpdatingUserId(null);
       setUpdatingRole(false);
+      setUpdatingUserId(null);
     }
   };
 
@@ -104,7 +122,7 @@ export default function DashboardPage() {
         <div className="h-32 bg-card rounded-xl" />
         <div className="h-32 bg-card rounded-xl" />
         <div className="h-32 bg-card rounded-xl" />
-        <div className="h-96 bg-card col-span-3 rounded-xl mt-6" />
+        <div className="h-96 bg-card col-span-1 md:col-span-3 rounded-xl mt-6" />
       </div>
     );
   }
@@ -301,7 +319,7 @@ export default function DashboardPage() {
                               )}
                               <select 
                                 value={item.role} 
-                                onChange={(e) => handleRoleChange(item.id, e.target.value)}
+                                onChange={(e) => initiateRoleChange(item, e.target.value)}
                                 disabled={updatingRole && updatingUserId === item.id}
                                 className="bg-background border border-border/40 text-xs font-mono text-foreground py-1.5 px-3 rounded-md focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer disabled:opacity-50"
                               >
@@ -486,6 +504,11 @@ export default function DashboardPage() {
         {/* STUDENT DASHBOARD PANELS */}
         {role === "student" && (
           <>
+            {/* Weekly Skill Tree Progress & AI Mentor Digest */}
+            <div className="lg:col-span-12">
+              <WeeklySkillDigestCard userName={user?.name} />
+            </div>
+
             {/* Active Tasks */}
             <Card className="lg:col-span-7 glass border-border/40">
               <CardHeader>
@@ -553,6 +576,7 @@ export default function DashboardPage() {
                             a.href = url;
                             a.download = `codercorps-certificate-${cert.id}.json`;
                             a.click();
+                            URL.revokeObjectURL(url);
                           }} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/15">
                             <Download className="h-4 w-4" />
                           </Button>
@@ -595,6 +619,101 @@ export default function DashboardPage() {
           </>
         )}
 
+        {/* Admin Role Modification Confirmation Modal */}
+        <Dialog open={roleDialogOpen} onOpenChange={(open) => {
+          setRoleDialogOpen(open);
+          if (!open) setPendingRoleChange(null);
+        }}>
+          <DialogContent className="glass-premium border-border/60 max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-2 text-amber-500 mb-1">
+                <AlertCircle className="h-5 w-5" />
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Confirm Role Modification
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Changing user permissions directly alters their access control across CoderCorps.
+              </DialogDescription>
+            </DialogHeader>
+
+            {pendingRoleChange && (
+              <div className="space-y-4 py-2 text-sm">
+                <div className="p-3.5 rounded-xl bg-card border border-border/50 space-y-2 font-mono text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">User:</span>
+                    <span className="font-bold text-foreground">{pendingRoleChange.user.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Email:</span>
+                    <span className="text-muted-foreground">{pendingRoleChange.user.email}</span>
+                  </div>
+                  <div className="flex justify-between pt-1.5 border-t border-border/30 items-center">
+                    <span className="text-muted-foreground">Role Transition:</span>
+                    <div className="flex items-center gap-2 font-bold">
+                      <span className="text-muted-foreground uppercase text-[11px] px-2 py-0.5 rounded bg-muted">
+                        {pendingRoleChange.user.role}
+                      </span>
+                      <span className="text-primary font-bold">➔</span>
+                      <span className="text-primary uppercase text-[11px] px-2 py-0.5 rounded bg-primary/10 border border-primary/20">
+                        {pendingRoleChange.targetRole}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {pendingRoleChange.targetRole === "admin" && (
+                  <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-xs text-red-400 space-y-1">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <Shield className="h-4 w-4" /> Elevation to Full Admin
+                    </p>
+                    <p className="text-[11px] text-red-300/80 leading-relaxed">
+                      This user will gain unrestricted authority to alter global settings, promote/demote other users, and access platform-wide telemetry.
+                    </p>
+                  </div>
+                )}
+
+                {pendingRoleChange.targetRole === "student" && pendingRoleChange.user.role === "mentor" && (
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-400 space-y-1">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <AlertCircle className="h-4 w-4" /> Mentor Privileges Revoked
+                    </p>
+                    <p className="text-[11px] text-amber-300/80 leading-relaxed">
+                      This user will lose access to mentor code reviews, standup feedback, and student roster oversight.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-0 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setRoleDialogOpen(false);
+                  setPendingRoleChange(null);
+                }}
+                disabled={updatingRole}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={confirmRoleChange}
+                disabled={updatingRole}
+                className={`text-xs font-bold gap-2 ${
+                  pendingRoleChange?.targetRole === "admin"
+                    ? "bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/20"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                }`}
+              >
+                {updatingRole ? "Applying Changes..." : "Confirm & Apply Role"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

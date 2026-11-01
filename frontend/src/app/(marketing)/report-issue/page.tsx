@@ -178,6 +178,14 @@ export default function ReportIssuePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Anti-bot honeypot protection: silently drop spam bots that fill hidden fields
+    if (honeypot && honeypot.trim().length > 0) {
+      console.warn("Bot detected via honeypot field. Discarding submission.");
+      setSubmittedReport({ ticket_id: "SPAM-SHIELDED", category, created_at: new Date().toISOString() });
+      return;
+    }
+
     if (!reporterName.trim() || !reporterEmail.trim() || !description.trim()) {
       setError("Please fill in all required fields (Name, Email, Description).");
       return;

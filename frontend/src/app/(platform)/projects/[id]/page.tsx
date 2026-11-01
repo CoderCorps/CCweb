@@ -22,8 +22,11 @@ import {
   Settings,
   UserPlus,
   Trophy,
-  Terminal
+  Terminal,
+  GripVertical,
+  Sparkles
 } from "lucide-react";
+import { playSuccessChime, triggerConfetti } from "@/lib/celebrate";
 import { toast } from "sonner";
 import { ResourcesTab } from "@/components/projects/resources-tab";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -97,6 +100,75 @@ export default function ProjectWorkspacePage() {
   const [selectedAssigneeId, setSelectedAssigneeId] = useState<number | "">("");
   const [assigningStudent, setAssigningStudent] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+
+  // Drag and Drop State
+  const [draggedTaskId, setDraggedTaskId] = useState<number | null>(null);
+  const [activeDropColumn, setActiveDropColumn] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, task: Task) => {
+    e.dataTransfer.setData("text/plain", String(task.id));
+    e.dataTransfer.effectAllowed = "move";
+    setDraggedTaskId(task.id);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTaskId(null);
+    setActiveDropColumn(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, colStatus: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (activeDropColumn !== colStatus) {
+      setActiveDropColumn(colStatus);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent, colStatus: string) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setActiveDropColumn(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetStatus: Task["status"]) => {
+    e.preventDefault();
+    setActiveDropColumn(null);
+    setDraggedTaskId(null);
+
+    const taskIdStr = e.dataTransfer.getData("text/plain");
+    if (!taskIdStr) return;
+    const taskId = Number(taskIdStr);
+
+    const task = activeSprint?.tasks.find((t) => t.id === taskId);
+    if (!task || task.status === targetStatus) return;
+
+    const previousStatus = task.status;
+
+    // Optimistically update status in UI immediately
+    updateTaskStatus(taskId, targetStatus);
+
+    // If completed, trigger sensory celebration
+    if (targetStatus === "done") {
+      playSuccessChime();
+      triggerConfetti();
+      toast.success(`🎉 "${task.title}" completed! Outstanding work!`);
+    } else {
+      const colTitle = columns.find((c) => c.status === targetStatus)?.title || targetStatus;
+      toast.info(`Moved to ${colTitle}`);
+    }
+
+    try {
+      const res = await api.patch(`/projects/tasks/${taskId}`, {
+        status: targetStatus,
+      });
+      if (!res.ok) {
+        updateTaskStatus(taskId, previousStatus);
+        toast.error("Failed to update task status on server.");
+      }
+    } catch {
+      updateTaskStatus(taskId, previousStatus);
+      toast.error("Connection error while updating task.");
+    }
+  };
 
 
 
@@ -566,62 +638,120 @@ export default function ProjectWorkspacePage() {
             <p className="text-xs text-foreground/90 mt-1.5 leading-relaxed font-medium">{activeSprint.goal || "No specific goal logged."}</p>
           </div>
 
-          {/* Kanban Board Columns */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 font-sans">
+          {/* Kanban Board Columns with Drag-and-Drop */}
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono text-muted-foreground flex items-center gap-1.5">
+              <GripVertical className="h-3.5 w-3.5 text-primary" />
+              <span>Drag & drop task cards across columns to update sprint status</span>
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
             {columns.map((col) => {
-              const colTasks = activeSprint.tasks.filter(t => t.status === col.status);
+              const colTasks = activeSprint.tasks.filter((t) => t.status === col.status);
+              const isDropTarget = activeDropColumn === col.status;
+
               return (
-                <div key={col.status} className="flex flex-col gap-4">
+                <div
+                  key={col.status}
+                  onDragOver={(e) => handleDragOver(e, col.status)}
+                  onDragLeave={(e) => handleDragLeave(e, col.status)}
+                  onDrop={(e) => handleDrop(e, col.status)}
+                  className={`flex flex-col gap-3 p-3.5 rounded-2xl border transition-all duration-200 ${
+                    isDropTarget
+                      ? "border-primary bg-primary/10 shadow-lg ring-2 ring-primary/30 scale-[1.01]"
+                      : "border-border/40 bg-card/20"
+                  }`}
+                >
                   <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                    <span className="font-extrabold text-sm text-foreground">{col.title}</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{colTasks.length}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-sm text-foreground">{col.title}</span>
+                      {col.status === "done" && <Sparkles className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />}
+                    </div>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full font-mono ${
+                      col.status === "done" 
+                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" 
+                        : col.status === "review"
+                        ? "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20"
+                        : col.status === "in_progress"
+                        ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20"
+                        : "bg-muted text-muted-foreground"
+                    }`}>
+                      {colTasks.length}
+                    </span>
                   </div>
 
-                  <div className="flex-grow flex flex-col gap-3 min-h-[300px]">
+                  <div className="flex-grow flex flex-col gap-3 min-h-[320px]">
                     {colTasks.length > 0 ? (
-                      colTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setSelectedTaskPr(task.github_pr_url || "");
-                            setSelectedTaskStatus(task.status as "todo" | "in_progress" | "review" | "done");
-                            setSelectedTaskAssigneeIds(task.assignments?.map((a: any) => a.user_id) || []);
-                            setTaskDetailDialogOpen(true);
-                          }}
-                          className="glass p-4 rounded-xl border border-border/60 hover:border-primary/40 cursor-pointer shadow-sm hover:shadow-md transition-all duration-200"
-                        >
-                          <h4 className="font-bold text-sm text-foreground leading-tight">{task.title}</h4>
-                          <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed line-clamp-2">
-                            {task.description || "No descriptions."}
-                          </p>
-                          <div className="flex items-center justify-between mt-4">
-                            <span className="text-[9px] text-muted-foreground font-mono truncate max-w-[150px]" title={task.assignments?.map((a: any) => a.user?.name).join(", ")}>
-                              {task.assignments && task.assignments.length > 0 
-                                ? task.assignments.map((a: any) => a.user?.name).join(", ") 
-                                : "Unassigned"}
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                              {task.ci_status && (
-                                <span className={`text-[8px] px-1.5 py-0.5 rounded-sm font-mono ${task.ci_status === 'success' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
-                                  CI: {task.ci_status.toUpperCase()}
-                                </span>
-                              )}
-                              {task.test_coverage && (
-                                <span className="text-[8px] px-1.5 py-0.5 rounded-sm font-mono bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                                  COV: {task.test_coverage}%
-                                </span>
-                              )}
-                              {task.github_pr_url && (
-                                <GitPullRequest className="h-3.5 w-3.5 text-indigo-400" />
-                              )}
+                      colTasks.map((task) => {
+                        const isBeingDragged = draggedTaskId === task.id;
+                        return (
+                          <div
+                            key={task.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, task)}
+                            onDragEnd={handleDragEnd}
+                            onClick={() => {
+                              setSelectedTask(task);
+                              setSelectedTaskPr(task.github_pr_url || "");
+                              setSelectedTaskStatus(task.status as "todo" | "in_progress" | "review" | "done");
+                              setSelectedTaskAssigneeIds(task.assignments?.map((a: any) => a.user_id) || []);
+                              setTaskDetailDialogOpen(true);
+                            }}
+                            className={`glass p-4 rounded-xl border border-border/60 hover:border-primary/50 cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-all duration-200 group relative ${
+                              isBeingDragged ? "opacity-30 scale-95 border-dashed border-primary" : ""
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="font-bold text-sm text-foreground leading-tight group-hover:text-primary transition-colors">
+                                {task.title}
+                              </h4>
+                              <GripVertical className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
+                            </div>
+
+                            <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed line-clamp-2">
+                              {task.description || "No description provided."}
+                            </p>
+
+                            <div className="flex items-center justify-between mt-4 pt-2 border-t border-border/20">
+                              <span
+                                className="text-[9px] text-muted-foreground font-mono truncate max-w-[130px]"
+                                title={task.assignments?.map((a: any) => a.user?.name).join(", ")}
+                              >
+                                {task.assignments && task.assignments.length > 0
+                                  ? task.assignments.map((a: any) => a.user?.name).join(", ")
+                                  : "Unassigned"}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                {task.ci_status && (
+                                  <span className={`text-[8px] px-1.5 py-0.5 rounded-sm font-mono ${
+                                    task.ci_status === "success" 
+                                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
+                                      : "bg-red-500/20 text-red-400 border border-red-500/30"
+                                  }`}>
+                                    CI: {task.ci_status.toUpperCase()}
+                                  </span>
+                                )}
+                                {task.test_coverage && (
+                                  <span className="text-[8px] px-1.5 py-0.5 rounded-sm font-mono bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                                    COV: {task.test_coverage}%
+                                  </span>
+                                )}
+                                {task.github_pr_url && (
+                                  <GitPullRequest className="h-3.5 w-3.5 text-indigo-400" />
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     ) : (
-                      <div className="flex-grow flex items-center justify-center border border-dashed border-border/30 rounded-xl py-12">
-                        <span className="text-xs text-muted-foreground font-mono">Empty Column</span>
+                      <div className={`flex-grow flex items-center justify-center border border-dashed rounded-xl py-12 transition-colors ${
+                        isDropTarget ? "border-primary/60 bg-primary/5 text-primary" : "border-border/30 text-muted-foreground"
+                      }`}>
+                        <span className="text-xs font-mono">
+                          {isDropTarget ? "Drop to Move Here" : "Empty Column"}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -634,7 +764,7 @@ export default function ProjectWorkspacePage() {
         <div className="glass p-12 text-center border-border/40 flex flex-col items-center gap-4">
           <GitBranch className="h-10 w-10 text-muted-foreground animate-pulse" />
           <div>
-            <h3 className="font-bold text-white text-lg">No Active Sprint Iteration</h3>
+            <h3 className="font-bold text-foreground text-lg">No Active Sprint Iteration</h3>
             <p className="text-xs text-muted-foreground mt-1">
               There are no sprint cycles running for this workspace. A mentor must start a sprint cycle.
             </p>

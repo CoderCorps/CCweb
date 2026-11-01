@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { getSupabaseClient } from '@/lib/supabaseClient';
+import { triggerConfetti, playFanfare, playCountdownTick } from '@/lib/celebrate';
 import {
   QuestionStartedPayload,
   QuestionRevealPayload,
@@ -23,6 +25,8 @@ import {
   Loader2,
   ArrowRight,
   Eye,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 export default function HostDisplayPage() {
@@ -51,6 +55,7 @@ export default function HostDisplayPage() {
   const [finalLeaderboard, setFinalLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [joinUrl, setJoinUrl] = useState<string>('');
   const [totalQuestions, setTotalQuestions] = useState<number>(0);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -275,7 +280,7 @@ export default function HostDisplayPage() {
     };
   }, [sessionId]);
 
-  // Timer countdown
+  // Timer countdown with ticking audio
   useEffect(() => {
     if (status !== 'question') {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -288,14 +293,34 @@ export default function HostDisplayPage() {
           if (timerRef.current) clearInterval(timerRef.current);
           return 0;
         }
-        return prev - 1;
+        const nextTime = prev - 1;
+        if (soundEnabled && nextTime > 0) {
+          playCountdownTick(nextTime <= 5);
+        }
+        return nextTime;
       });
     }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [status]);
+  }, [status, soundEnabled]);
+
+  // Grand Championship Podium Celebration effect
+  useEffect(() => {
+    if (status === 'ended') {
+      if (soundEnabled) {
+        playFanfare();
+      }
+      triggerConfetti();
+      const t1 = setTimeout(() => triggerConfetti(), 900);
+      const t2 = setTimeout(() => triggerConfetti(), 2200);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [status, soundEnabled]);
 
   // 1. Lobby View (Big PIN & QR Code)
   if (status === 'lobby') {
@@ -331,6 +356,18 @@ export default function HostDisplayPage() {
                 <Play className="w-5 h-5 fill-current" />
               )}
               <span>Start Quiz</span>
+            </button>
+
+            <button
+              onClick={() => setSoundEnabled((prev) => !prev)}
+              className={`p-3 rounded-2xl border transition shadow-lg cursor-pointer ${
+                soundEnabled
+                  ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-300 hover:text-white'
+                  : 'bg-slate-900 border-slate-700 text-slate-500 hover:text-slate-300'
+              }`}
+              title={soundEnabled ? 'Mute Game Audio' : 'Unmute Game Audio'}
+            >
+              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
             </button>
 
             <a
@@ -471,6 +508,18 @@ export default function HostDisplayPage() {
               <span>Reveal Answer</span>
             </button>
 
+            <button
+              onClick={() => setSoundEnabled((prev) => !prev)}
+              className={`p-3 rounded-2xl border transition shadow-lg cursor-pointer ${
+                soundEnabled
+                  ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-300 hover:text-white'
+                  : 'bg-slate-900 border-slate-700 text-slate-500 hover:text-slate-300'
+              }`}
+              title={soundEnabled ? 'Mute Game Audio' : 'Unmute Game Audio'}
+            >
+              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </button>
+
             <a
               href={`/admin/sessions/${sessionId}/control`}
               target="_blank"
@@ -609,6 +658,18 @@ export default function HostDisplayPage() {
                 <span>Next Question</span>
               </button>
             )}
+
+            <button
+              onClick={() => setSoundEnabled((prev) => !prev)}
+              className={`p-3 rounded-2xl border transition shadow-lg cursor-pointer ${
+                soundEnabled
+                  ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-300 hover:text-white'
+                  : 'bg-slate-900 border-slate-700 text-slate-500 hover:text-slate-300'
+              }`}
+              title={soundEnabled ? 'Mute Game Audio' : 'Unmute Game Audio'}
+            >
+              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </button>
 
             <a
               href={`/admin/sessions/${sessionId}/control`}
@@ -770,8 +831,21 @@ export default function HostDisplayPage() {
 
   // 4. Session Ended / Winner Ceremony Screen (Big Screen)
   return (
-    <main className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-between p-8 sm:p-12">
-      <header className="text-center">
+    <main className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-between p-8 sm:p-12 relative overflow-hidden">
+      <header className="text-center relative w-full max-w-4xl flex flex-col items-center">
+        <div className="absolute right-0 top-0">
+          <button
+            onClick={() => setSoundEnabled((prev) => !prev)}
+            className={`p-3 rounded-2xl border transition shadow-lg cursor-pointer ${
+              soundEnabled
+                ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:text-white'
+                : 'bg-slate-900 border-slate-700 text-slate-500 hover:text-slate-300'
+            }`}
+            title={soundEnabled ? 'Mute Game Audio' : 'Unmute Game Audio'}
+          >
+            {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          </button>
+        </div>
         <div className="inline-block px-4 py-1 rounded-full bg-amber-500/20 text-amber-300 text-sm font-black uppercase tracking-wider mb-3">
           Grand Championship Ceremony
         </div>
@@ -789,8 +863,20 @@ export default function HostDisplayPage() {
         </div>
       ) : finalLeaderboard.length === 1 ? (
         /* Single Player Podium */
-        <div className="flex flex-col items-center my-8 w-full max-w-sm mx-auto">
-          <div className="text-6xl mb-2 animate-bounce">👑</div>
+        <motion.div
+          initial={{ opacity: 0, y: 150 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, type: 'spring', damping: 15 }}
+          className="flex flex-col items-center my-8 w-full max-w-sm mx-auto"
+        >
+          <motion.div
+            initial={{ scale: 0, rotate: -25 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 1.0, type: 'spring', bounce: 0.6 }}
+            className="text-6xl mb-2"
+          >
+            👑
+          </motion.div>
           <div className="text-3xl font-black text-amber-400 text-center truncate max-w-[280px]">
             {finalLeaderboard[0].nickname}
           </div>
@@ -803,13 +889,18 @@ export default function HostDisplayPage() {
               Grand Champion
             </span>
           </div>
-        </div>
+        </motion.div>
       ) : (
-        /* Multi-Player Podium Top 3 */
+        /* Multi-Player Staggered Kahoot Podium: 3rd place rises 1st, 2nd rises 2nd, 1st rises highest! */
         <div className="flex items-end justify-center gap-4 sm:gap-8 my-8 w-full max-w-4xl">
-          {/* 2nd Place */}
+          {/* 2nd Place (Rises second at 1.1s) */}
           {finalLeaderboard[1] && (
-            <div className="flex flex-col items-center flex-1 max-w-[220px]">
+            <motion.div
+              initial={{ opacity: 0, y: 160 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.1, type: 'spring', damping: 15, stiffness: 100 }}
+              className="flex flex-col items-center flex-1 max-w-[220px]"
+            >
               <div className="text-3xl mb-2">🥈</div>
               <div className="text-lg font-black text-slate-200 text-center truncate w-full">
                 {finalLeaderboard[1].nickname}
@@ -821,13 +912,25 @@ export default function HostDisplayPage() {
                 <span className="text-4xl">2nd</span>
                 <span className="text-xs uppercase tracking-wider font-bold mt-1 text-slate-400">Runner Up</span>
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* 1st Place (Champion) */}
+          {/* 1st Place Champion (Rises last at 1.9s with crown pop at 2.6s) */}
           {finalLeaderboard[0] && (
-            <div className="flex flex-col items-center flex-1 max-w-[240px]">
-              <div className="text-5xl mb-2 animate-bounce">👑</div>
+            <motion.div
+              initial={{ opacity: 0, y: 220 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.9, type: 'spring', damping: 14, stiffness: 90 }}
+              className="flex flex-col items-center flex-1 max-w-[240px]"
+            >
+              <motion.div
+                initial={{ scale: 0, rotate: -30 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 2.6, type: 'spring', bounce: 0.65 }}
+                className="text-5xl mb-2"
+              >
+                👑
+              </motion.div>
               <div className="text-2xl font-black text-amber-400 text-center truncate w-full">
                 {finalLeaderboard[0].nickname}
               </div>
@@ -840,12 +943,17 @@ export default function HostDisplayPage() {
                   Champion
                 </span>
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* 3rd Place */}
+          {/* 3rd Place (Rises first at 0.4s) */}
           {finalLeaderboard[2] && (
-            <div className="flex flex-col items-center flex-1 max-w-[220px]">
+            <motion.div
+              initial={{ opacity: 0, y: 130 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, type: 'spring', damping: 16, stiffness: 110 }}
+              className="flex flex-col items-center flex-1 max-w-[220px]"
+            >
               <div className="text-3xl mb-2">🥉</div>
               <div className="text-lg font-black text-amber-600 text-center truncate w-full">
                 {finalLeaderboard[2].nickname}
@@ -857,7 +965,7 @@ export default function HostDisplayPage() {
                 <span className="text-3xl">3rd</span>
                 <span className="text-xs uppercase tracking-wider font-bold mt-1 text-amber-400">Podium</span>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       )}

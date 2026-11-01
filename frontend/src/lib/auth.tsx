@@ -30,8 +30,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (name: string, email: string, pass: string, role: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, pass: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  signup: (name: string, email: string, pass: string, role: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   /** Returns the current in-memory JWT access token - for WebSocket connections */
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, pass: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     try {
       const cleanEmail = email.trim().toLowerCase();
       const cleanPass = pass;
@@ -83,8 +83,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await res.json();
       setAccessToken(data.access_token);
+      if (typeof window !== "undefined" && data.refresh_token) {
+        localStorage.setItem("cc_refresh_token", data.refresh_token);
+      }
       setUser(data.user);
-      return { success: true };
+      return { success: true, user: data.user };
     } catch (err) {
       return { success: false, error: "An unexpected error occurred." };
     }
@@ -95,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     pass: string,
     role: string
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; error?: string; user?: User }> => {
     try {
       const res = await api.post(
         "/auth/signup",
@@ -114,8 +117,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await res.json();
       setAccessToken(data.access_token);
+      if (typeof window !== "undefined" && data.refresh_token) {
+        localStorage.setItem("cc_refresh_token", data.refresh_token);
+      }
       setUser(data.user);
-      return { success: true };
+      return { success: true, user: data.user };
     } catch (err) {
       return { success: false, error: "An unexpected error occurred." };
     }
@@ -128,6 +134,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Ignored
     } finally {
       setAccessToken(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("cc_refresh_token");
+      }
       setUser(null);
       // Reset all Zustand stores on logout so data doesn't leak to next session
       useProjectStore.getState().reset();

@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
+
+import app.db.base  # Early registration of all models
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,6 +50,8 @@ async def startup_event():
         from app.core import security
         from sqlalchemy import text
 
+        if "sqlite" in str(engine.url):
+            Base.metadata.create_all(bind=engine)
         # Base.metadata.create_all(bind=engine)
         # 
         # We comment out the heavy ALTER TABLE statements below because they cause 

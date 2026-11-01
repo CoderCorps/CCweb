@@ -12,9 +12,9 @@ for env_path in [
     os.path.join(os.getcwd(), "backend", ".env"),
 ]:
     if os.path.exists(env_path):
-        load_dotenv(dotenv_path=env_path)
+        load_dotenv(dotenv_path=env_path, override=True)
         break
-load_dotenv()
+load_dotenv(override=True)
 
 PROD_SUPABASE_DB = "postgresql+psycopg2://postgres.arbhdndsmpzvuliiopru:Coder%402004corps@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?sslmode=require"
 

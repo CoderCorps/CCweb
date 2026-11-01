@@ -20,8 +20,14 @@ import {
   Plus,
   Clock,
   FileText,
-  Workflow
+  Workflow,
+  Sparkles,
+  Flame
 } from "lucide-react";
+import { FocusSprintTimer } from "@/components/dashboard/FocusSprintTimer";
+import { DailyStreakCard } from "@/components/dashboard/DailyStreakCard";
+import { WeeklySkillDigestCard } from "@/components/dashboard/WeeklySkillDigestCard";
+import { playSuccessChime, triggerConfetti } from "@/lib/celebrate";
 
 interface Project {
   id: number;
@@ -56,8 +62,19 @@ export default function StudentTodayPage() {
   const [reportSubmitted, setReportSubmitted] = useState(false);
 
   // Unstarted Setup State
+  const [activeTab, setActiveTab] = useState<"daily" | "weekly">("daily");
   const [selectedProjectId, setSelectedProjectId] = useState<number | "">("");
   const [checkedTaskIds, setCheckedTaskIds] = useState<number[]>([]);
+  const [currentTime, setCurrentTime] = useState<string>("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 10000);
+    return () => clearInterval(timer);
+  }, []);
   const [customTodos, setCustomTodos] = useState<string[]>([]);
   const [newCustomText, setNewCustomText] = useState("");
 
@@ -114,15 +131,21 @@ export default function StudentTodayPage() {
         if (projData.length > 0) {
           setSelectedProjectId(projData[0].id);
 
-          // Get assigned tasks in active sprints
+          // Parallel fetch all project sprints to eliminate N+1 waterfall
           const tasksList: Task[] = [];
-          for (const p of projData) {
-            const sprRes = await api.get(`/projects/${p.id}/sprints`);
-            if (sprRes.ok) {
-              const sprData = await sprRes.json();
-              if (sprData.length > 0) {
-                const latestSprint = sprData[sprData.length - 1];
-                // Filter tasks assigned to current user
+          const sprintResponses = await Promise.all(
+            projData.map((p: any) =>
+              api.get(`/projects/${p.id}/sprints`)
+                .then((res: any) => (res.ok ? res.json() : []))
+                .catch(() => [])
+            )
+          );
+
+          sprintResponses.forEach((sprData: any, idx: number) => {
+            const p = projData[idx];
+            if (Array.isArray(sprData) && sprData.length > 0) {
+              const latestSprint = sprData[sprData.length - 1];
+              if (latestSprint?.tasks) {
                 latestSprint.tasks.forEach((t: any) => {
                   const isAssigned = t.assignments?.some((a: any) => a.user_id === user.id);
                   if (isAssigned && t.status !== "done") {
@@ -137,7 +160,7 @@ export default function StudentTodayPage() {
                 });
               }
             }
-          }
+          });
           setAssignedTasks(tasksList);
         }
       }
@@ -236,6 +259,11 @@ export default function StudentTodayPage() {
         setTodos((prev) =>
           prev.map((t) => (t.id === todoId ? { ...t, status: nextStatus } : t))
         );
+
+        if (nextStatus === "done") {
+          playSuccessChime();
+          toast.success("Task completed! 🎉 Outstanding execution!");
+        }
       }
     } catch (err) {
       console.error("Failed to update status", err);
@@ -261,7 +289,7 @@ export default function StudentTodayPage() {
               TODAY WORKSPACE
             </span>
             <span className="text-[11px] font-mono text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md">
-              Local Time: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              Local Time: {currentTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
           <h1 className="text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
@@ -305,6 +333,54 @@ export default function StudentTodayPage() {
         )}
       </div>
 
+      {/* View Mode Switcher: Daily Standup vs Weekly Skill & AI Digest */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-card/60 border border-border/50 backdrop-blur-md w-full sm:w-fit shadow-sm">
+          <button
+            type="button"
+            onClick={() => setActiveTab("daily")}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+              activeTab === "daily"
+                ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/20"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+            }`}
+          >
+            <Sun className="h-4 w-4" />
+            <span>Daily Focus & Standup</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("weekly")}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+              activeTab === "weekly"
+                ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/20"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+            }`}
+          >
+            <Sparkles className="h-4 w-4 text-amber-400" />
+            <span>Weekly Skill & AI Digest</span>
+            <span className="text-[9px] font-black font-mono px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-500 border border-amber-400/30">
+              NEW
+            </span>
+          </button>
+        </div>
+
+        {activeTab === "daily" && (
+          <button
+            type="button"
+            onClick={() => setActiveTab("weekly")}
+            className="text-xs font-mono text-muted-foreground hover:text-indigo-400 flex items-center gap-1.5 transition-colors cursor-pointer self-end sm:self-auto"
+          >
+            <span>+480 XP gained this week</span>
+            <span className="font-bold text-indigo-500 underline decoration-indigo-500/40 underline-offset-4">View Digest & AI Review ➔</span>
+          </button>
+        )}
+      </div>
+
+      {activeTab === "weekly" ? (
+        <WeeklySkillDigestCard userName={user?.name} />
+      ) : (
+        <>
       {/* Main Workspace */}
       {!started ? (
 
@@ -452,8 +528,23 @@ export default function StudentTodayPage() {
 
       ) : (
 
-        // STARTED TODAY CHECKLIST PROGRESS VIEW
-        <Card className="glass-premium border-border/40 shadow-xl shadow-black/5 dark:shadow-black/25">
+        // STARTED TODAY VIEW
+        <div className="space-y-6">
+          {/* Interactive Productivity Grid: Streak + Pomodoro Sprint Engine */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DailyStreakCard
+              userId={user?.id}
+              userName={user?.name}
+              reportSubmitted={reportSubmitted}
+            />
+            <FocusSprintTimer
+              todos={todos}
+              userName={user?.name}
+            />
+          </div>
+
+          {/* Checklist Progress View */}
+          <Card className="glass-premium border-border/40 shadow-xl shadow-black/5 dark:shadow-black/25">
           <CardHeader className="pb-4 border-b border-border/30">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="space-y-1">
@@ -470,7 +561,35 @@ export default function StudentTodayPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3 pt-6">
+          <CardContent className="space-y-4 pt-6">
+            {/* Dynamic Progress Metric Bar */}
+            {todos.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-background/40 border border-border/40 space-y-2">
+                <div className="flex justify-between items-center text-xs font-mono">
+                  <span className="text-muted-foreground flex items-center gap-1.5 font-semibold">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" /> Today's Completion Velocity:
+                  </span>
+                  <span className="font-bold text-foreground">
+                    {todos.filter((t) => t.status === "done").length} of {todos.length} Done (
+                    {Math.round(
+                      (todos.filter((t) => t.status === "done").length / Math.max(1, todos.length)) * 100
+                    )}%)
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-muted/60 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 transition-all duration-500 rounded-full"
+                    style={{
+                      width: `${Math.round(
+                        (todos.filter((t) => t.status === "done").length / Math.max(1, todos.length)) * 100
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
             {todos.map((todo) => {
               let statusText = "Planned";
               let statusColor = "text-muted-foreground bg-muted/50 border-border";
@@ -516,12 +635,16 @@ export default function StudentTodayPage() {
                 </div>
               );
             })}
+            </div>
           </CardContent>
         </Card>
+        </div>
       )}
 
       {/* Peer Review Panel */}
-      {started && <PeerReviewPanel />}
+      <PeerReviewPanel />
+        </>
+      )}
 
     </div>
   );

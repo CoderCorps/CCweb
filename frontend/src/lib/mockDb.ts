@@ -142,6 +142,61 @@ let mockSprints: MockSprint[] = [
         ]
       },
       {
+        id: 4,
+        sprint_id: 1,
+        title: "Implement Stripe Webhook Signature Verification & Idempotency",
+        description: "Zero-loss event dispatch with replay protection and Postgres transaction rollback.",
+        status: "done" as const,
+        github_pr_url: "https://github.com/codercorps/ecommerce-api/pull/4",
+        assignments: [
+          { id: 4, task_id: 4, user_id: 1, assigned_at: new Date(Date.now() - 5 * 86400000).toISOString(), status: "reviewed", user: { id: 1, name: "Atul Sharma" } }
+        ]
+      },
+      {
+        id: 5,
+        sprint_id: 1,
+        title: "Build Redis Cache Layer with Write-Through Invalidation",
+        description: "Sub-5ms product catalog response times with distributed lock concurrency.",
+        status: "done" as const,
+        github_pr_url: "https://github.com/codercorps/ecommerce-api/pull/7",
+        assignments: [
+          { id: 5, task_id: 5, user_id: 1, assigned_at: new Date(Date.now() - 3 * 86400000).toISOString(), status: "reviewed", user: { id: 1, name: "Atul Sharma" } }
+        ]
+      },
+      {
+        id: 6,
+        sprint_id: 1,
+        title: "Add Automated Flaky Test Detector and CI Pipeline in GitHub Actions",
+        description: "Parallel matrix tests across Python 3.11/3.12 with JUnit artifact publishing.",
+        status: "review" as const,
+        github_pr_url: "https://github.com/codercorps/ecommerce-api/pull/12",
+        assignments: [
+          { id: 6, task_id: 6, user_id: 1, assigned_at: new Date(Date.now() - 1 * 86400000).toISOString(), status: "submitted", user: { id: 1, name: "Atul Sharma" } }
+        ]
+      },
+      {
+        id: 7,
+        sprint_id: 1,
+        title: "Interactive Product Filter & Multi-faceted Category Search UI",
+        description: "Instant client-side debounce search with URL query synchronization.",
+        status: "done" as const,
+        github_pr_url: "https://github.com/codercorps/ecommerce-frontend/pull/3",
+        assignments: [
+          { id: 7, task_id: 7, user_id: 2, assigned_at: new Date(Date.now() - 4 * 86400000).toISOString(), status: "reviewed", user: { id: 2, name: "Priya Patel" } }
+        ]
+      },
+      {
+        id: 8,
+        sprint_id: 1,
+        title: "Implement Accessible Checkout Modal with ARIA Live Announcements",
+        description: "Screen-reader verified keyboard traps and WCAG AAA compliant color contrasts.",
+        status: "review" as const,
+        github_pr_url: "https://github.com/codercorps/ecommerce-frontend/pull/9",
+        assignments: [
+          { id: 8, task_id: 8, user_id: 2, assigned_at: new Date(Date.now() - 2 * 86400000).toISOString(), status: "submitted", user: { id: 2, name: "Priya Patel" } }
+        ]
+      },
+      {
         id: 2,
         sprint_id: 1,
         title: "Set up JWT Authentication & Route Guards",
@@ -188,8 +243,90 @@ interface MockCertificate {
 }
 
 let mockSubmissions: MockSubmission[] = [];
-let mockCertificates: MockCertificate[] = [];
+let mockCertificates: MockCertificate[] = [
+  {
+    id: 101,
+    user_id: 1,
+    project_id: 1,
+    issued_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    criteria_met: {
+      student_name: "Atul Sharma",
+      project_title: "Distributed E-Commerce API Engine",
+      mentor_name: "Siddharth Roy (Senior Staff Engineer)",
+      demo_url: "https://ecommerce-api.demo.codercorps.dev",
+      repo_url: "https://github.com/codercorps/ecommerce-api",
+      approved_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      audit_message: "Demonstrated production-grade SQL indexing, asynchronous payment queue processing, and achieved 94% test coverage on critical order paths."
+    }
+  },
+  {
+    id: 102,
+    user_id: 2,
+    project_id: 1,
+    issued_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    criteria_met: {
+      student_name: "Priya Patel",
+      project_title: "Distributed E-Commerce API Engine",
+      mentor_name: "Siddharth Roy (Senior Staff Engineer)",
+      demo_url: "https://ecommerce-ui.demo.codercorps.dev",
+      repo_url: "https://github.com/codercorps/ecommerce-frontend",
+      approved_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      audit_message: "Exceptional UI design and state architecture. Implemented zero-latency optimistic cart updates and accessible design tokens."
+    }
+  }
+];
 let mockCurrentUser: User | null = null;
+
+let mockPeerReviews = [
+  {
+    id: 1,
+    task_id: 4,
+    task_title: "Implement Stripe Webhook Signature Verification & Idempotency",
+    project_title: "Distributed E-Commerce API Engine",
+    requester_id: 2,
+    reviewer_id: 1,
+    status: "pending",
+    review_note: null,
+    score: null,
+    created_at: new Date(Date.now() - 4 * 3600000).toISOString(),
+    github_pr_url: "https://github.com/codercorps/ecommerce-api/pull/4",
+    filename: "backend/app/services/stripe_webhook.py",
+    code_diff: `--- a/backend/app/services/stripe_webhook.py\n+++ b/backend/app/services/stripe_webhook.py\n@@ -14,8 +14,19 @@ class StripeWebhookHandler:\n     async def handle_checkout(self, event_data: dict, idempotency_key: str):\n-        self.db.add(Order(payload=event_data))\n-        await self.db.commit()\n+        # Verify idempotency key against processed events table\n+        existing = await self.db.query(ProcessedWebhook).filter(\n+            ProcessedWebhook.event_id == idempotency_key\n+        ).first()\n+        if existing:\n+            logger.info(f"Duplicate webhook {idempotency_key} skipped.")\n+            return {"status": "idempotent_skip"}\n+\n+        async with self.db.begin_nested():\n+            order = Order(status="paid", metadata=event_data)\n+            self.db.add(order)\n+            self.db.add(ProcessedWebhook(event_id=idempotency_key))\n+            await self.db.commit()\n+        return {"status": "processed", "order_id": order.id}`,
+    requester: {
+      id: 2,
+      name: "Priya Patel",
+      avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+      college: "RV College of Engineering"
+    },
+    submission: {
+      task_id: 4,
+      repo_url: "https://github.com/codercorps/ecommerce-api/pull/4",
+      approach_notes: "Implemented atomic transactions using SQLAlchemy begin_nested() and added Redis replay check."
+    }
+  },
+  {
+    id: 2,
+    task_id: 5,
+    task_title: "Build Redis Cache Layer with Write-Through Invalidation",
+    project_title: "Distributed E-Commerce API Engine",
+    requester_id: 1,
+    reviewer_id: 2,
+    status: "reviewed",
+    review_note: "Clean connection pooling and exponential backoff. Approved!",
+    score: 95,
+    created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
+    reviewed_at: new Date(Date.now() - 12 * 3600000).toISOString(),
+    github_pr_url: "https://github.com/codercorps/ecommerce-api/pull/7",
+    filename: "backend/app/core/redis_cache.py",
+    code_diff: `--- a/backend/app/core/redis_cache.py\n+++ b/backend/app/core/redis_cache.py\n@@ -1,5 +1,12 @@\n+import redis.asyncio as aioredis\n+from app.core.config import settings\n+\n+async def get_redis_client():\n+    return aioredis.from_url(settings.REDIS_URL, decode_responses=True)`,
+    reviewer: {
+      id: 2,
+      name: "Priya Patel",
+      college: "RV College of Engineering"
+    }
+  }
+];
+
 
 // Helper to find a user by ID
 const findUser = (id: number) => mockUsers.find(u => u.id === id) || null;
@@ -777,19 +914,74 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
     }
     
     // Attach certificates dynamically to public user object
-    const userCerts = mockCertificates.filter(c => c.user_id === user.id).map(c => ({
-      id: c.id,
-      project_title: mockProjects.find(p => p.id === c.project_id)?.title || "Project",
-      issued_at: c.issued_at,
-      criteria: c.criteria_met
-    }));
+    const userCerts = mockCertificates.filter(c => c.user_id === user.id).map(c => {
+      const pTitle = mockProjects.find(p => p.id === c.project_id)?.title || "Distributed E-Commerce API Engine";
+      return {
+        id: c.id,
+        certificate_number: `CORPS-CERT-${c.id}`,
+        verification_code: `VERIF-${c.id}-SECURE`,
+        title: `Certificate of Full-Stack Engineering - ${pTitle}`,
+        project_title: pTitle,
+        issued_at: c.issued_at,
+        criteria: c.criteria_met,
+        public_url: `/certify/VERIF-${c.id}-SECURE`
+      };
+    });
+
+    // Associated student projects
+    const studentProjects = mockProjects
+      .filter(p => p.members.some(m => m.user_id === user.id))
+      .map(p => ({
+        project_id: p.id,
+        project_title: p.title,
+        project_description: p.description,
+        role: p.members.find(m => m.user_id === user.id)?.role || "contributor",
+        status: p.status
+      }));
+
+    // Associated pull requests & sprint deliverables
+    const allStudentTasks = mockSprints
+      .flatMap(s => s.tasks.map(t => ({ ...t, sprint_project_id: s.project_id })))
+      .filter(t => t.assignments.some(a => a.user_id === user.id));
+
+    const pullRequests = allStudentTasks.map(t => {
+      const p = mockProjects.find(pr => pr.id === t.sprint_project_id);
+      const prStatus = t.status === "done" ? "merged" : t.status === "review" ? "review" : "open";
+      return {
+        id: t.id,
+        task_id: t.id,
+        task_title: t.title,
+        project_id: t.sprint_project_id,
+        project_title: p?.title || "Engineering Project",
+        github_pr_url: t.github_pr_url || `https://github.com/codercorps/project/pull/${t.id}`,
+        status: prStatus,
+        difficulty: t.id % 2 === 0 ? "hard" : "medium",
+        submitted_at: t.assignments[0]?.assigned_at || new Date().toISOString(),
+        mentor_score: t.status === "done" ? 95 : null
+      };
+    });
+
+    const totalRaised = pullRequests.length;
+    const mergedCount = pullRequests.filter(p => p.status === "merged").length;
+    const inReviewCount = pullRequests.filter(p => p.status === "review").length;
+    const openCount = pullRequests.filter(p => p.status === "open").length;
+    const mergeRate = totalRaised > 0 ? Math.round((mergedCount / totalRaised) * 100) : 0;
 
     return { 
       status: 200, 
       ok: true, 
       json: async () => ({
         ...user,
-        certificates: userCerts
+        certificates: userCerts,
+        projects: studentProjects,
+        pull_requests: pullRequests,
+        pr_stats: {
+          total_raised: totalRaised,
+          merged_count: mergedCount,
+          in_review_count: inReviewCount,
+          open_count: openCount,
+          merge_rate: mergeRate
+        }
       }) 
     };
   }
@@ -1078,6 +1270,130 @@ export function handleMockRequest(path: string, method: string, body?: Record<st
 
   if (path.includes("/assessment-attempts/") && path.endsWith("/reset") && method === "POST") {
     return { status: 200, ok: true, json: async () => ({ status: "reset_successful" }) };
+  }
+
+
+  // --- Peer Reviews ---
+  if ((path === "/peer-reviews" || path === "/peer-reviews/incoming") && method === "GET") {
+    const incoming = mockPeerReviews.filter(r => r.reviewer_id === (mockCurrentUser?.id || 1));
+    return { status: 200, ok: true, json: async () => incoming };
+  }
+
+  if (path === "/peer-reviews/outgoing" && method === "GET") {
+    const outgoing = mockPeerReviews.filter(r => r.requester_id === (mockCurrentUser?.id || 1));
+    return { status: 200, ok: true, json: async () => outgoing };
+  }
+
+  if (path.startsWith("/peer-reviews/") && (path.endsWith("/submit") || method === "PATCH" || method === "POST")) {
+    const rId = parseInt(path.split("/")[2]);
+    const review = mockPeerReviews.find(r => r.id === rId);
+    if (review) {
+      review.status = "reviewed";
+      review.score = (bodyObj as any)?.score || 90;
+      review.review_note = (bodyObj as any)?.feedback || (bodyObj as any)?.review_note || "Approved by peer review.";
+      review.reviewed_at = new Date().toISOString();
+    }
+    return { status: 200, ok: true, json: async () => review || { status: "reviewed" } };
+  }
+
+  // --- Student Weekly Skill Tree Progress Digest & AI Mentor Feedback ---
+  if (path === "/daily/weekly-digest" && method === "GET") {
+    const studentName = mockCurrentUser?.name || "Atul Sharma";
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        period_start: "Oct 24, 2026",
+        period_end: "Oct 31, 2026",
+        weekly_xp_gained: 480,
+        total_xp: 1820,
+        weekly_tasks_completed: 8,
+        weekly_prs_merged: 3,
+        active_streak_days: 12,
+        velocity_score: 94,
+        category_mastery: [
+          { category: "Frontend", level: 4, progress: 85, xp: 580 },
+          { category: "Backend", level: 5, progress: 92, xp: 720 },
+          { category: "DevOps", level: 3, progress: 70, xp: 360 },
+          { category: "AI & Systems", level: 3, progress: 76, xp: 320 }
+        ],
+        unlocked_nodes: [
+          {
+            id: "redis",
+            title: "Redis & In-Memory Caching",
+            category: "Backend",
+            unlocked_at: "2 days ago",
+            xp_awarded: 150
+          },
+          {
+            id: "docker",
+            title: "Docker Multi-stage Builds",
+            category: "DevOps",
+            unlocked_at: "4 days ago",
+            xp_awarded: 180
+          },
+          {
+            id: "react-query",
+            title: "TanStack React Query 5",
+            category: "Frontend",
+            unlocked_at: "6 days ago",
+            xp_awarded: 150
+          }
+        ],
+        next_recommended_nodes: [
+          {
+            id: "websockets",
+            title: "WebSockets & Event Streams",
+            category: "Backend",
+            required_xp: 200,
+            description: "Real-time bidirectional message distribution and state synchronization across pair-programming rooms."
+          },
+          {
+            id: "k8s",
+            title: "Kubernetes & Pod Orchestration",
+            category: "DevOps",
+            required_xp: 250,
+            description: "Container orchestration, rolling deployments, health checks, and service mesh ingress."
+          },
+          {
+            id: "nextjs-streaming",
+            title: "Next.js Streaming & RSC Architecture",
+            category: "Frontend",
+            required_xp: 180,
+            description: "React Server Component hydration boundaries, Suspense fallbacks, and micro-frontend bundling."
+          }
+        ],
+        ai_mentor_feedback: {
+          mentor_name: "Ada",
+          mentor_title: "AI Staff Mentor",
+          weekly_headline: `Outstanding Sprint Execution & Architecture Rigor, ${studentName}!`,
+          strengths: [
+            "Clean separation between database transactions and route handlers in recent PR commits.",
+            "Consistently maintained 96%+ test pass rates across modified API endpoints.",
+            "High team velocity with rapid peer code review turnaround under 24 hours."
+          ],
+          growth_areas: [
+            "Consider wrapping async database calls in explicit timeout retries to guard against network hiccups.",
+            "Add schema validation assertions covering edge-case 404/422 responses in upcoming sprint tests."
+          ],
+          suggested_focus: "Focus on WebSockets & Event Streaming next sprint to empower real-time collaborative features."
+        },
+        committed_target_node_id: "websockets"
+      })
+    };
+  }
+
+  if (path === "/daily/weekly-digest/commit-goal" && method === "POST") {
+    const nodeId = (bodyObj as any)?.node_id || "websockets";
+    return {
+      status: 200,
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        node_id: nodeId,
+        message: "Goal committed successfully"
+      })
+    };
   }
 
   return { status: 404, ok: false, json: async () => ({ detail: "Not found" }) };

@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import datetime
+from pydantic import BaseModel
 
 from app.deps import get_db, get_current_user
 from app.models.user import User
-from app.models.sprint import PeerReviewRequest
+from app.models.sprint import PeerReviewRequest, Task
 from app.schemas.interaction import PeerReviewResponse, PeerReviewUpdate
 
 router = APIRouter()
 
+@router.get("", response_model=List[PeerReviewResponse])
 @router.get("/incoming", response_model=List[PeerReviewResponse])
 def get_incoming_peer_reviews(
     db: Session = Depends(get_db),
@@ -38,31 +40,42 @@ def get_outgoing_peer_reviews(
     
     return requests
 
+class PeerReviewSubmitPayload(BaseModel):
+    feedback: str
+    score: Optional[int] = 90
+    badge_nomination: Optional[str] = None
+
+@router.post("/{id}/submit", response_model=PeerReviewResponse)
 @router.patch("/{id}", response_model=PeerReviewResponse)
-def update_peer_review(
+def submit_or_update_peer_review(
     id: int,
-    payload: PeerReviewUpdate,
+    payload: dict,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Marks a peer review request as reviewed with an optional review note.
-    Only the assigned reviewer can perform this action.
+    Submits feedback and score for a peer review request, awarding karma points.
     """
     review_request = db.query(PeerReviewRequest).filter(PeerReviewRequest.id == id).first()
     if not review_request:
         raise HTTPException(status_code=404, detail="Peer review request not found")
         
     if review_request.reviewer_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to update this peer review request")
+        raise HTTPException(status_code=403, detail="Not authorized to review this request")
         
-    if review_request.status != "reviewed":
-        review_request.status = "reviewed"
-        review_request.reviewed_at = datetime.datetime.utcnow()
+    review_request.status = "reviewed"
+    review_request.reviewed_at = datetime.datetime.utcnow()
+    
+    note_content = payload.get("feedback") or payload.get("review_note") or ""
+    score = payload.get("score")
+    if score is not None:
+        note_content = f"Score: {score}/100. {note_content}"
         
-    if payload.review_note is not None:
-        review_request.review_note = payload.review_note
-        
+    review_request.review_note = note_content
+    
+    # Award reviewer karma / skill points
+    current_user.skill_points = (current_user.skill_points or 0) + 50
+    
     db.commit()
     db.refresh(review_request)
     return review_request

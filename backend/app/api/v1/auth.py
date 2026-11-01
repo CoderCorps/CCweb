@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 import time
 import asyncio
+import os
 from datetime import timedelta
 from typing import Optional
 from pydantic import BaseModel, EmailStr
@@ -14,6 +15,16 @@ from app.core import security
 from app.models.user import User, Profile
 from app.models.candidate import CandidateApplication
 from app.schemas.user import UserCreate, UserResponse, Token
+
+def get_cookie_security_params():
+    is_prod = settings.ENVIRONMENT == "production" or bool(os.getenv("VERCEL")) or bool(os.getenv("VERCEL_ENV"))
+    return {
+        "samesite": "none" if is_prod else "lax",
+        "secure": is_prod,
+    }
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: Optional[str] = None
 
 # Simple in-memory rate limiter: IP -> (list of timestamps)
 rate_limit_records = defaultdict(list)
@@ -115,13 +126,14 @@ async def signup(
 
 
     # Set refresh token in HttpOnly cookie
+    cookie_opts = get_cookie_security_params()
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        samesite="none",
-        secure=True,
+        samesite=cookie_opts["samesite"],
+        secure=cookie_opts["secure"],
     )
 
     return {
@@ -164,13 +176,14 @@ async def login(
         refresh_token = security.create_refresh_token(subject=user.id, token_version=user.token_version)
 
         # Set refresh token in HttpOnly cookie
+        cookie_opts = get_cookie_security_params()
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
             max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-            samesite="none",
-            secure=True,
+            samesite=cookie_opts["samesite"],
+            secure=cookie_opts["secure"],
         )
 
         return {
@@ -193,16 +206,19 @@ async def login(
 @router.post("/refresh", response_model=Token)
 async def refresh_token_route(
     response: Response,
+    request: Request,
+    body: Optional[RefreshTokenRequest] = None,
     refresh_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
-    if not refresh_token:
+    token = refresh_token or (body.refresh_token if body else None) or request.headers.get("x-refresh-token")
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token missing"
         )
     
-    payload = security.decode_token(refresh_token)
+    payload = security.decode_token(token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -230,13 +246,14 @@ async def refresh_token_route(
     new_refresh_token = security.create_refresh_token(subject=user.id, token_version=user.token_version)
 
 
+    cookie_opts = get_cookie_security_params()
     response.set_cookie(
         key="refresh_token",
         value=new_refresh_token,
         httponly=True,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        samesite="none",
-        secure=True,
+        samesite=cookie_opts["samesite"],
+        secure=cookie_opts["secure"],
     )
 
     return {
@@ -252,7 +269,13 @@ async def get_me(current_user: User = Depends(get_current_user_unverified)):
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie(key="refresh_token")
+    cookie_opts = get_cookie_security_params()
+    response.delete_cookie(
+        key="refresh_token",
+        path="/",
+        samesite=cookie_opts["samesite"],
+        secure=cookie_opts["secure"],
+    )
     return {"detail": "Successfully logged out"}
 
 class ForgotPasswordRequest(BaseModel):

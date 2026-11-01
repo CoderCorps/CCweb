@@ -65,8 +65,21 @@ export default function ContactPage() {
                 <Terminal className="h-6 w-6 text-emerald-400" />
                 <h3 className="font-bold text-foreground">Message Dispatched!</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Your inquiry has been successfully logged and routed to <span className="font-semibold text-primary">codercorps@gmail.comm</span>. An engineering lead will follow up shortly.
+                  Your inquiry has been successfully logged and routed to <span className="font-semibold text-primary">codercorps@gmail.com</span>. An engineering lead will follow up shortly.
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSubmitted(false);
+                    setName("");
+                    setEmail("");
+                    setMessage("");
+                  }}
+                  className="mt-2 text-xs"
+                >
+                  Send Another Message
+                </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">

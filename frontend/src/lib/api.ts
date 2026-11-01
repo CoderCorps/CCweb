@@ -28,22 +28,35 @@ async function silentRefresh(): Promise<string | null> {
 
   refreshPromise = (async () => {
     try {
+      const storedRefreshToken = typeof window !== "undefined" ? localStorage.getItem("cc_refresh_token") : null;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (storedRefreshToken) {
+        headers["X-Refresh-Token"] = storedRefreshToken;
+      }
+
       const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
+        body: JSON.stringify({ refresh_token: storedRefreshToken }),
       });
 
       if (!res.ok) {
         setAccessToken(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("cc_refresh_token");
+        }
         return null;
       }
 
       const data = await res.json();
       const newToken = data.access_token;
       setAccessToken(newToken);
+      if (typeof window !== "undefined" && data.refresh_token) {
+        localStorage.setItem("cc_refresh_token", data.refresh_token);
+      }
       return newToken;
     } catch (err) {
       setAccessToken(null);

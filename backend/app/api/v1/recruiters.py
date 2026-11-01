@@ -33,7 +33,7 @@ async def search_candidates(
         query = db.query(User).join(Profile).filter(Profile.is_public == True, User.role == "student")
         if skill:
             query = query.join(UserSkill).join(SkillNode).filter(SkillNode.name.ilike(f"%{skill}%"))
-        users = query.order_by(User.skill_points.desc()).limit(50).all()
+        users = query.order_by(User.id.desc()).limit(50).all()
 
         results = []
         for u in users:
@@ -56,7 +56,7 @@ async def search_candidates(
             results.append({
                 "user": u,
                 "skills": profile_skills,
-                "skill_points": u.skill_points,
+                "skill_points": sum(us.proficiency_level * 100 for us in u.skills) if getattr(u, "skills", None) else 0,
                 "bio": u.profile.bio if u.profile else None,
                 "github_url": u.profile.github_url if u.profile else None,
                 "linkedin_url": u.profile.linkedin_url if u.profile else None,

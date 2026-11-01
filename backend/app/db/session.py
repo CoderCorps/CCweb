@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy.pool import NullPool
 from app.core.config import settings
@@ -18,6 +18,26 @@ if "supabase" in db_url and "sslmode" not in db_url:
 if db_url.startswith("postgresql://"):
     db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
+# In local development, if remote PostgreSQL fails to connect, fallback to SQLite
+if not (os.getenv("VERCEL") or os.getenv("VERCEL_ENV")) and not db_url.startswith("sqlite"):
+    try:
+        _test_engine = create_engine(db_url, connect_args={"connect_timeout": 3})
+        with _test_engine.connect() as _conn:
+            _conn.execute(text("SELECT 1"))
+        _test_engine.dispose()
+    except Exception as _exc:
+        print(f"\n[DATABASE CONNECTION NOTICE]: Could not connect to remote PostgreSQL: {_exc}")
+        print("[DATABASE AUTO-FALLBACK]: Falling back to local SQLite database (backend/codercorps.db)\n")
+        db_url = "sqlite:///./codercorps.db"
+
+# Resolve relative SQLite path consistently across working directories
+if db_url.startswith("sqlite:///."):
+    backend_base = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    db_file_name = db_url.split("sqlite:///.")[-1].lstrip("/").lstrip("\\")
+    candidate_path = os.path.join(backend_base, db_file_name)
+    if os.path.exists(candidate_path):
+        db_url = f"sqlite:///{candidate_path.replace(os.sep, '/')}"
+
 if db_url.startswith("sqlite"):
     engine = create_engine(db_url, connect_args={"check_same_thread": False})
 elif os.getenv("VERCEL") or os.getenv("VERCEL_ENV"):
@@ -33,3 +53,4 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 class Base(DeclarativeBase):
     pass
+

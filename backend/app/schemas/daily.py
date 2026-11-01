@@ -56,3 +56,52 @@ class DailyReportResponse(BaseModel):
     todos: List[dict] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CategoryMastery(BaseModel):
+    category: str
+    level: int
+    progress: int
+    xp: int
+
+
+class UnlockedNode(BaseModel):
+    id: str
+    title: str
+    category: str
+    unlocked_at: str
+    xp_awarded: int
+
+
+class RecommendedNode(BaseModel):
+    id: str
+    title: str
+    category: str
+    required_xp: int
+    description: str
+
+
+class AIMentorFeedback(BaseModel):
+    mentor_name: str
+    mentor_title: str
+    weekly_headline: str
+    strengths: List[str]
+    growth_areas: List[str]
+    suggested_focus: str
+
+
+class WeeklySkillDigestResponse(BaseModel):
+    period_start: str
+    period_end: str
+    weekly_xp_gained: int
+    total_xp: int
+    weekly_tasks_completed: int
+    weekly_prs_merged: int
+    active_streak_days: int
+    velocity_score: int
+    category_mastery: List[CategoryMastery]
+    unlocked_nodes: List[UnlockedNode]
+    next_recommended_nodes: List[RecommendedNode]
+    ai_mentor_feedback: AIMentorFeedback
+    committed_target_node_id: Optional[str] = None
+

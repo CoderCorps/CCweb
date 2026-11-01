@@ -8,7 +8,8 @@ import {
   QuestionRevealPayload,
   SessionEndedPayload,
 } from '@/types/quiz';
-import { CheckCircle2, XCircle, Trophy, Sparkles, Loader2, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, Trophy, Sparkles, Loader2, Clock, Volume2, VolumeX } from 'lucide-react';
+import { triggerConfetti, playAnswerResultSound, playFanfare, playCountdownTick } from '@/lib/celebrate';
 
 export default function PlayPinPage() {
   const routeParams = useParams();
@@ -42,6 +43,7 @@ export default function PlayPinPage() {
   const [totalScore, setTotalScore] = useState<number>(0);
   const [currentRank, setCurrentRank] = useState<number | null>(null);
   const [finalLeaderboard, setFinalLeaderboard] = useState<any[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -195,7 +197,7 @@ export default function PlayPinPage() {
     };
   }, [sessionId, participantId]);
 
-  // Countdown timer effect
+  // Countdown timer effect with optional ticking audio
   useEffect(() => {
     if (status !== 'question') {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -209,14 +211,38 @@ export default function PlayPinPage() {
           setStatus('answered');
           return 0;
         }
-        return prev - 1;
+        const nextTime = prev - 1;
+        if (soundEnabled && nextTime <= 5 && nextTime > 0) {
+          playCountdownTick(true);
+        }
+        return nextTime;
       });
     }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [status]);
+  }, [status, soundEnabled]);
+
+  // Audio feedback upon answer reveal (uplifting chime if correct, muted thud if wrong)
+  useEffect(() => {
+    if (status === 'reveal' && soundEnabled) {
+      const isCorrect = lastAnswerResult?.is_correct ?? false;
+      playAnswerResultSound(isCorrect);
+    }
+  }, [status, lastAnswerResult, soundEnabled]);
+
+  // Podium Fanfare and Confetti if player finishes in the Top 3!
+  useEffect(() => {
+    if (status === 'ended') {
+      if (currentRank && currentRank <= 3) {
+        triggerConfetti();
+        if (soundEnabled) {
+          playFanfare();
+        }
+      }
+    }
+  }, [status, currentRank, soundEnabled]);
 
   // Submit Answer via normal POST API route (Section 2 & 5: No realtime flood)
   const handleSelectOption = async (option: 'a' | 'b' | 'c' | 'd') => {
@@ -347,6 +373,13 @@ export default function PlayPinPage() {
             <span className="text-xs font-bold text-slate-400">
               Q{currentQuestion?.question_index} of {currentQuestion?.total_questions}
             </span>
+            <button
+              onClick={() => setSoundEnabled((prev) => !prev)}
+              className="p-1 rounded-lg text-slate-400 hover:text-white transition cursor-pointer"
+              title={soundEnabled ? 'Mute Game Audio' : 'Unmute Game Audio'}
+            >
+              {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5 text-rose-400" />}
+            </button>
           </div>
 
           <div
@@ -497,7 +530,15 @@ export default function PlayPinPage() {
           isCorrect ? 'bg-emerald-950/80' : didAnswer ? 'bg-rose-950/80' : 'bg-slate-950'
         }`}
       >
-        <div className="w-full max-w-sm sm:max-w-md rounded-3xl p-6 sm:p-8 backdrop-blur-md bg-slate-900/90 border border-slate-800 shadow-2xl flex flex-col items-center">
+        <div className="w-full max-w-sm sm:max-w-md rounded-3xl p-6 sm:p-8 backdrop-blur-md bg-slate-900/90 border border-slate-800 shadow-2xl flex flex-col items-center relative">
+          <button
+            onClick={() => setSoundEnabled((prev) => !prev)}
+            className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800/80 border border-slate-700/60 transition cursor-pointer"
+            title={soundEnabled ? 'Mute Game Audio' : 'Unmute Game Audio'}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
+          </button>
+
           {/* Result Icon Banner */}
           {isCorrect ? (
             <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center mb-3 text-emerald-400 animate-bounce">
@@ -591,7 +632,15 @@ export default function PlayPinPage() {
   // 5. Final Screen (Session Ended)
   return (
     <main className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white text-center">
-      <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
+      <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl flex flex-col items-center relative">
+        <button
+          onClick={() => setSoundEnabled((prev) => !prev)}
+          className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800/80 border border-slate-700/60 transition cursor-pointer"
+          title={soundEnabled ? 'Mute Game Audio' : 'Unmute Game Audio'}
+        >
+          {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
+        </button>
+
         <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mb-4 text-amber-400">
           <Trophy className="w-12 h-12" />
         </div>

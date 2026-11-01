@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import Image from "next/image";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, Eye, EyeOff, Loader2 } from "lucide-react";
 import { getAssetUrl } from "@/lib/utils";
 
 export default function LoginPage() {
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -23,30 +24,42 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && user) {
       if (user.status === "pending") {
-        router.push(user.role === "student" ? "/student/pending-approval" : "/mentor/pending-approval");
+        router.replace(user.role === "student" ? "/student/pending-approval" : "/mentor/pending-approval");
       } else if (user.role === "student") {
-        router.push("/today");
+        router.replace("/today");
       } else {
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }
     }
   }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+
     setError(null);
     setSubmitting(true);
 
     try {
-      const result = await login(email, password);
-      if (result.success) {
-        // Will be redirected by useEffect once user state updates
+      const result = await login(email.trim(), password);
+      if (result.success && result.user) {
+        // Immediate redirection without waiting for an extra React render cycle
+        const u = result.user;
+        if (u.status === "pending") {
+          router.replace(u.role === "student" ? "/student/pending-approval" : "/mentor/pending-approval");
+        } else if (u.role === "student") {
+          router.replace("/today");
+        } else {
+          router.replace("/dashboard");
+        }
+        // Keep submitting=true while navigation is occurring to prevent button flashing
+        return;
       } else {
         setError(result.error || "Invalid email or password. Please try again.");
+        setSubmitting(false);
       }
-    } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
-    } finally {
+    } catch (err: any) {
+      setError(err?.message || "An unexpected error occurred. Please try again.");
       setSubmitting(false);
     }
   };
@@ -64,7 +77,7 @@ export default function LoginPage() {
           <p className="text-xs text-muted-foreground font-mono">WORKSPACE AUTH SERVICE</p>
         </div>
 
-        <Card className="glass-premium border border-border/40">
+        <Card className="glass-premium border border-border/40 shadow-xl">
           <CardHeader>
             <CardTitle className="text-xl font-bold text-foreground">Sign In</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
@@ -85,31 +98,54 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="atul@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={submitting}
                 />
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <label htmlFor="password" className="text-xs font-semibold text-foreground font-mono">PASSWORD</label>
-                  <Link href="/forgot-password" className="text-xs text-primary hover:underline font-medium">
+                  <Link href="/forgot-password" tabIndex={submitting ? -1 : 0} className="text-xs text-primary hover:underline font-medium">
                     Forgot password?
                   </Link>
                 </div>
 
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={submitting}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
-              <Button type="submit" className="w-full font-semibold mt-4" disabled={submitting}>
-                {submitting ? "Signing In..." : "Sign In"}
+              <Button type="submit" className="w-full font-semibold mt-4 gap-2" disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Signing In...</span>
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
           </CardContent>
