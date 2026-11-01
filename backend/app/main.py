@@ -18,6 +18,20 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
+from sqlalchemy.exc import OperationalError
+from fastapi.responses import JSONResponse
+from fastapi import Request, status
+
+@app.exception_handler(OperationalError)
+async def db_operational_error_handler(request: Request, exc: OperationalError):
+    print(f"[DATABASE OPERATIONAL ERROR]: {exc}")
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={
+            "detail": "Database connection unavailable. Your Supabase PostgreSQL database is currently paused or inactive. Please unpause/restore your project at https://supabase.com/dashboard."
+        }
+    )
+
 # Enable CORS for Vercel & local development
 app.add_middleware(
     CORSMiddleware,
