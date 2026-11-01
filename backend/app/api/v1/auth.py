@@ -196,11 +196,15 @@ async def login(
         raise
     except Exception as e:
         import traceback
-        err_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
-        print(f"[LOGIN ERROR]: {err_msg}")
+        print(f"[LOGIN ERROR]: {type(e).__name__}: {str(e)}\n{traceback.format_exc()}")
+        err_str = str(e).lower()
+        if "tenant" in err_str or "not found" in err_str or "operationalerror" in err_str or "connect" in err_str:
+            detail = "Database connection unavailable: Your Supabase database is currently paused or inactive. Please restore/unpause the project in your Supabase dashboard (supabase.com/dashboard)."
+        else:
+            detail = "An internal server error occurred. Please try again."
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=err_msg
+            detail=detail
         )
 
 @router.post("/refresh", response_model=Token)
