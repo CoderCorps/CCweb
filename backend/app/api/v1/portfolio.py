@@ -55,21 +55,34 @@ async def list_public_portfolios(db: Session = Depends(get_db)):
     users = await asyncio.to_thread(
         lambda: db.query(User).join(User.profile).filter(Profile.is_public == True).all()
     )
-    return [u.name.lower().replace(" ", "-") for u in users]
+    return ["-".join(u.name.lower().split()) for u in users]
 
 
 @router.get("/{username}", response_model=PortfolioResponse)
 async def get_public_portfolio(username: str, db: Session = Depends(get_db)):
     def _query():
-        user = db.query(User).filter(
-            func.lower(func.replace(User.name, " ", "-")) == username.lower()
-        ).first()
+        clean_user = username.strip().lower()
+
+        # 1. Try finding by ID if numeric
+        user = None
+        if clean_user.isdigit():
+            user = db.query(User).filter(User.id == int(clean_user)).first()
+
+        # 2. Try exact SQL slug match
         if not user:
-            try:
-                user_id = int(username)
-                user = db.query(User).filter(User.id == user_id).first()
-            except ValueError:
-                pass
+            user = db.query(User).filter(
+                func.lower(func.replace(User.name, " ", "-")) == clean_user
+            ).first()
+
+        # 3. If not found, search with normalized whitespace & email prefix
+        if not user:
+            all_public = db.query(User).join(User.profile).filter(Profile.is_public == True).all()
+            for u in all_public:
+                slug = "-".join(u.name.lower().split())
+                email_handle = u.email.split("@")[0].lower()
+                if slug == clean_user or email_handle == clean_user or u.name.lower() == clean_user.replace("-", " "):
+                    user = u
+                    break
 
         if not user or not user.profile or not user.profile.is_public:
             return None
@@ -168,6 +181,8 @@ async def get_public_portfolio(username: str, db: Session = Depends(get_db)):
 
     user, projects_list, prs_list, stats, certs_list = result
 
+    calculated_skill_points = sum(us.proficiency_level * 100 for us in user.skills) if getattr(user, "skills", None) else 0
+
     # Construct complete PortfolioResponse
     return PortfolioResponse(
         id=user.id,
@@ -180,7 +195,7 @@ async def get_public_portfolio(username: str, db: Session = Depends(get_db)):
         rejection_reason=user.rejection_reason,
         last_reminder_sent_at=user.last_reminder_sent_at,
         unlocked_skills=user.unlocked_skills or [],
-        skill_points=user.skill_points or 0,
+        skill_points=calculated_skill_points,
         profile=user.profile,
         badges=user.badges or [],
         certificates=certs_list,
